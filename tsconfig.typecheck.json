@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "types": ["node", "react", "react-dom"]
+  },
+  "include": [
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx",
+    "constants/**/*.ts",
+    "features/**/*.ts",
+    "hooks/**/*.ts",
+    "lib/**/*.ts",
+    "services/**/*.ts",
+    "types/**/*.ts",
+    "next.config.ts",
+    "postcss.config.mjs",
+    "eslint.config.mjs"
+  ],
+  "exclude": ["node_modules", ".next"]
+}
