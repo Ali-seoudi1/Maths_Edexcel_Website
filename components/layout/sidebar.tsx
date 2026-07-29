@@ -1,10 +1,12 @@
 "use client";
 
-import { Sigma } from "lucide-react";
+import { LogOut, Sigma } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { dashboardNavigation } from "@/constants";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/features/auth";
 import { cn } from "@/lib/utils";
 
 type SidebarProps = {
@@ -13,6 +15,14 @@ type SidebarProps = {
 
 export function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname();
+  const { profile, signOut } = useAuth();
+  const initials =
+    profile?.fullName
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "EM";
 
   return (
     <aside className="flex h-full flex-col bg-sidebar px-4 py-8 text-sidebar-foreground">
@@ -53,13 +63,24 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         <p className="text-xs text-sidebar-muted">Logged in as</p>
         <div className="mt-2 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning-soft text-sm font-bold text-amber-700">
-            NS
+            {initials}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-bold">Nour S.</p>
-            <p className="truncate text-xs text-sidebar-muted">Year 11</p>
+            <p className="truncate text-sm font-bold">{profile?.fullName ?? "Student"}</p>
+            <p className="truncate text-xs capitalize text-sidebar-muted">
+              {profile?.role ?? "student"}
+            </p>
           </div>
         </div>
+        <Button
+          type="button"
+          variant="ghost"
+          className="mt-5 w-full justify-start rounded-xl px-4 text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          onClick={() => void signOut()}
+        >
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          Sign out
+        </Button>
       </div>
     </aside>
   );

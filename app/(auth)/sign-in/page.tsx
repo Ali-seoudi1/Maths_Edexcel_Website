@@ -1,14 +1,12 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Metadata } from "next";
+
+import { SignInForm } from "@/features/auth";
+
+export const metadata: Metadata = {
+  title: "Sign In",
+  description: "Secure sign in for Edexcel Mathematics students and administrators.",
+};
 
 export default function SignInPage() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Authentication Placeholder</CardTitle>
-      </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">
-        Sign-in UI will be implemented later.
-      </CardContent>
-    </Card>
-  );
+  return <SignInForm />;
 }
