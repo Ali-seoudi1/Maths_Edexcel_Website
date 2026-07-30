@@ -11,7 +11,7 @@ type ProtectedRouteProps = {
 };
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { status } = useAuth();
+  const { isLoading, status } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -21,7 +21,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     }
   }, [pathname, router, status]);
 
-  if (status !== "authenticated") {
+  if (isLoading || status !== "authenticated") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />

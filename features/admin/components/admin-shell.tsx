@@ -1,16 +1,18 @@
 "use client";
 
-import { GraduationCap, LayoutDashboard, LogOut, Menu, UserRoundPlus, UsersRound } from "lucide-react";
+import {
+  GraduationCap,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  UserRoundPlus,
+  UsersRound,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ToastProvider } from "@/components/ui/toast";
 import { useAuth } from "@/features/auth";

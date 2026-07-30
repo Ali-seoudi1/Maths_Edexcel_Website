@@ -18,7 +18,10 @@ export async function requireAdmin(request: Request) {
   }
 
   const decodedToken = await getFirebaseAdminAuth().verifyIdToken(token);
-  const profileSnapshot = await getFirebaseAdminDb().collection("users").doc(decodedToken.uid).get();
+  const profileSnapshot = await getFirebaseAdminDb()
+    .collection("users")
+    .doc(decodedToken.uid)
+    .get();
   const profile = profileSnapshot.data();
 
   if (!profileSnapshot.exists || profile?.role !== "admin" || profile.active !== true) {

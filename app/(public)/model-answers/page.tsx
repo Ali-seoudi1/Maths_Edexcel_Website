@@ -26,7 +26,8 @@ const modelAnswerFeatures = [
   },
   {
     title: "Revision-ready layout",
-    description: "Answers are organised so students can revisit methods quickly before assessments.",
+    description:
+      "Answers are organised so students can revisit methods quickly before assessments.",
     icon: PencilRuler,
   },
 ];

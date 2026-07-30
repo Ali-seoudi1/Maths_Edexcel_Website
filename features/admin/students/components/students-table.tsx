@@ -26,9 +26,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
+import { useAuth } from "@/features/auth";
 
-import { sendStudentPasswordReset, softDeleteStudent } from "../services/student-service";
-import { subscribeToStudents } from "../services/student-queries";
+import { deleteStudent, getStudents, sendStudentPasswordReset } from "../services/student-service";
 import type { Student } from "../types";
 import { StudentStatusBadge } from "./student-status-badge";
 
@@ -48,6 +48,7 @@ function StudentTableSkeleton() {
 
 export function StudentsTable() {
   const { toast } = useToast();
+  const { authReady, profile, status } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -56,23 +57,44 @@ export function StudentsTable() {
   const [busyStudentId, setBusyStudentId] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = subscribeToStudents(
-      (nextStudents) => {
-        setStudents(nextStudents);
-        setLoading(false);
-      },
-      (error) => {
+    let isMounted = true;
+
+    if (!authReady || status !== "authenticated" || profile?.role !== "admin") {
+      setLoading(true);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    setLoading(true);
+    void getStudents()
+      .then((result) => {
+        if (isMounted) {
+          setStudents(result.students);
+        }
+      })
+      .catch((error) => {
+        if (!isMounted) {
+          return;
+        }
+
         toast({
           title: "Could not load students",
-          description: error.message,
+          description: error instanceof Error ? error.message : "Try again in a moment.",
           variant: "destructive",
         });
-        setLoading(false);
-      },
-    );
+        setStudents([]);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
 
-    return unsubscribe;
-  }, [toast]);
+    return () => {
+      isMounted = false;
+    };
+  }, [authReady, profile?.role, status, toast]);
 
   const filteredStudents = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -124,10 +146,11 @@ export function StudentsTable() {
     setBusyStudentId(studentToDelete.uid);
 
     try {
-      await softDeleteStudent(studentToDelete.uid);
+      await deleteStudent(studentToDelete.uid);
+      setStudents((items) => items.filter((student) => student.uid !== studentToDelete.uid));
       toast({
-        title: "Student disabled",
-        description: "Full deletion is a TODO; this action soft deletes by disabling access.",
+        title: "Student deleted",
+        description: "The Firebase Auth user and Firestore student profile were deleted.",
         variant: "success",
       });
       setStudentToDelete(null);
@@ -150,7 +173,10 @@ export function StudentsTable() {
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <Search
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -271,13 +297,16 @@ export function StudentsTable() {
         </div>
       </div>
 
-      <Dialog open={Boolean(studentToDelete)} onOpenChange={(open) => !open && setStudentToDelete(null)}>
+      <Dialog
+        open={Boolean(studentToDelete)}
+        onOpenChange={(open) => !open && setStudentToDelete(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete student?</DialogTitle>
             <DialogDescription>
-              Full deletion is not implemented yet. This action will soft delete the account by
-              disabling student access.
+              This deletes the Firebase Auth user and Firestore student profile. The same email can
+              be reused later.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -285,7 +314,7 @@ export function StudentsTable() {
               Cancel
             </Button>
             <Button type="button" variant="destructive" onClick={() => void handleDelete()}>
-              Disable access
+              Delete student
             </Button>
           </DialogFooter>
         </DialogContent>

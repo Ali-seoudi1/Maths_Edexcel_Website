@@ -34,17 +34,20 @@ const statistics = [
 const reasons = [
   {
     title: "Exam-led clarity",
-    description: "Lessons are built around Edexcel assessment objectives, mark schemes, and common examiner expectations.",
+    description:
+      "Lessons are built around Edexcel assessment objectives, mark schemes, and common examiner expectations.",
     icon: Target,
   },
   {
     title: "Precise explanations",
-    description: "Complex topics are broken into clean steps so students understand both the method and the reasoning.",
+    description:
+      "Complex topics are broken into clean steps so students understand both the method and the reasoning.",
     icon: Brain,
   },
   {
     title: "Premium structure",
-    description: "Each stage has a clear learning sequence, revision rhythm, and model answer support.",
+    description:
+      "Each stage has a clear learning sequence, revision rhythm, and model answer support.",
     icon: Sparkles,
   },
 ];
@@ -53,33 +56,60 @@ const courses = [
   {
     title: "IGCSE Mathematics",
     stage: "Years 10-11",
-    description: "A complete route through number, algebra, geometry, statistics, and exam technique.",
+    description:
+      "A complete route through number, algebra, geometry, statistics, and exam technique.",
     topics: ["Algebra", "Graphs", "Geometry"],
     icon: GraduationCap,
   },
   {
     title: "O Level Mathematics",
     stage: "Secondary",
-    description: "Focused preparation for core and extended problem solving with clear worked examples.",
+    description:
+      "Focused preparation for core and extended problem solving with clear worked examples.",
     topics: ["Functions", "Trigonometry", "Mensuration"],
     icon: BookOpen,
   },
   {
     title: "A Level Mathematics",
     stage: "Sixth form",
-    description: "Rigorous pure mathematics, mechanics, and statistics support for ambitious students.",
+    description:
+      "Rigorous pure mathematics, mechanics, and statistics support for ambitious students.",
     topics: ["Calculus", "Mechanics", "Statistics"],
     icon: Layers3,
   },
 ];
 
 const features = [
-  { title: "Recorded Lessons", description: "Reviewable lesson libraries for paced revision.", icon: MonitorPlay },
-  { title: "Model Answers", description: "Clean, mark-aware solutions for exam-style questions.", icon: FileCheck2 },
-  { title: "Assignments", description: "Structured practice tasks aligned to each unit.", icon: ClipboardCheck },
-  { title: "Quizzes", description: "Short checks to consolidate methods and confidence.", icon: CheckCircle2 },
-  { title: "Reports", description: "Progress summaries designed for clear next steps.", icon: ChartNoAxesCombined },
-  { title: "Live Lessons", description: "Interactive sessions focused on active problem solving.", icon: Video },
+  {
+    title: "Recorded Lessons",
+    description: "Reviewable lesson libraries for paced revision.",
+    icon: MonitorPlay,
+  },
+  {
+    title: "Model Answers",
+    description: "Clean, mark-aware solutions for exam-style questions.",
+    icon: FileCheck2,
+  },
+  {
+    title: "Assignments",
+    description: "Structured practice tasks aligned to each unit.",
+    icon: ClipboardCheck,
+  },
+  {
+    title: "Quizzes",
+    description: "Short checks to consolidate methods and confidence.",
+    icon: CheckCircle2,
+  },
+  {
+    title: "Reports",
+    description: "Progress summaries designed for clear next steps.",
+    icon: ChartNoAxesCombined,
+  },
+  {
+    title: "Live Lessons",
+    description: "Interactive sessions focused on active problem solving.",
+    icon: Video,
+  },
 ];
 
 const testimonials = [
@@ -111,11 +141,13 @@ const faqs = [
   },
   {
     question: "Is this page connected to a student account?",
-    answer: "No. This is a static public marketing website with no authentication or backend logic.",
+    answer:
+      "No. This is a static public marketing website with no authentication or backend logic.",
   },
   {
     question: "Can parents review progress?",
-    answer: "The platform feature set includes reports as a static public-facing feature description.",
+    answer:
+      "The platform feature set includes reports as a static public-facing feature description.",
   },
 ];
 

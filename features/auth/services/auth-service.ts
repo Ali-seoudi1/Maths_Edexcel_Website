@@ -25,10 +25,25 @@ export class AuthError extends Error {
   }
 }
 
+let authPersistencePromise: Promise<void> | null = null;
+
+export function initializeAuthPersistence() {
+  if (!authPersistencePromise) {
+    const auth = getFirebaseAuth();
+    authPersistencePromise = setPersistence(auth, browserLocalPersistence);
+  }
+
+  return authPersistencePromise;
+}
+
 function getAuthErrorMessage(error: unknown): string {
   const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
 
-  if (code === "auth/invalid-credential" || code === "auth/user-not-found" || code === "auth/wrong-password") {
+  if (
+    code === "auth/invalid-credential" ||
+    code === "auth/user-not-found" ||
+    code === "auth/wrong-password"
+  ) {
     return "The email or password you entered is incorrect.";
   }
 
@@ -47,7 +62,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
   const auth = getFirebaseAuth();
 
   try {
-    await setPersistence(auth, browserLocalPersistence);
+    await initializeAuthPersistence();
     const credential = await signInWithEmailAndPassword(auth, email, password);
     const profile = await getUserProfile(credential.user.uid);
 

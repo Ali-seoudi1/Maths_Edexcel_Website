@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, KeyRound } from "lucide-react";
+import { MailCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -31,7 +31,7 @@ export function CreateStudentView() {
       setCreatedStudent(result);
       toast({
         title: "Student created",
-        description: `${result.student.fullName} can now sign in with the temporary password.`,
+        description: `A password setup email was sent to ${result.student.email}.`,
         variant: "success",
       });
     } catch (error) {
@@ -41,19 +41,6 @@ export function CreateStudentView() {
         variant: "destructive",
       });
     }
-  }
-
-  async function copyTemporaryPassword() {
-    if (!createdStudent) {
-      return;
-    }
-
-    await navigator.clipboard.writeText(createdStudent.temporaryPassword);
-    toast({
-      title: "Temporary password copied",
-      description: "Share it securely with the student.",
-      variant: "success",
-    });
   }
 
   return (
@@ -67,34 +54,34 @@ export function CreateStudentView() {
         </CardContent>
       </Card>
 
-      <Dialog open={Boolean(createdStudent)} onOpenChange={(open) => !open && router.push("/admin/students")}>
+      <Dialog
+        open={Boolean(createdStudent)}
+        onOpenChange={(open) => !open && router.push("/admin/students")}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Student account created</DialogTitle>
             <DialogDescription>
-              Save this temporary password now. It is only shown once.
+              The student has been emailed a secure link to set their own password.
             </DialogDescription>
           </DialogHeader>
           {createdStudent ? (
             <div className="space-y-5">
               <div className="rounded-md border bg-secondary/60 p-4">
                 <div className="flex items-center gap-3">
-                  <KeyRound className="h-5 w-5 text-primary" aria-hidden="true" />
+                  <MailCheck className="h-5 w-5 text-primary" aria-hidden="true" />
                   <div>
                     <p className="text-sm font-semibold text-foreground">
                       {createdStudent.student.email}
                     </p>
-                    <p className="mt-1 font-mono text-sm text-muted-foreground">
-                      {createdStudent.temporaryPassword}
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      They can open the email, choose a password, then sign in with their email and
+                      password.
                     </p>
                   </div>
                 </div>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-                <Button type="button" variant="outline" onClick={() => void copyTemporaryPassword()}>
-                  <Copy className="h-4 w-4" aria-hidden="true" />
-                  Copy password
-                </Button>
                 <Button type="button" onClick={() => router.push("/admin/students")}>
                   Done
                 </Button>

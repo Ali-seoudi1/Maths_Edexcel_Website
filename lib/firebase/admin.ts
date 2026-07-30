@@ -13,9 +13,13 @@ function getPrivateKey() {
   return process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 }
 
+function getProjectId() {
+  return process.env.FIREBASE_PROJECT_ID ?? process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+}
+
 export function getMissingFirebaseAdminEnv(): string[] {
   const envMap: Record<(typeof requiredFirebaseAdminEnv)[number], string | undefined> = {
-    FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
+    FIREBASE_PROJECT_ID: getProjectId(),
     FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
     FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
   };
@@ -46,7 +50,7 @@ export function getFirebaseAdminApp(): App {
 
   return initializeApp({
     credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
+      projectId: getProjectId(),
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
       privateKey: getPrivateKey(),
     }),

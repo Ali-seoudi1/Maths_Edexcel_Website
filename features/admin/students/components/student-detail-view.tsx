@@ -23,9 +23,9 @@ import { useToast } from "@/components/ui/toast";
 import type { EditStudentFormValues } from "../schemas";
 import { getStudentById } from "../services/student-queries";
 import {
-  sendStudentPasswordReset,
-  softDeleteStudent,
+  deleteStudent,
   updateStudent,
+  sendStudentPasswordReset,
 } from "../services/student-service";
 import type { Student } from "../types";
 import { StudentForm } from "./student-form";
@@ -150,12 +150,12 @@ export function StudentDetailView({ studentId }: { studentId: string }) {
     setBusy(true);
 
     try {
-      const result = await softDeleteStudent(student.uid);
-      setStudent(result.student);
+      await deleteStudent(student.uid);
+      setStudent(null);
       setDeleteOpen(false);
       toast({
-        title: "Student disabled",
-        description: "Full deletion is a TODO; this soft delete disabled account access.",
+        title: "Student deleted",
+        description: "The Firebase Auth user and Firestore student profile were deleted.",
         variant: "success",
       });
     } catch (error) {
@@ -228,8 +228,16 @@ export function StudentDetailView({ studentId }: { studentId: string }) {
           <DetailItem icon={UserRound} label="Name" value={student.fullName} />
           <DetailItem icon={Mail} label="Email" value={student.email} />
           <DetailItem icon={UserRound} label="UID" value={student.uid} />
-          <DetailItem icon={UserRound} label="Status" value={<StudentStatusBadge active={student.active} />} />
-          <DetailItem icon={CalendarDays} label="Created At" value={formatDate(student.createdAt)} />
+          <DetailItem
+            icon={UserRound}
+            label="Status"
+            value={<StudentStatusBadge active={student.active} />}
+          />
+          <DetailItem
+            icon={CalendarDays}
+            label="Created At"
+            value={formatDate(student.createdAt)}
+          />
         </CardContent>
       </Card>
 
@@ -256,16 +264,21 @@ export function StudentDetailView({ studentId }: { studentId: string }) {
           <DialogHeader>
             <DialogTitle>Delete student?</DialogTitle>
             <DialogDescription>
-              Full deletion is not implemented yet. This will soft delete the account by disabling
-              student access.
+              This deletes the Firebase Auth user and Firestore student profile. The same email can
+              be reused later.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setDeleteOpen(false)}>
               Cancel
             </Button>
-            <Button type="button" variant="destructive" disabled={busy} onClick={() => void handleDelete()}>
-              Disable access
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={busy}
+              onClick={() => void handleDelete()}
+            >
+              Delete student
             </Button>
           </DialogFooter>
         </DialogContent>

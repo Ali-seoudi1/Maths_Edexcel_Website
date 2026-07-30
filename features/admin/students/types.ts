@@ -11,5 +11,9 @@ export type Student = {
 
 export type CreateStudentResponse = {
   student: Student;
-  temporaryPassword: string;
+  invitationEmailSent: boolean;
+};
+
+export type DeleteStudentResponse = {
+  deletedStudentId: string;
 };

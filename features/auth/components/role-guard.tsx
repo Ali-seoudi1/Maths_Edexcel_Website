@@ -17,7 +17,7 @@ function getFallbackPath(role?: UserRole) {
 }
 
 export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
-  const { profile, status } = useAuth();
+  const { isLoading, profile, status } = useAuth();
   const router = useRouter();
   const isAllowed = profile ? allowedRoles.includes(profile.role) : false;
 
@@ -27,7 +27,7 @@ export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
     }
   }, [isAllowed, profile, router, status]);
 
-  if (status !== "authenticated" || !isAllowed) {
+  if (isLoading || status !== "authenticated" || !isAllowed) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />

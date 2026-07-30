@@ -11,7 +11,8 @@ export const metadata: Metadata = {
 const contactOptions = [
   {
     title: "Email enquiries",
-    description: "Use your preferred email client to ask about availability, course stage, and goals.",
+    description:
+      "Use your preferred email client to ask about availability, course stage, and goals.",
     icon: Mail,
   },
   {
@@ -21,7 +22,8 @@ const contactOptions = [
   },
   {
     title: "Lesson planning",
-    description: "Course recommendations are shaped around exam board, timeline, and confidence gaps.",
+    description:
+      "Course recommendations are shaped around exam board, timeline, and confidence gaps.",
     icon: CalendarDays,
   },
 ];
@@ -45,8 +47,8 @@ export default function ContactPage() {
                 Public contact placeholder
               </h2>
               <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                Add preferred contact details here when the final business information is ready.
-                The marketing site keeps this section presentational only.
+                Add preferred contact details here when the final business information is ready. The
+                marketing site keeps this section presentational only.
               </p>
             </div>
           </div>

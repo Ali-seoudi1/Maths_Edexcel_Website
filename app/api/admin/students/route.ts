@@ -4,7 +4,10 @@ import { ZodError } from "zod";
 import { getMissingFirebaseAdminEnv } from "@/lib/firebase/admin";
 import { studentFormSchema } from "@/features/admin/students/schemas";
 import { requireAdmin } from "@/features/admin/students/services/admin-auth";
-import { createStudentAccount } from "@/features/admin/students/services/server-student-service";
+import {
+  createStudentAccount,
+  listStudentAccounts,
+} from "@/features/admin/students/services/server-student-service";
 
 function errorResponse(error: unknown) {
   if (error instanceof ZodError) {
@@ -23,7 +26,7 @@ export async function POST(request: Request) {
   if (missingAdminEnv.length > 0) {
     return NextResponse.json(
       {
-        error: `TODO: Configure Firebase Admin SDK env variables before creating student accounts. Missing: ${missingAdminEnv.join(
+        error: `Firebase Admin SDK is not configured. Add the missing server environment variables before creating student accounts. Missing: ${missingAdminEnv.join(
           ", ",
         )}.`,
       },
@@ -34,9 +37,33 @@ export async function POST(request: Request) {
   try {
     await requireAdmin(request);
     const values = studentFormSchema.parse(await request.json());
-    const result = await createStudentAccount(values);
+    const result = await createStudentAccount(values, new URL(request.url).origin);
 
     return NextResponse.json(result, { status: 201 });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+export async function GET(request: Request) {
+  const missingAdminEnv = getMissingFirebaseAdminEnv();
+
+  if (missingAdminEnv.length > 0) {
+    return NextResponse.json(
+      {
+        error: `Firebase Admin SDK is not configured. Add the missing server environment variables before listing student accounts. Missing: ${missingAdminEnv.join(
+          ", ",
+        )}.`,
+      },
+      { status: 501 },
+    );
+  }
+
+  try {
+    await requireAdmin(request);
+    const students = await listStudentAccounts();
+
+    return NextResponse.json({ students });
   } catch (error) {
     return errorResponse(error);
   }

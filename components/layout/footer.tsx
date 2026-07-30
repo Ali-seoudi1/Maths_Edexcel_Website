@@ -7,8 +7,8 @@ export function Footer() {
         <div>
           <p className="font-semibold text-foreground">Edexcel Mathematics</p>
           <p className="mt-2 max-w-xl leading-6">
-            Premium IGCSE, O Level, and A Level mathematics teaching with a structured,
-            exam-focused approach.
+            Premium IGCSE, O Level, and A Level mathematics teaching with a structured, exam-focused
+            approach.
           </p>
         </div>
         <p>© 2026 Edexcel Mathematics Teacher. All rights reserved.</p>

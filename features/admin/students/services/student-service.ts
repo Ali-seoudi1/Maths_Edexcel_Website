@@ -2,7 +2,7 @@ import { sendPasswordResetEmail } from "firebase/auth";
 
 import { getFirebaseAuth } from "@/lib/firebase/client";
 
-import type { CreateStudentResponse, Student } from "../types";
+import type { CreateStudentResponse, DeleteStudentResponse, Student } from "../types";
 import type { EditStudentFormValues, StudentFormValues } from "../schemas";
 
 async function getAdminIdToken() {
@@ -37,9 +37,7 @@ async function requestJson<TResponse>(url: string, init: RequestInit): Promise<T
         ? payload.error
         : "The student request could not be completed.";
 
-    throw new Error(
-      errorMessage,
-    );
+    throw new Error(errorMessage);
   }
 
   return payload as TResponse;
@@ -49,6 +47,12 @@ export async function createStudent(values: StudentFormValues): Promise<CreateSt
   return requestJson<CreateStudentResponse>("/api/admin/students", {
     method: "POST",
     body: JSON.stringify(values),
+  });
+}
+
+export async function getStudents(): Promise<{ students: Student[] }> {
+  return requestJson<{ students: Student[] }>("/api/admin/students", {
+    method: "GET",
   });
 }
 
@@ -62,8 +66,8 @@ export async function updateStudent(
   });
 }
 
-export async function softDeleteStudent(uid: string): Promise<{ student: Student }> {
-  return requestJson<{ student: Student }>(`/api/admin/students/${uid}`, {
+export async function deleteStudent(uid: string): Promise<DeleteStudentResponse> {
+  return requestJson<DeleteStudentResponse>(`/api/admin/students/${uid}`, {
     method: "DELETE",
   });
 }

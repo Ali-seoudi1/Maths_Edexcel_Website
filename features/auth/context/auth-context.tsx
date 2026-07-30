@@ -4,6 +4,7 @@ import { createContext, useCallback, useEffect, useMemo, useState, type ReactNod
 import type { User } from "firebase/auth";
 
 import {
+  initializeAuthPersistence,
   sendPasswordReset,
   signInWithEmail,
   signOutCurrentUser,
@@ -16,6 +17,7 @@ type AuthContextValue = {
   firebaseUser: User | null;
   profile: UserProfile | null;
   status: AuthStatus;
+  authReady: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<UserProfile>;
   signOut: () => Promise<void>;
@@ -33,6 +35,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [status, setStatus] = useState<AuthStatus>("loading");
+  const [authReady, setAuthReady] = useState(false);
 
   const loadProfile = useCallback(async (user: User | null) => {
     setFirebaseUser(user);
@@ -62,28 +65,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
     let isMounted = true;
     let unsubscribe: (() => void) | undefined;
 
-    try {
-      unsubscribe = subscribeToAuthState((user) => {
+    void initializeAuthPersistence()
+      .then(() => {
         if (!isMounted) {
           return;
         }
 
-        setStatus("loading");
-        void loadProfile(user).catch(() => {
+        unsubscribe = subscribeToAuthState((user) => {
           if (!isMounted) {
             return;
           }
 
-          setFirebaseUser(null);
-          setProfile(null);
-          setStatus("unauthenticated");
+          setStatus("loading");
+          setAuthReady(false);
+          void loadProfile(user)
+            .catch(() => {
+              if (!isMounted) {
+                return;
+              }
+
+              setFirebaseUser(null);
+              setProfile(null);
+              setStatus("unauthenticated");
+            })
+            .finally(() => {
+              if (isMounted) {
+                setAuthReady(true);
+              }
+            });
         });
+      })
+      .catch(() => {
+        if (!isMounted) {
+          return;
+        }
+
+        setFirebaseUser(null);
+        setProfile(null);
+        setStatus("unauthenticated");
+        setAuthReady(true);
       });
-    } catch {
-      setFirebaseUser(null);
-      setProfile(null);
-      setStatus("unauthenticated");
-    }
 
     return () => {
       isMounted = false;
@@ -96,6 +117,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setFirebaseUser(result.user);
     setProfile(result.profile);
     setStatus("authenticated");
+    setAuthReady(true);
     return result.profile;
   }, []);
 
@@ -104,6 +126,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setFirebaseUser(null);
     setProfile(null);
     setStatus("unauthenticated");
+    setAuthReady(true);
   }, []);
 
   const resetPassword = useCallback(async (email: string) => {
@@ -120,13 +143,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       firebaseUser,
       profile,
       status,
-      isLoading: status === "loading",
+      authReady,
+      isLoading: !authReady || status === "loading",
       signIn,
       signOut,
       resetPassword,
       refreshProfile,
     }),
-    [firebaseUser, profile, refreshProfile, resetPassword, signIn, signOut, status],
+    [authReady, firebaseUser, profile, refreshProfile, resetPassword, signIn, signOut, status],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

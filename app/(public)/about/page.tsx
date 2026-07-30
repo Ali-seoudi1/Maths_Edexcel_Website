@@ -21,7 +21,8 @@ const values = [
   },
   {
     title: "Calm confidence",
-    description: "Lessons are paced to make difficult ideas feel clear, repeatable, and achievable.",
+    description:
+      "Lessons are paced to make difficult ideas feel clear, repeatable, and achievable.",
     icon: Award,
   },
 ];
@@ -37,8 +38,8 @@ export default function AboutPage() {
               Professional Edexcel Mathematics teaching with a precise, student-first method.
             </h1>
             <p className="mt-6 text-base leading-8 text-muted-foreground sm:text-lg">
-              This public website introduces a premium learning experience for IGCSE, O Level, and
-              A Level Mathematics students. The teaching approach is built around clarity,
+              This public website introduces a premium learning experience for IGCSE, O Level, and A
+              Level Mathematics students. The teaching approach is built around clarity,
               consistency, and strong exam habits.
             </p>
           </div>
@@ -48,8 +49,8 @@ export default function AboutPage() {
             </div>
             <p className="mt-6 text-sm font-semibold text-foreground">Teaching focus</p>
             <p className="mt-3 text-sm leading-7 text-muted-foreground">
-              Edexcel specification alignment, worked examples, targeted practice, and concise
-              model answers that help students understand how to earn marks.
+              Edexcel specification alignment, worked examples, targeted practice, and concise model
+              answers that help students understand how to earn marks.
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               <StatisticCard value="IGCSE" label="Foundation" detail="Core fluency." />

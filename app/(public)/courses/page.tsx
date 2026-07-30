@@ -35,7 +35,8 @@ const courses = [
 const support = [
   {
     title: "Topic sequencing",
-    description: "Students move through a deliberate order that connects prior knowledge to new skills.",
+    description:
+      "Students move through a deliberate order that connects prior knowledge to new skills.",
     icon: Target,
   },
   {

@@ -21,7 +21,10 @@ export function AdminPageHeader({
 }: AdminPageHeaderProps) {
   return (
     <header className="mb-8 space-y-5">
-      <nav className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground" aria-label="Breadcrumb">
+      <nav
+        className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground"
+        aria-label="Breadcrumb"
+      >
         {breadcrumbs.map((item, index) => (
           <span key={`${item.label}-${index}`} className="flex items-center gap-2">
             {item.href ? (

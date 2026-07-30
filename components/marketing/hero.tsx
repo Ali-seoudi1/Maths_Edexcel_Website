@@ -42,7 +42,9 @@ export function Hero() {
               <div className="mb-5 flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold text-foreground">Lesson workspace</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Professional illustration placeholder</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Professional illustration placeholder
+                  </p>
                 </div>
                 <div className="rounded-md bg-success/10 px-3 py-1 text-xs font-semibold text-success">
                   Live
@@ -73,7 +75,9 @@ export function Hero() {
                   </div>
                   <div className="rounded-md border bg-card p-4">
                     <p className="text-xs font-medium text-muted-foreground">Next lesson</p>
-                    <p className="mt-2 text-sm font-semibold text-foreground">Integration methods</p>
+                    <p className="mt-2 text-sm font-semibold text-foreground">
+                      Integration methods
+                    </p>
                     <p className="mt-1 text-xs text-muted-foreground">A Level Pure Mathematics</p>
                   </div>
                 </div>

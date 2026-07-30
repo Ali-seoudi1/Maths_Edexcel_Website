@@ -5,7 +5,7 @@ import { getMissingFirebaseAdminEnv } from "@/lib/firebase/admin";
 import { editStudentFormSchema } from "@/features/admin/students/schemas";
 import { requireAdmin } from "@/features/admin/students/services/admin-auth";
 import {
-  softDeleteStudentAccount,
+  deleteStudentAccount,
   updateStudentAccount,
 } from "@/features/admin/students/services/server-student-service";
 
@@ -35,7 +35,7 @@ function adminSdkTodoResponse() {
 
   return NextResponse.json(
     {
-      error: `TODO: Configure Firebase Admin SDK env variables before mutating student accounts. Missing: ${missingAdminEnv.join(
+      error: `Firebase Admin SDK is not configured. Add the missing server environment variables before mutating student accounts. Missing: ${missingAdminEnv.join(
         ", ",
       )}.`,
     },
@@ -72,9 +72,9 @@ export async function DELETE(request: Request, context: RouteContext) {
   try {
     await requireAdmin(request);
     const { id } = await context.params;
-    const student = await softDeleteStudentAccount(id);
+    const result = await deleteStudentAccount(id);
 
-    return NextResponse.json({ student });
+    return NextResponse.json(result);
   } catch (error) {
     return errorResponse(error);
   }
