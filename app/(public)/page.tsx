@@ -1,229 +1,261 @@
 import {
-  BookOpen,
-  Brain,
-  ChartNoAxesCombined,
+  BookOpenCheck,
   CheckCircle2,
   ClipboardCheck,
-  FileCheck2,
-  GraduationCap,
-  Layers3,
-  MonitorPlay,
-  Sparkles,
+  Mail,
+  Phone,
+  Pi,
   Target,
-  Video,
 } from "lucide-react";
+import Link from "next/link";
 
-import {
-  CourseCard,
-  CtaBanner,
-  FaqAccordion,
-  FeatureCard,
-  Hero,
-  Section,
-  StatisticCard,
-  TestimonialCard,
-} from "@/components/marketing";
-
-const statistics = [
-  { value: "420+", label: "Students", detail: "Supported across Edexcel pathways." },
-  { value: "12+", label: "Years of Experience", detail: "Specialist mathematics teaching." },
-  { value: "1,800+", label: "Lessons", detail: "Structured, exam-focused sessions." },
-  { value: "96%", label: "Success Rate", detail: "Static placeholder outcome metric." },
-];
-
-const reasons = [
-  {
-    title: "Exam-led clarity",
-    description:
-      "Lessons are built around Edexcel assessment objectives, mark schemes, and common examiner expectations.",
-    icon: Target,
-  },
-  {
-    title: "Precise explanations",
-    description:
-      "Complex topics are broken into clean steps so students understand both the method and the reasoning.",
-    icon: Brain,
-  },
-  {
-    title: "Premium structure",
-    description:
-      "Each stage has a clear learning sequence, revision rhythm, and model answer support.",
-    icon: Sparkles,
-  },
-];
-
-const courses = [
-  {
-    title: "IGCSE Mathematics",
-    stage: "Years 10-11",
-    description:
-      "A complete route through number, algebra, geometry, statistics, and exam technique.",
-    topics: ["Algebra", "Graphs", "Geometry"],
-    icon: GraduationCap,
-  },
-  {
-    title: "O Level Mathematics",
-    stage: "Secondary",
-    description:
-      "Focused preparation for core and extended problem solving with clear worked examples.",
-    topics: ["Functions", "Trigonometry", "Mensuration"],
-    icon: BookOpen,
-  },
-  {
-    title: "A Level Mathematics",
-    stage: "Sixth form",
-    description:
-      "Rigorous pure mathematics, mechanics, and statistics support for ambitious students.",
-    topics: ["Calculus", "Mechanics", "Statistics"],
-    icon: Layers3,
-  },
-];
+import { Container } from "@/components/shared/container";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 const features = [
   {
-    title: "Recorded Lessons",
-    description: "Reviewable lesson libraries for paced revision.",
-    icon: MonitorPlay,
+    title: "Edexcel Specialist",
+    description: "Focused exclusively on Edexcel IGCSE Mathematics.",
+    icon: BookOpenCheck,
   },
   {
-    title: "Model Answers",
-    description: "Clean, mark-aware solutions for exam-style questions.",
-    icon: FileCheck2,
+    title: "Exam-Focused Learning",
+    description: "Lessons designed around the official Edexcel syllabus.",
+    icon: Target,
   },
   {
-    title: "Assignments",
-    description: "Structured practice tasks aligned to each unit.",
+    title: "Past Paper Practice",
+    description: "Students gain confidence by solving real examination questions.",
     icon: ClipboardCheck,
   },
   {
-    title: "Quizzes",
-    description: "Short checks to consolidate methods and confidence.",
+    title: "Clear Explanations",
+    description:
+      "Every lesson simplifies difficult mathematical concepts into easy-to-understand steps.",
     icon: CheckCircle2,
   },
-  {
-    title: "Reports",
-    description: "Progress summaries designed for clear next steps.",
-    icon: ChartNoAxesCombined,
-  },
-  {
-    title: "Live Lessons",
-    description: "Interactive sessions focused on active problem solving.",
-    icon: Video,
-  },
 ];
 
-const testimonials = [
-  {
-    quote: "The lessons made difficult topics feel organised and manageable before the exam.",
-    name: "Parent of Year 11 student",
-    detail: "IGCSE Mathematics",
-  },
-  {
-    quote: "Model answers helped me understand exactly how marks are awarded.",
-    name: "A Level student",
-    detail: "Pure Mathematics",
-  },
-  {
-    quote: "The teaching style is calm, precise, and focused on real exam performance.",
-    name: "Parent feedback",
-    detail: "O Level Mathematics",
-  },
-];
-
-const faqs = [
-  {
-    question: "Which Edexcel courses are covered?",
-    answer: "The public programme highlights IGCSE, O Level, and A Level Mathematics support.",
-  },
-  {
-    question: "Are model answers included?",
-    answer: "Yes. The marketing site presents model answer support as a core learning resource.",
-  },
-  {
-    question: "Is this page connected to a student account?",
-    answer:
-      "No. This is a static public marketing website with no authentication or backend logic.",
-  },
-  {
-    question: "Can parents review progress?",
-    answer:
-      "The platform feature set includes reports as a static public-facing feature description.",
-  },
-];
+function SectionHeader({
+  eyebrow,
+  title,
+  description,
+}: {
+  eyebrow: string;
+  title: string;
+  description?: string;
+}) {
+  return (
+    <div className="mx-auto mb-14 max-w-3xl text-center">
+      <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#2f9b87]">{eyebrow}</p>
+      <h2 className="mt-4 text-3xl font-bold tracking-normal text-[#07112f] sm:text-4xl">
+        {title}
+      </h2>
+      {description ? (
+        <p className="mt-4 text-base leading-7 text-[#5b627c]">{description}</p>
+      ) : null}
+    </div>
+  );
+}
 
 export default function PublicHomePage() {
   return (
     <>
-      <Hero />
+      <section className="overflow-hidden border-b border-[#dfe4ee] bg-[#f5f7fb] py-24 sm:py-32 lg:py-36">
+        <Container className="grid max-w-[1400px] items-center gap-16 lg:grid-cols-[1.02fr_0.98fr]">
+          <div className="max-w-3xl">
+            <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#2f9b87]">
+              Edexcel IGCSE Mathematics Teacher
+            </p>
+            <h1 className="mt-6 text-5xl font-bold leading-[1.04] tracking-normal text-[#07112f] sm:text-6xl lg:text-7xl">
+              Master Edexcel IGCSE Mathematics with Confidence
+            </h1>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-[#5b627c]">
+              Students receive structured lessons, exam-focused preparation, and clear
+              explanations that help them build confidence and succeed in Edexcel IGCSE
+              Mathematics.
+            </p>
+            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+              <Button
+                asChild
+                size="lg"
+                className="h-14 rounded-xl bg-[#2f9b87] px-8 text-base font-bold text-white shadow-sm hover:bg-[#278773]"
+              >
+                <Link href="/sign-in">Login</Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="h-14 rounded-xl border-[#dfe4ee] bg-white px-8 text-base font-bold text-[#07112f] shadow-sm hover:bg-[#f8fafc]"
+              >
+                <Link href="#contact">Contact</Link>
+              </Button>
+            </div>
+          </div>
 
-      <Section className="border-y bg-card py-10 sm:py-12">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {statistics.map((statistic) => (
-            <StatisticCard key={statistic.label} {...statistic} />
-          ))}
-        </div>
-      </Section>
+          <Card className="rounded-[1.55rem] border border-[#dfe4ee] bg-white shadow-[0_28px_70px_rgba(8,17,47,0.10)]">
+            <CardContent className="p-6 sm:p-8">
+              <div className="rounded-[1.25rem] bg-white p-2">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-lg font-bold text-[#07112f]">Learning focus</p>
+                    <p className="mt-2 text-sm text-[#5b627c]">
+                      Clear preparation for Edexcel IGCSE Mathematics
+                    </p>
+                  </div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#dff1ed] text-[#2f9b87]">
+                    <Pi className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                </div>
 
-      <Section
-        eyebrow="Why choose us"
-        title="A refined teaching experience for serious mathematics progress."
-        description="Every resource is designed to reduce friction, strengthen technique, and make revision feel calm and purposeful."
-      >
-        <div className="grid gap-5 md:grid-cols-3">
-          {reasons.map((reason) => (
-            <FeatureCard key={reason.title} {...reason} />
-          ))}
-        </div>
-      </Section>
+                <div className="mt-8 divide-y divide-[#e4e8f1]">
+                  {[
+                    "Official syllabus guidance",
+                    "Past paper practice",
+                    "Step-by-step explanations",
+                  ].map((item) => (
+                    <div
+                      key={item}
+                      className="flex items-center justify-between gap-6 py-5"
+                    >
+                      <div className="flex items-center gap-4">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#dff1ed] text-[#2f9b87]">
+                          <BookOpenCheck className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                        <span className="text-base font-bold text-[#07112f]">{item}</span>
+                      </div>
+                      <CheckCircle2 className="h-5 w-5 shrink-0 text-[#2f9b87]" aria-hidden="true" />
+                    </div>
+                  ))}
+                </div>
 
-      <Section
-        id="subjects"
-        className="bg-card"
-        eyebrow="Subjects"
-        title="Edexcel pathways from IGCSE to A Level."
-        description="Static course cards for the public website, ready to connect to deeper content later."
-      >
-        <div className="grid gap-5 lg:grid-cols-3">
-          {courses.map((course) => (
-            <CourseCard key={course.title} {...course} />
-          ))}
-        </div>
-      </Section>
+                <div className="mt-5 rounded-2xl bg-[#f5f7fb] p-5">
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                      <p className="text-xl font-bold text-[#07112f]">01</p>
+                      <p className="mt-1 text-xs font-medium text-[#5b627c]">Learn</p>
+                    </div>
+                    <div>
+                      <p className="text-xl font-bold text-[#07112f]">02</p>
+                      <p className="mt-1 text-xs font-medium text-[#5b627c]">Practise</p>
+                    </div>
+                    <div>
+                      <p className="text-xl font-bold text-[#07112f]">03</p>
+                      <p className="mt-1 text-xs font-medium text-[#5b627c]">Improve</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Container>
+      </section>
 
-      <Section
-        eyebrow="Platform features"
-        title="The learning tools students expect from a modern course."
-        description="A polished public overview of the platform experience without implementing business logic."
-      >
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <FeatureCard key={feature.title} {...feature} />
-          ))}
-        </div>
-      </Section>
+      <section id="about" className="border-y border-[#dfe4ee] bg-white py-20 sm:py-24">
+        <Container className="grid max-w-[1400px] items-center gap-14 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="overflow-hidden rounded-[1.55rem] bg-gradient-to-br from-[#14213d] via-[#1f5d61] to-[#2f9b87] shadow-[0_28px_70px_rgba(8,17,47,0.12)]">
+            <div className="flex aspect-[4/5] items-center justify-center">
+              <div className="text-center">
+                <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-white/10 text-white ring-1 ring-white/20">
+                  <span className="text-4xl font-bold">OE</span>
+                </div>
+                <p className="mt-5 text-sm font-semibold text-white/75">
+                  Professional teacher photo
+                </p>
+              </div>
+            </div>
+          </div>
 
-      <Section
-        className="bg-card"
-        eyebrow="Testimonials"
-        title="Placeholder feedback from students and parents."
-      >
-        <div className="grid gap-5 lg:grid-cols-3">
-          {testimonials.map((testimonial) => (
-            <TestimonialCard key={testimonial.name} {...testimonial} />
-          ))}
-        </div>
-      </Section>
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#2f9b87]">
+              About the teacher
+            </p>
+            <h2 className="mt-5 text-4xl font-bold leading-tight tracking-normal text-[#07112f] sm:text-5xl">
+              Omar El Adawy
+            </h2>
+            <p className="mt-6 max-w-3xl text-lg leading-8 text-[#5b627c]">
+              Omar El Adawy specializes exclusively in Edexcel IGCSE Mathematics (O Level),
+              helping students build confidence through clear explanations, structured lessons,
+              and extensive past paper practice. His teaching approach is focused, calm, and
+              designed to help students understand each concept before applying it in examination
+              questions.
+            </p>
+            <div className="mt-7 inline-flex rounded-lg bg-[#101a3d] px-4 py-2 text-sm font-bold text-white shadow-sm">
+              <span className="mr-2 text-[#2f9b87]">•</span>
+              Edexcel IGCSE Mathematics (O Level)
+            </div>
+          </div>
+        </Container>
+      </section>
 
-      <Section eyebrow="FAQ" title="Common questions, answered simply.">
-        <FaqAccordion items={faqs} />
-      </Section>
+      <section className="bg-[#f5f7fb] py-20 sm:py-24">
+        <Container className="max-w-[1400px]">
+          <SectionHeader
+            eyebrow="Why choose Omar El Adawy"
+            title="Focused support for Edexcel IGCSE Mathematics students."
+          />
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {features.map((feature) => {
+              const Icon = feature.icon;
 
-      <Section className="pt-0">
-        <CtaBanner
-          title="Build confidence with a focused Edexcel Mathematics pathway."
-          description="Explore the public course overview and model answer resources prepared for the marketing website."
-        />
-      </Section>
+              return (
+                <Card
+                  key={feature.title}
+                  className="h-full rounded-[1.35rem] border border-[#e2e7ef] bg-white shadow-[0_18px_48px_rgba(8,17,47,0.06)]"
+                >
+                  <CardContent className="p-7">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#dff1ed] text-[#2f9b87]">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </div>
+                    <h3 className="mt-6 text-lg font-bold tracking-normal text-[#07112f]">
+                      {feature.title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-6 text-[#5b627c]">
+                      {feature.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </Container>
+      </section>
+
+      <section id="contact" className="bg-white py-20 sm:py-24">
+        <Container className="max-w-[1400px]">
+          <SectionHeader
+            eyebrow="Contact"
+            title="Speak with Omar El Adawy"
+            description="For enquiries about Edexcel IGCSE Mathematics lessons, use the contact details below."
+          />
+          <div className="mx-auto grid max-w-3xl gap-5 sm:grid-cols-2">
+            <Card className="rounded-[1.35rem] border border-[#e2e7ef] bg-white shadow-[0_18px_48px_rgba(8,17,47,0.06)]">
+              <CardContent className="flex items-start gap-5 p-7">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#dff1ed] text-[#2f9b87]">
+                  <Phone className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#07112f]">Phone Number</p>
+                  <p className="mt-2 text-sm font-medium text-[#5b627c]">+20 000 000 0000</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="rounded-[1.35rem] border border-[#e2e7ef] bg-white shadow-[0_18px_48px_rgba(8,17,47,0.06)]">
+              <CardContent className="flex items-start gap-5 p-7">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#dff1ed] text-[#2f9b87]">
+                  <Mail className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#07112f]">Email Address</p>
+                  <p className="mt-2 text-sm font-medium text-[#5b627c]">hello@example.com</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </Container>
+      </section>
     </>
   );
 }
