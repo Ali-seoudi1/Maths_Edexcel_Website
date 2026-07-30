@@ -1,0 +1,134 @@
+"use client";
+
+import { GraduationCap, LayoutDashboard, LogOut, Menu, UserRoundPlus, UsersRound } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState, type ReactNode } from "react";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ToastProvider } from "@/components/ui/toast";
+import { useAuth } from "@/features/auth";
+import { cn } from "@/lib/utils";
+
+const adminNavigation = [
+  { title: "Overview", href: "/admin", icon: LayoutDashboard },
+  { title: "Students", href: "/admin/students", icon: UsersRound },
+  { title: "New Student", href: "/admin/students/new", icon: UserRoundPlus },
+];
+
+type AdminShellProps = {
+  children: ReactNode;
+};
+
+function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
+  const pathname = usePathname();
+  const { profile, signOut } = useAuth();
+
+  return (
+    <aside className="flex h-full flex-col border-r bg-card px-4 py-6">
+      <Link href="/admin" className="flex items-center gap-3 px-2" onClick={onNavigate}>
+        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
+          <GraduationCap className="h-5 w-5" aria-hidden="true" />
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-foreground">Admin Console</p>
+          <p className="truncate text-xs text-muted-foreground">User Management</p>
+        </div>
+      </Link>
+
+      <nav className="mt-8 space-y-1" aria-label="Admin navigation">
+        {adminNavigation.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            (item.href === "/admin/students" && pathname.startsWith("/admin/students/"));
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onNavigate}
+              className={cn(
+                "flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors",
+                "hover:bg-secondary hover:text-foreground",
+                isActive && "bg-primary/10 text-primary",
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="truncate">{item.title}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="mt-auto border-t pt-4">
+        <p className="text-xs text-muted-foreground">Signed in as</p>
+        <p className="mt-1 truncate text-sm font-semibold text-foreground">
+          {profile?.fullName ?? "Admin"}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          className="mt-4 w-full justify-start"
+          onClick={() => void signOut()}
+        >
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          Sign out
+        </Button>
+      </div>
+    </aside>
+  );
+}
+
+export function AdminShell({ children }: AdminShellProps) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <ToastProvider>
+      <div className="min-h-screen bg-background">
+        <div className="fixed inset-y-0 left-0 z-40 hidden w-72 lg:block">
+          <AdminSidebar />
+        </div>
+
+        <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
+          <DialogContent className="left-0 top-0 h-dvh w-72 max-w-none translate-x-0 translate-y-0 rounded-none border-0 bg-card p-0 shadow-none sm:w-80">
+            <DialogTitle className="sr-only">Admin navigation</DialogTitle>
+            <DialogDescription className="sr-only">
+              Primary navigation for admin user management.
+            </DialogDescription>
+            <AdminSidebar onNavigate={() => setMobileOpen(false)} />
+          </DialogContent>
+        </Dialog>
+
+        <div className="lg:pl-72">
+          <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur-xl">
+            <div className="flex h-16 items-center justify-between gap-4 px-5 sm:px-8 lg:px-10">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setMobileOpen(true)}
+                aria-label="Open navigation"
+              >
+                <Menu className="h-5 w-5" aria-hidden="true" />
+              </Button>
+              <p className="ml-auto text-sm font-medium text-muted-foreground">
+                Admin User Management
+              </p>
+            </div>
+          </header>
+          <main className="mx-auto w-full max-w-[1440px] px-5 py-8 sm:px-8 lg:px-10">
+            {children}
+          </main>
+        </div>
+      </div>
+    </ToastProvider>
+  );
+}
