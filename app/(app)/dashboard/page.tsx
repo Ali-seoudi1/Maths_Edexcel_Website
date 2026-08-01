@@ -113,7 +113,7 @@ function ViewAllLink({ href = "#" }: { href?: string }) {
 export default function DashboardPage() {
   return (
     <div className="space-y-9">
-      <PageTitle eyebrow="Wednesday, 27 June" title="Welcome back, Nour" />
+      <PageTitle eyebrow="Wednesday, 27 June" title="Welcome back" />
 
       <section className="space-y-5" aria-labelledby="continue-watching-title">
         <div className="flex items-center justify-between gap-4">

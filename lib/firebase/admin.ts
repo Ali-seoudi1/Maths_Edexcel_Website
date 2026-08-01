@@ -69,3 +69,13 @@ export function getFirebaseAdminDb(): Firestore {
 export function getFirebaseAdminStorage(): Storage {
   return getStorage(getFirebaseAdminApp());
 }
+
+export function getFirebaseAdminStorageBucket() {
+  const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+
+  if (!bucketName) {
+    throw new Error("Missing NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET in .env.local.");
+  }
+
+  return getFirebaseAdminStorage().bucket(bucketName);
+}

@@ -2,6 +2,7 @@
 
 import {
   GraduationCap,
+  FileQuestion,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -22,6 +23,7 @@ const adminNavigation = [
   { title: "Overview", href: "/admin", icon: LayoutDashboard },
   { title: "Students", href: "/admin/students", icon: UsersRound },
   { title: "New Student", href: "/admin/students/new", icon: UserRoundPlus },
+  { title: "Model Answers", href: "/admin/model-answers", icon: FileQuestion },
 ];
 
 type AdminShellProps = {
@@ -49,7 +51,9 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
           const Icon = item.icon;
           const isActive =
             pathname === item.href ||
-            (item.href === "/admin/students" && pathname.startsWith("/admin/students/"));
+            (item.href === "/admin/students" && pathname.startsWith("/admin/students/")) ||
+            (item.href === "/admin/model-answers" &&
+              pathname.startsWith("/admin/model-answers/"));
 
           return (
             <Link
