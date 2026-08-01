@@ -1,7 +1,6 @@
-import { randomBytes } from "node:crypto";
-
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
+import { getEmailConfig, sendStudentInvitationEmail } from "@/features/email";
 import { getFirebaseAdminAuth, getFirebaseAdminDb } from "@/lib/firebase/admin";
 
 import type { EditStudentFormValues, StudentFormValues } from "../schemas";
@@ -21,61 +20,19 @@ function isEmailAlreadyExistsError(error: unknown) {
   return getErrorCode(error) === "auth/email-already-exists";
 }
 
-function generateHiddenInitialPassword() {
-  return `Edx-${randomBytes(18).toString("base64url")}1!`;
-}
-
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
-function getPasswordSetupContinueUrl(origin?: string) {
-  if (origin) {
-    return `${origin}/sign-in`;
-  }
-
-  return process.env.NEXT_PUBLIC_APP_URL
-    ? `${process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/sign-in`
-    : undefined;
+function getPasswordSetupContinueUrl() {
+  return `${getEmailConfig().appUrl}/sign-in`;
 }
 
-async function sendFirebasePasswordSetupEmail(email: string, origin?: string) {
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-
-  if (!apiKey) {
-    throw new Error("Missing Firebase API key for password setup email.");
-  }
-
-  const response = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        requestType: "PASSWORD_RESET",
-        email,
-        continueUrl: getPasswordSetupContinueUrl(origin),
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as unknown;
-    const message =
-      payload &&
-      typeof payload === "object" &&
-      "error" in payload &&
-      typeof payload.error === "object" &&
-      payload.error &&
-      "message" in payload.error &&
-      typeof payload.error.message === "string"
-        ? payload.error.message
-        : "Firebase did not send the password setup email.";
-
-    throw new Error(message);
-  }
+async function createPasswordSetupLink(email: string) {
+  return getFirebaseAdminAuth().generatePasswordResetLink(email, {
+    url: getPasswordSetupContinueUrl(),
+    handleCodeInApp: false,
+  });
 }
 
 function normalizeCreatedAt(value: unknown): string | null {
@@ -147,10 +104,11 @@ function toStudent(uid: string, data: FirebaseFirestore.DocumentData): Student {
   };
 }
 
-export async function createStudentAccount(values: StudentFormValues, origin?: string) {
+export async function createStudentAccount(values: StudentFormValues) {
   const auth = getFirebaseAdminAuth();
   const db = getFirebaseAdminDb();
   const email = normalizeEmail(values.email);
+  getEmailConfig();
   await assertEmailIsReusable(email);
 
   let user = null;
@@ -158,7 +116,6 @@ export async function createStudentAccount(values: StudentFormValues, origin?: s
   try {
     user = await auth.createUser({
       email,
-      password: generateHiddenInitialPassword(),
       displayName: values.fullName,
       disabled: false,
       emailVerified: false,
@@ -188,7 +145,12 @@ export async function createStudentAccount(values: StudentFormValues, origin?: s
   }
 
   try {
-    await sendFirebasePasswordSetupEmail(email, origin);
+    const passwordSetupLink = await createPasswordSetupLink(email);
+    await sendStudentInvitationEmail({
+      to: email,
+      studentName: values.fullName,
+      passwordSetupLink,
+    });
   } catch (error) {
     await db
       .collection("users")

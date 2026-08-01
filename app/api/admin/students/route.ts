@@ -15,7 +15,10 @@ function errorResponse(error: unknown) {
   }
 
   const message = error instanceof Error ? error.message : "Student request failed.";
-  const status = message.includes("Admin SDK environment") ? 501 : 400;
+  const status =
+    message.includes("Admin SDK environment") || message.includes("email environment variables")
+      ? 501
+      : 400;
 
   return NextResponse.json({ error: message }, { status });
 }
@@ -37,7 +40,7 @@ export async function POST(request: Request) {
   try {
     await requireAdmin(request);
     const values = studentFormSchema.parse(await request.json());
-    const result = await createStudentAccount(values, new URL(request.url).origin);
+    const result = await createStudentAccount(values);
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
