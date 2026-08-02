@@ -3,6 +3,7 @@
 import {
   GraduationCap,
   FileQuestion,
+  LibraryBig,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -23,6 +24,8 @@ const adminNavigation = [
   { title: "Overview", href: "/admin", icon: LayoutDashboard },
   { title: "Students", href: "/admin/students", icon: UsersRound },
   { title: "New Student", href: "/admin/students/new", icon: UserRoundPlus },
+  { title: "Chapters", href: "/admin/chapters", icon: LibraryBig },
+  { title: "Lessons", href: "/admin/lessons", icon: GraduationCap },
   { title: "Model Answers", href: "/admin/model-answers", icon: FileQuestion },
 ];
 
@@ -52,6 +55,8 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
           const isActive =
             pathname === item.href ||
             (item.href === "/admin/students" && pathname.startsWith("/admin/students/")) ||
+            (item.href === "/admin/chapters" && pathname.startsWith("/admin/chapters/")) ||
+            (item.href === "/admin/lessons" && pathname.startsWith("/admin/lessons/")) ||
             (item.href === "/admin/model-answers" &&
               pathname.startsWith("/admin/model-answers/"));
 
