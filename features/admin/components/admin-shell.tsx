@@ -1,12 +1,13 @@
 "use client";
 
 import {
-  GraduationCap,
   FileQuestion,
+  GraduationCap,
   LibraryBig,
   LayoutDashboard,
   LogOut,
   Menu,
+  PenSquare,
   UserRoundPlus,
   UsersRound,
 } from "lucide-react";
@@ -26,6 +27,7 @@ const adminNavigation = [
   { title: "New Student", href: "/admin/students/new", icon: UserRoundPlus },
   { title: "Chapters", href: "/admin/chapters", icon: LibraryBig },
   { title: "Lessons", href: "/admin/lessons", icon: GraduationCap },
+  { title: "Assignments", href: "/admin/assignments", icon: PenSquare },
   { title: "Model Answers", href: "/admin/model-answers", icon: FileQuestion },
 ];
 
@@ -57,8 +59,8 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
             (item.href === "/admin/students" && pathname.startsWith("/admin/students/")) ||
             (item.href === "/admin/chapters" && pathname.startsWith("/admin/chapters/")) ||
             (item.href === "/admin/lessons" && pathname.startsWith("/admin/lessons/")) ||
-            (item.href === "/admin/model-answers" &&
-              pathname.startsWith("/admin/model-answers/"));
+            (item.href === "/admin/assignments" && pathname.startsWith("/admin/assignments/")) ||
+            (item.href === "/admin/model-answers" && pathname.startsWith("/admin/model-answers/"));
 
           return (
             <Link
