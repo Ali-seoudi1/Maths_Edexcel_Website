@@ -19,7 +19,7 @@ function getRedirectForRole(role: "admin" | "student") {
 
 export function SignInForm() {
   const router = useRouter();
-  const { profile, resetPassword, signIn, status } = useAuth();
+  const { isLoading, profile, resetPassword, signIn, status } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [resetMessage, setResetMessage] = useState<string | null>(null);
@@ -43,6 +43,22 @@ export function SignInForm() {
       router.replace(getRedirectForRole(profile.role));
     }
   }, [profile, router, status]);
+
+  if (isLoading || status === "authenticated") {
+    return (
+      <Card className="border-border/70 shadow-card">
+        <CardContent className="flex min-h-80 flex-col items-center justify-center gap-4 text-center">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" aria-hidden="true" />
+          <div className="space-y-2">
+            <CardTitle className="text-xl">Restoring your session</CardTitle>
+            <p className="max-w-sm text-sm leading-6 text-muted-foreground">
+              If you are already signed in, you will be taken to your dashboard automatically.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   async function onSubmit(values: SignInFormValues) {
     setAuthError(null);
@@ -80,7 +96,7 @@ export function SignInForm() {
     }
   }
 
-  const isBusy = isSubmitting || status === "loading";
+  const isBusy = isSubmitting;
 
   return (
     <Card className="border-border/70 shadow-card">

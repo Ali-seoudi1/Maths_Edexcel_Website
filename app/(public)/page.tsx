@@ -12,6 +12,7 @@ import Link from "next/link";
 import { Container } from "@/components/shared/container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { AuthenticatedHomeRedirect } from "@/features/auth";
 
 const features = [
   {
@@ -62,6 +63,7 @@ function SectionHeader({
 export default function PublicHomePage() {
   return (
     <>
+      <AuthenticatedHomeRedirect />
       <section className="overflow-hidden border-b border-[#dfe4ee] bg-[#f5f7fb] py-24 sm:py-32 lg:py-36">
         <Container className="grid max-w-[1400px] items-center gap-16 lg:grid-cols-[1.02fr_0.98fr]">
           <div className="max-w-3xl">
