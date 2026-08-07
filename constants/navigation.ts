@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Archive,
   BookOpen,
   ClipboardCheck,
   FileQuestion,
@@ -26,6 +27,11 @@ export const dashboardNavigation: DashboardNavItem[] = [
     title: "Lessons",
     href: "/lessons",
     icon: BookOpen,
+  },
+  {
+    title: "Past Papers",
+    href: "/past-papers",
+    icon: Archive,
   },
   {
     title: "Model Answers",

@@ -4,6 +4,7 @@ import {
   ClipboardCheck,
   FileQuestion,
   GraduationCap,
+  Archive,
   LibraryBig,
   LayoutDashboard,
   LogOut,
@@ -28,6 +29,7 @@ const adminNavigation = [
   { title: "New Student", href: "/admin/students/new", icon: UserRoundPlus },
   { title: "Chapters", href: "/admin/chapters", icon: LibraryBig },
   { title: "Lessons", href: "/admin/lessons", icon: GraduationCap },
+  { title: "Past Papers", href: "/admin/past-papers", icon: Archive },
   { title: "Assignments", href: "/admin/assignments", icon: PenSquare },
   { title: "Quizzes", href: "/admin/quizzes", icon: ClipboardCheck },
   { title: "Model Answers", href: "/admin/model-answers", icon: FileQuestion },
@@ -61,6 +63,7 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
             (item.href === "/admin/students" && pathname.startsWith("/admin/students/")) ||
             (item.href === "/admin/chapters" && pathname.startsWith("/admin/chapters/")) ||
             (item.href === "/admin/lessons" && pathname.startsWith("/admin/lessons/")) ||
+            (item.href === "/admin/past-papers" && pathname.startsWith("/admin/past-papers/")) ||
             (item.href === "/admin/assignments" && pathname.startsWith("/admin/assignments/")) ||
             (item.href === "/admin/quizzes" && pathname.startsWith("/admin/quizzes/")) ||
             (item.href === "/admin/model-answers" && pathname.startsWith("/admin/model-answers/"));
