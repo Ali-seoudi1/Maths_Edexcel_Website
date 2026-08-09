@@ -43,15 +43,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           >
             <Search className="h-5 w-5" aria-hidden="true" />
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="h-11 w-11 rounded-xl bg-card shadow-soft"
-            aria-label="Notifications"
-          >
-            <Bell className="h-5 w-5" aria-hidden="true" />
-          </Button>
+
           <Button
             type="button"
             variant="outline"
