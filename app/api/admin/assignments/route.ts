@@ -31,19 +31,18 @@ export async function POST(request: Request) {
   try {
     const admin = await requireAdmin(request);
     const formData = await request.formData();
-    const pdfFile = formData.get("pdf");
-
-    if (!(pdfFile instanceof File)) {
-      throw new Error("Upload an assignment PDF.");
-    }
+    const pdfFiles = formData.getAll("pdfs").filter((file): file is File => file instanceof File);
 
     const values = assignmentPayloadSchema.parse({
       title: String(formData.get("title") ?? ""),
       description: String(formData.get("description") ?? ""),
       deadline: String(formData.get("deadline") ?? ""),
     });
+    if (!values.description.trim() && pdfFiles.length === 0) {
+      throw new Error("Add a description, upload at least one PDF, or both.");
+    }
 
-    const assignment = await createAssignment(values, pdfFile, admin.uid);
+    const assignment = await createAssignment(values, pdfFiles, admin.uid);
     return NextResponse.json({ assignment }, { status: 201 });
   } catch (error) {
     return errorResponse(error, "Assignment request failed.");

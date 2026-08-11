@@ -1,0 +1,50 @@
+import { NextResponse } from "next/server";
+
+import { getSubmissionPdfBufferForAdmin } from "@/features/assignments/services/server-assignment-service";
+import {
+  adminSdkUnavailableResponse,
+  errorResponse,
+  requireActiveUser,
+} from "@/features/lessons/services/route-helpers";
+
+type RouteContext = {
+  params: Promise<{
+    id: string;
+    submissionId: string;
+  }>;
+};
+
+export async function GET(request: Request, context: RouteContext) {
+  const unavailableResponse = adminSdkUnavailableResponse();
+
+  if (unavailableResponse) {
+    return unavailableResponse;
+  }
+
+  try {
+    const user = await requireActiveUser(request);
+
+    if (user.role !== "admin") {
+      throw new Error("Admin access is required.");
+    }
+
+    const { id, submissionId } = await context.params;
+    const pdfId = new URL(request.url).searchParams.get("pdfId") ?? undefined;
+    const pdf = await getSubmissionPdfBufferForAdmin(id, submissionId, pdfId);
+
+    if (!pdf) {
+      return NextResponse.json({ error: "Submission PDF was not found." }, { status: 404 });
+    }
+
+    return new Response(new Uint8Array(pdf.buffer), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${pdf.fileName.replace(/"/g, "")}"`,
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
+  } catch (error) {
+    return errorResponse(error, "Submission PDF request failed.");
+  }
+}

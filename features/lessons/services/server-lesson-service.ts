@@ -3,7 +3,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getFirebaseAdminDb, getFirebaseAdminStorageBucket } from "@/lib/firebase/admin";
 
 import type { ChapterFormValues, LessonFormValues } from "../schemas";
-import type { Chapter, Lesson } from "../types";
+import type { Chapter, Lesson, LessonPdf } from "../types";
 
 export const chaptersCollection = "chapters";
 export const lessonsCollection = "lessons";
@@ -38,12 +38,15 @@ function toChapter(id: string, data: FirebaseFirestore.DocumentData): Chapter {
 }
 
 function toLesson(id: string, data: FirebaseFirestore.DocumentData, chapterName?: string): Lesson {
+  const pdfs = normalizeLessonPdfs(data);
+
   return {
     id,
     chapterId: typeof data.chapterId === "string" ? data.chapterId : "",
     title: typeof data.title === "string" ? data.title : "",
     description: typeof data.description === "string" ? data.description : "",
     order: typeof data.order === "number" ? data.order : 0,
+    pdfs,
     pdfUrl: typeof data.pdfUrl === "string" ? data.pdfUrl : "",
     pdfFileName: typeof data.pdfFileName === "string" ? data.pdfFileName : "",
     published: data.published === true,
@@ -52,6 +55,34 @@ function toLesson(id: string, data: FirebaseFirestore.DocumentData, chapterName?
     updatedAt: normalizeTimestamp(data.updatedAt),
     chapterName,
   };
+}
+
+function normalizeLessonPdfs(data: FirebaseFirestore.DocumentData): LessonPdf[] {
+  if (Array.isArray(data.pdfs)) {
+    return data.pdfs
+      .map((pdf, index) => {
+        if (typeof pdf !== "object" || !pdf) {
+          return null;
+        }
+
+        const path = "path" in pdf && typeof pdf.path === "string" ? pdf.path : "";
+        const fileName = "fileName" in pdf && typeof pdf.fileName === "string" ? pdf.fileName : "";
+        const pdfId = "id" in pdf && typeof pdf.id === "string" ? pdf.id : `pdf-${index + 1}`;
+
+        if (!path || !fileName) {
+          return null;
+        }
+
+        return { id: pdfId, path, fileName };
+      })
+      .filter((pdf): pdf is LessonPdf => Boolean(pdf));
+  }
+
+  if (typeof data.pdfUrl === "string" && typeof data.pdfFileName === "string") {
+    return [{ id: "primary", path: data.pdfUrl, fileName: data.pdfFileName }];
+  }
+
+  return [];
 }
 
 function sortByOrderThenName<T extends { order: number; title?: string; name?: string }>(items: T[]) {
@@ -177,11 +208,12 @@ function getSafeFileName(fileName: string) {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
 }
 
-async function uploadLessonPdf(file: File) {
+async function uploadLessonPdf(file: File): Promise<LessonPdf> {
   if (file.type !== "application/pdf") {
     throw new Error("Upload a PDF file.");
   }
 
+  const id = crypto.randomUUID();
   const path = `${lessonPdfFolder}/${crypto.randomUUID()}-${getSafeFileName(file.name)}`;
   const bucket = getFirebaseAdminStorageBucket();
   const storageFile = bucket.file(path);
@@ -194,7 +226,7 @@ async function uploadLessonPdf(file: File) {
     },
   });
 
-  return { path, fileName: file.name };
+  return { id, path, fileName: file.name };
 }
 
 async function deleteLessonPdf(path: string) {
@@ -209,14 +241,21 @@ async function deleteLessonPdf(path: string) {
   }
 }
 
-export async function createLesson(values: LessonFormValues, pdfFile: File, adminId: string) {
+export async function createLesson(values: LessonFormValues, pdfFiles: File[], adminId: string) {
   await assertChapterExists(values.chapterId);
-  const pdf = await uploadLessonPdf(pdfFile);
+  const pdfs = await Promise.all(pdfFiles.map((pdfFile) => uploadLessonPdf(pdfFile)));
+
+  if (pdfs.length === 0) {
+    throw new Error("Upload at least one lesson PDF.");
+  }
+
+  const primaryPdf = pdfs[0];
   const ref = getFirebaseAdminDb().collection(lessonsCollection).doc();
   const record = {
     ...values,
-    pdfUrl: pdf.path,
-    pdfFileName: pdf.fileName,
+    pdfs,
+    pdfUrl: primaryPdf.path,
+    pdfFileName: primaryPdf.fileName,
     createdBy: adminId,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
@@ -232,7 +271,7 @@ export async function updateLesson(
   id: string,
   values: LessonFormValues,
   adminId: string,
-  pdfFile?: File,
+  pdfFiles: File[] = [],
 ) {
   await assertChapterExists(values.chapterId);
   const ref = getFirebaseAdminDb().collection(lessonsCollection).doc(id);
@@ -243,18 +282,17 @@ export async function updateLesson(
   }
 
   const existingLesson = toLesson(snapshot.id, snapshot.data() ?? {});
-  const nextPdf = pdfFile ? await uploadLessonPdf(pdfFile) : null;
+  const uploadedPdfs = await Promise.all(pdfFiles.map((pdfFile) => uploadLessonPdf(pdfFile)));
+  const nextPdfs = [...existingLesson.pdfs, ...uploadedPdfs];
+  const primaryPdf = nextPdfs[0];
 
   await ref.update({
     ...values,
-    ...(nextPdf ? { pdfUrl: nextPdf.path, pdfFileName: nextPdf.fileName } : {}),
+    pdfs: nextPdfs,
+    ...(primaryPdf ? { pdfUrl: primaryPdf.path, pdfFileName: primaryPdf.fileName } : {}),
     updatedBy: adminId,
     updatedAt: FieldValue.serverTimestamp(),
   });
-
-  if (nextPdf) {
-    await deleteLessonPdf(existingLesson.pdfUrl);
-  }
 
   const updated = await ref.get();
 
@@ -271,21 +309,27 @@ export async function deleteLesson(id: string) {
 
   const lesson = toLesson(snapshot.id, snapshot.data() ?? {});
   await ref.delete();
-  await deleteLessonPdf(lesson.pdfUrl);
+  await Promise.all(lesson.pdfs.map((pdf) => deleteLessonPdf(pdf.path)));
 
   return { deletedLessonId: id };
 }
 
-export async function getLessonPdfBuffer(id: string) {
+export async function getLessonPdfBuffer(id: string, pdfId?: string) {
   const lesson = await getLessonById(id, { publishedOnly: true });
 
   if (!lesson) {
     return null;
   }
 
-  const [buffer] = await getFirebaseAdminStorageBucket().file(lesson.pdfUrl).download();
+  const pdf = lesson.pdfs.find((item) => item.id === pdfId) ?? lesson.pdfs[0];
 
-  return { buffer, fileName: lesson.pdfFileName };
+  if (!pdf) {
+    return null;
+  }
+
+  const [buffer] = await getFirebaseAdminStorageBucket().file(pdf.path).download();
+
+  return { buffer, fileName: pdf.fileName };
 }
 
 async function assertChapterExists(chapterId: string) {

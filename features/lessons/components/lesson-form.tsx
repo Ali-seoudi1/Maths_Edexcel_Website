@@ -15,7 +15,7 @@ type LessonFormProps = {
   lesson?: Lesson;
   submitLabel: string;
   requiresPdf?: boolean;
-  onSubmit: (values: LessonFormValues, pdfFile?: File) => Promise<void>;
+  onSubmit: (values: LessonFormValues, pdfFiles: File[]) => Promise<void>;
 };
 
 export function LessonForm({
@@ -50,14 +50,14 @@ export function LessonForm({
 
   async function handleFormSubmit(values: LessonFormValues, event?: React.BaseSyntheticEvent) {
     const form = event?.target as HTMLFormElement | undefined;
-    const fileInput = form?.elements.namedItem("pdf") as HTMLInputElement | null;
-    const pdfFile = fileInput?.files?.[0];
+    const fileInput = form?.elements.namedItem("pdfs") as HTMLInputElement | null;
+    const pdfFiles = Array.from(fileInput?.files ?? []);
 
-    if (requiresPdf && !pdfFile) {
-      throw new Error("Upload a lesson PDF.");
+    if (requiresPdf && pdfFiles.length === 0) {
+      throw new Error("Upload at least one lesson PDF.");
     }
 
-    await onSubmit(values, pdfFile);
+    await onSubmit(values, pdfFiles);
   }
 
   return (
@@ -110,7 +110,7 @@ export function LessonForm({
       </div>
       <div className="space-y-2">
         <label htmlFor="description" className="text-sm font-medium text-foreground">
-          Description
+          Description <span className="text-muted-foreground">(optional)</span>
         </label>
         <textarea
           id="description"
@@ -124,12 +124,31 @@ export function LessonForm({
         ) : null}
       </div>
       <div className="space-y-2">
-        <label htmlFor="pdf" className="text-sm font-medium text-foreground">
-          Upload PDF
+        <label htmlFor="pdfs" className="text-sm font-medium text-foreground">
+          Upload PDFs
         </label>
-        <Input id="pdf" name="pdf" type="file" accept="application/pdf" disabled={isSubmitting} />
-        {lesson?.pdfFileName ? (
-          <p className="text-xs text-muted-foreground">Current PDF: {lesson.pdfFileName}</p>
+        <Input
+          id="pdfs"
+          name="pdfs"
+          type="file"
+          accept="application/pdf"
+          multiple
+          disabled={isSubmitting}
+        />
+        {lesson?.pdfs.length ? (
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <p>Current PDFs:</p>
+            <ul className="list-inside list-disc">
+              {lesson.pdfs.map((pdf) => (
+                <li key={pdf.id}>{pdf.fileName}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {lesson ? (
+          <p className="text-xs text-muted-foreground">
+            Uploading new PDFs adds them to this lesson.
+          </p>
         ) : null}
       </div>
       <label className="flex items-center gap-3 rounded-md border bg-card p-4 text-sm font-medium">

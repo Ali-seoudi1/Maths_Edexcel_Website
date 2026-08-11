@@ -40,14 +40,14 @@ export async function POST(request: Request) {
   try {
     const admin = await requireAdmin(request);
     const formData = await request.formData();
-    const pdfFile = formData.get("pdf");
+    const pdfFiles = formData.getAll("pdfs").filter((file): file is File => file instanceof File);
 
-    if (!(pdfFile instanceof File)) {
-      throw new Error("Upload a lesson PDF.");
+    if (pdfFiles.length === 0) {
+      throw new Error("Upload at least one lesson PDF.");
     }
 
     const values = lessonPayloadSchema.parse(formDataToLessonPayload(formData));
-    const lesson = await createLesson(values, pdfFile, admin.uid);
+    const lesson = await createLesson(values, pdfFiles, admin.uid);
 
     return NextResponse.json({ lesson }, { status: 201 });
   } catch (error) {

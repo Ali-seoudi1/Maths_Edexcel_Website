@@ -24,13 +24,18 @@ export async function POST(request: Request, context: RouteContext) {
     const user = await requireActiveUser(request);
     const { id } = await context.params;
     const formData = await request.formData();
-    const pdfFile = formData.get("pdf");
+    const pdfFiles = formData.getAll("pdfs").filter((file): file is File => file instanceof File);
 
-    if (!(pdfFile instanceof File)) {
-      throw new Error("Upload a PDF solution.");
+    if (pdfFiles.length === 0) {
+      throw new Error("Upload at least one PDF solution.");
     }
 
-    const submission = await submitAssignmentSolution(id, user.uid, user.role === "admin" ? "Admin" : "Student", pdfFile);
+    const submission = await submitAssignmentSolution(
+      id,
+      user.uid,
+      user.role === "admin" ? "Admin" : "Student",
+      pdfFiles,
+    );
 
     return NextResponse.json({ submission }, { status: 201 });
   } catch (error) {

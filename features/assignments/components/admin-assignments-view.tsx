@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit3, FileText, Loader2, Trash2 } from "lucide-react";
+import { Edit3, Eye, FileText, Loader2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
@@ -113,16 +113,25 @@ export function AdminAssignmentsView() {
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-base font-semibold text-foreground">{assignment.title}</h2>
-                <Badge variant="secondary">PDF</Badge>
+                <Badge variant="secondary">
+                  {assignment.pdfs.length} PDF{assignment.pdfs.length === 1 ? "" : "s"}
+                </Badge>
               </div>
-              <p className="text-sm text-muted-foreground">{assignment.description}</p>
+              {assignment.description ? (
+                <p className="text-sm text-muted-foreground">{assignment.description}</p>
+              ) : null}
               <p className="text-sm font-medium text-foreground">
                 Deadline: {formatDate(assignment.deadline)}
               </p>
             </div>
             <div className="flex gap-2">
-              <Button asChild variant="outline" size="icon" aria-label="Edit assignment">
+              <Button asChild variant="outline" size="icon" aria-label="View submissions">
                 <Link href={`/admin/assignments/${assignment.id}`}>
+                  <Eye className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="icon" aria-label="Edit assignment">
+                <Link href={`/admin/assignments/${assignment.id}/edit`}>
                   <Edit3 className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </Button>

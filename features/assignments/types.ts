@@ -1,8 +1,15 @@
+export type AssignmentPdf = {
+  id: string;
+  path: string;
+  fileName: string;
+};
+
 export type Assignment = {
   id: string;
   title: string;
   description: string;
   deadline: string | null;
+  pdfs: AssignmentPdf[];
   pdfUrl: string;
   pdfFileName: string;
   createdBy: string;
@@ -16,6 +23,7 @@ export type AssignmentSubmission = {
   studentId: string;
   studentName: string;
   submittedAt: string | null;
+  pdfs: AssignmentPdf[];
   pdfUrl: string;
   pdfFileName: string;
   grade: number | null;

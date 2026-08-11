@@ -48,16 +48,16 @@ export function AdminLessonFormView({ lessonId }: AdminLessonFormViewProps) {
       .finally(() => setLoading(false));
   }, [lessonId, toast]);
 
-  async function handleSubmit(values: LessonFormValues, pdfFile?: File) {
+  async function handleSubmit(values: LessonFormValues, pdfFiles: File[]) {
     try {
       if (lessonId) {
-        await updateAdminLesson(lessonId, values, pdfFile);
+        await updateAdminLesson(lessonId, values, pdfFiles);
       } else {
-        if (!pdfFile) {
-          throw new Error("Upload a lesson PDF.");
+        if (pdfFiles.length === 0) {
+          throw new Error("Upload at least one lesson PDF.");
         }
 
-        await createAdminLesson(values, pdfFile);
+        await createAdminLesson(values, pdfFiles);
       }
 
       toast({ title: lessonId ? "Lesson updated" : "Lesson created", variant: "success" });

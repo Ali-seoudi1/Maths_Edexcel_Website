@@ -12,7 +12,7 @@ import type { AssignmentFormValues } from "../schemas";
 import {
   createAdminAssignment,
   getAdminAssignment,
-  listAdminAssignments,
+  updateAdminAssignment,
 } from "../services/assignment-service";
 import type { Assignment } from "../types";
 import { AssignmentForm } from "./assignment-form";
@@ -42,20 +42,16 @@ export function AdminAssignmentFormView({ assignmentId }: { assignmentId?: strin
       .finally(() => setLoading(false));
   }, [assignmentId, toast]);
 
-  async function handleSubmit(values: AssignmentFormValues, pdfFile?: File) {
+  async function handleSubmit(values: AssignmentFormValues, pdfFiles: File[]) {
     try {
-      if (!pdfFile && !assignmentId) {
-        throw new Error("Upload an assignment PDF.");
+      if (!values.description.trim() && pdfFiles.length === 0 && !assignment?.pdfs.length) {
+        throw new Error("Add a description, upload at least one PDF, or both.");
       }
 
       if (assignmentId) {
-        // Placeholder: existing assignment edit is not required for this request, yet the page must still render.
-        await createAdminAssignment(
-          values,
-          pdfFile ?? new File([""], "assignment.pdf", { type: "application/pdf" }),
-        );
+        await updateAdminAssignment(assignmentId, values, pdfFiles);
       } else {
-        await createAdminAssignment(values, pdfFile!);
+        await createAdminAssignment(values, pdfFiles);
       }
 
       toast({

@@ -2,7 +2,13 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 import { getFirebaseAdminDb, getFirebaseAdminStorageBucket } from "@/lib/firebase/admin";
 
-import type { Assignment, AssignmentFormValues, AssignmentGradeValues, AssignmentSubmission } from "../types";
+import type {
+  Assignment,
+  AssignmentFormValues,
+  AssignmentGradeValues,
+  AssignmentPdf,
+  AssignmentSubmission,
+} from "../types";
 
 export const assignmentsCollection = "assignments";
 export const assignmentSubmissionsCollection = "assignmentSubmissions";
@@ -52,11 +58,14 @@ function isLateSubmission(deadline: string | null, submittedAt: string | null) {
 }
 
 function toAssignment(id: string, data: FirebaseFirestore.DocumentData): Assignment {
+  const pdfs = normalizePdfs(data);
+
   return {
     id,
     title: typeof data.title === "string" ? data.title : "",
     description: typeof data.description === "string" ? data.description : "",
     deadline: normalizeDeadline(data.deadline),
+    pdfs,
     pdfUrl: typeof data.pdfUrl === "string" ? data.pdfUrl : "",
     pdfFileName: typeof data.pdfFileName === "string" ? data.pdfFileName : "",
     createdBy: typeof data.createdBy === "string" ? data.createdBy : "",
@@ -71,6 +80,7 @@ function toAssignmentSubmission(
   assignmentDeadline?: string | null,
 ): AssignmentSubmission {
   const submittedAt = normalizeTimestamp(data.submittedAt);
+  const pdfs = normalizePdfs(data);
 
   return {
     id,
@@ -78,6 +88,7 @@ function toAssignmentSubmission(
     studentId: typeof data.studentId === "string" ? data.studentId : "",
     studentName: typeof data.studentName === "string" ? data.studentName : "Student",
     submittedAt,
+    pdfs,
     pdfUrl: typeof data.pdfUrl === "string" ? data.pdfUrl : "",
     pdfFileName: typeof data.pdfFileName === "string" ? data.pdfFileName : "",
     grade: typeof data.grade === "number" ? data.grade : null,
@@ -86,6 +97,34 @@ function toAssignmentSubmission(
     createdAt: normalizeTimestamp(data.createdAt),
     updatedAt: normalizeTimestamp(data.updatedAt),
   };
+}
+
+function normalizePdfs(data: FirebaseFirestore.DocumentData): AssignmentPdf[] {
+  if (Array.isArray(data.pdfs)) {
+    return data.pdfs
+      .map((pdf, index) => {
+        if (typeof pdf !== "object" || !pdf) {
+          return null;
+        }
+
+        const path = "path" in pdf && typeof pdf.path === "string" ? pdf.path : "";
+        const fileName = "fileName" in pdf && typeof pdf.fileName === "string" ? pdf.fileName : "";
+        const id = "id" in pdf && typeof pdf.id === "string" ? pdf.id : `pdf-${index + 1}`;
+
+        if (!path || !fileName) {
+          return null;
+        }
+
+        return { id, path, fileName };
+      })
+      .filter((pdf): pdf is AssignmentPdf => Boolean(pdf));
+  }
+
+  if (typeof data.pdfUrl === "string" && typeof data.pdfFileName === "string") {
+    return [{ id: "primary", path: data.pdfUrl, fileName: data.pdfFileName }];
+  }
+
+  return [];
 }
 
 function sortByDeadline<T extends { deadline: string | null }>(items: T[]) {
@@ -101,11 +140,12 @@ function getSafeFileName(fileName: string) {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
 }
 
-async function uploadAssignmentPdf(file: File) {
+async function uploadAssignmentPdf(file: File): Promise<AssignmentPdf> {
   if (file.type !== "application/pdf") {
     throw new Error("Upload a PDF file.");
   }
 
+  const id = crypto.randomUUID();
   const path = `${assignmentPdfFolder}/${crypto.randomUUID()}-${getSafeFileName(file.name)}`;
   const bucket = getFirebaseAdminStorageBucket();
   const storageFile = bucket.file(path);
@@ -118,14 +158,15 @@ async function uploadAssignmentPdf(file: File) {
     },
   });
 
-  return { path, fileName: file.name };
+  return { id, path, fileName: file.name };
 }
 
-async function uploadAssignmentSolution(file: File) {
+async function uploadAssignmentSolution(file: File): Promise<AssignmentPdf> {
   if (file.type !== "application/pdf") {
     throw new Error("Upload a PDF file.");
   }
 
+  const id = crypto.randomUUID();
   const path = `${assignmentSubmissionFolder}/${crypto.randomUUID()}-${getSafeFileName(file.name)}`;
   const bucket = getFirebaseAdminStorageBucket();
   const storageFile = bucket.file(path);
@@ -138,7 +179,7 @@ async function uploadAssignmentSolution(file: File) {
     },
   });
 
-  return { path, fileName: file.name };
+  return { id, path, fileName: file.name };
 }
 
 async function deleteStorageFile(path: string) {
@@ -151,6 +192,13 @@ async function deleteStorageFile(path: string) {
   } catch {
     // ignore missing files during cleanup
   }
+}
+
+async function getStudentDisplayName(studentId: string, fallback: string) {
+  const snapshot = await getFirebaseAdminDb().collection("users").doc(studentId).get();
+  const data = snapshot.data();
+
+  return typeof data?.fullName === "string" && data.fullName.trim() ? data.fullName : fallback;
 }
 
 export async function listAssignments() {
@@ -171,14 +219,16 @@ export async function getAssignmentById(id: string) {
   return toAssignment(snapshot.id, snapshot.data() ?? {});
 }
 
-export async function createAssignment(values: AssignmentFormValues, pdfFile: File, adminId: string) {
-  const pdf = await uploadAssignmentPdf(pdfFile);
+export async function createAssignment(values: AssignmentFormValues, pdfFiles: File[], adminId: string) {
+  const pdfs = await Promise.all(pdfFiles.map((pdfFile) => uploadAssignmentPdf(pdfFile)));
+  const primaryPdf = pdfs[0];
   const ref = getFirebaseAdminDb().collection(assignmentsCollection).doc();
   const record = {
     ...values,
     deadline: new Date(values.deadline).toISOString(),
-    pdfUrl: pdf.path,
-    pdfFileName: pdf.fileName,
+    pdfs,
+    pdfUrl: primaryPdf?.path ?? "",
+    pdfFileName: primaryPdf?.fileName ?? "",
     createdBy: adminId,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
@@ -188,6 +238,43 @@ export async function createAssignment(values: AssignmentFormValues, pdfFile: Fi
   const snapshot = await ref.get();
 
   return toAssignment(snapshot.id, snapshot.data() ?? record);
+}
+
+export async function updateAssignment(
+  id: string,
+  values: AssignmentFormValues,
+  pdfFiles: File[],
+  adminId: string,
+) {
+  const ref = getFirebaseAdminDb().collection(assignmentsCollection).doc(id);
+  const snapshot = await ref.get();
+
+  if (!snapshot.exists) {
+    throw new Error("Assignment was not found.");
+  }
+
+  const existingAssignment = toAssignment(snapshot.id, snapshot.data() ?? {});
+  const uploadedPdfs = await Promise.all(pdfFiles.map((pdfFile) => uploadAssignmentPdf(pdfFile)));
+  const nextPdfs = [...existingAssignment.pdfs, ...uploadedPdfs];
+  const primaryPdf = nextPdfs[0];
+
+  if (!values.description.trim() && nextPdfs.length === 0) {
+    throw new Error("Add a description, upload at least one PDF, or both.");
+  }
+
+  await ref.update({
+    ...values,
+    deadline: new Date(values.deadline).toISOString(),
+    pdfs: nextPdfs,
+    pdfUrl: primaryPdf?.path ?? "",
+    pdfFileName: primaryPdf?.fileName ?? "",
+    updatedBy: adminId,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  const updated = await ref.get();
+
+  return toAssignment(updated.id, updated.data() ?? {});
 }
 
 export async function deleteAssignment(id: string) {
@@ -200,7 +287,7 @@ export async function deleteAssignment(id: string) {
 
   const assignment = toAssignment(snapshot.id, snapshot.data() ?? {});
   await ref.delete();
-  await deleteStorageFile(assignment.pdfUrl);
+  await Promise.all(assignment.pdfs.map((pdf) => deleteStorageFile(pdf.path)));
 
   const submissions = await getFirebaseAdminDb()
     .collection(assignmentSubmissionsCollection)
@@ -211,7 +298,7 @@ export async function deleteAssignment(id: string) {
     submissions.docs.map(async (doc) => {
       const data = toAssignmentSubmission(doc.id, doc.data(), assignment.deadline);
       await doc.ref.delete();
-      await deleteStorageFile(data.pdfUrl);
+      await Promise.all(data.pdfs.map((pdf) => deleteStorageFile(pdf.path)));
     }),
   );
 
@@ -258,11 +345,38 @@ export async function getStudentSubmission(assignmentId: string, studentId: stri
   return toAssignmentSubmission(snapshot.id, snapshot.data() ?? {}, assignment.deadline);
 }
 
-export async function submitAssignmentSolution(
+export async function deleteStudentSubmission(assignmentId: string, studentId: string) {
+  const assignment = await getAssignmentById(assignmentId);
+
+  if (!assignment) {
+    throw new Error("Assignment was not found.");
+  }
+
+  const ref = getFirebaseAdminDb()
+    .collection(assignmentSubmissionsCollection)
+    .doc(getSubmissionDocumentId(assignmentId, studentId));
+  const snapshot = await ref.get();
+
+  if (!snapshot.exists) {
+    throw new Error("Submission was not found.");
+  }
+
+  const submission = toAssignmentSubmission(snapshot.id, snapshot.data() ?? {}, assignment.deadline);
+
+  if (typeof submission.grade === "number") {
+    throw new Error("This assignment has already been graded.");
+  }
+
+  await ref.delete();
+  await Promise.all(submission.pdfs.map((pdf) => deleteStorageFile(pdf.path)));
+
+  return { deletedSubmissionId: snapshot.id };
+}
+
+export async function deleteStudentSubmissionPdf(
   assignmentId: string,
   studentId: string,
-  studentName: string,
-  pdfFile: File,
+  pdfId: string,
 ) {
   const assignment = await getAssignmentById(assignmentId);
 
@@ -270,17 +384,86 @@ export async function submitAssignmentSolution(
     throw new Error("Assignment was not found.");
   }
 
-  const pdf = await uploadAssignmentSolution(pdfFile);
   const ref = getFirebaseAdminDb()
     .collection(assignmentSubmissionsCollection)
     .doc(getSubmissionDocumentId(assignmentId, studentId));
+  const snapshot = await ref.get();
+
+  if (!snapshot.exists) {
+    throw new Error("Submission was not found.");
+  }
+
+  const submission = toAssignmentSubmission(snapshot.id, snapshot.data() ?? {}, assignment.deadline);
+
+  if (typeof submission.grade === "number") {
+    throw new Error("This assignment has already been graded.");
+  }
+
+  const pdfToDelete = submission.pdfs.find((pdf) => pdf.id === pdfId);
+
+  if (!pdfToDelete) {
+    throw new Error("Submission PDF was not found.");
+  }
+
+  const nextPdfs = submission.pdfs.filter((pdf) => pdf.id !== pdfId);
+  await deleteStorageFile(pdfToDelete.path);
+
+  if (nextPdfs.length === 0) {
+    await ref.delete();
+    return { submission: null };
+  }
+
+  const primaryPdf = nextPdfs[0];
+  await ref.update({
+    pdfs: nextPdfs,
+    pdfUrl: primaryPdf.path,
+    pdfFileName: primaryPdf.fileName,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  const updated = await ref.get();
+
+  return {
+    submission: toAssignmentSubmission(updated.id, updated.data() ?? {}, assignment.deadline),
+  };
+}
+
+export async function submitAssignmentSolution(
+  assignmentId: string,
+  studentId: string,
+  studentName: string,
+  pdfFiles: File[],
+) {
+  const assignment = await getAssignmentById(assignmentId);
+
+  if (!assignment) {
+    throw new Error("Assignment was not found.");
+  }
+
+  const displayName = await getStudentDisplayName(studentId, studentName);
+  const ref = getFirebaseAdminDb()
+    .collection(assignmentSubmissionsCollection)
+    .doc(getSubmissionDocumentId(assignmentId, studentId));
+  const existingSnapshot = await ref.get();
+  const existingSubmission = existingSnapshot.exists
+    ? toAssignmentSubmission(existingSnapshot.id, existingSnapshot.data() ?? {}, assignment.deadline)
+    : null;
+
+  if (typeof existingSubmission?.grade === "number") {
+    throw new Error("This assignment has already been graded.");
+  }
+
+  const uploadedPdfs = await Promise.all(pdfFiles.map((pdfFile) => uploadAssignmentSolution(pdfFile)));
+  const pdfs = [...(existingSubmission?.pdfs ?? []), ...uploadedPdfs];
+  const primaryPdf = pdfs[0];
 
   const record = {
     assignmentId,
     studentId,
-    studentName,
-    pdfUrl: pdf.path,
-    pdfFileName: pdf.fileName,
+    studentName: displayName,
+    pdfs,
+    pdfUrl: primaryPdf?.path ?? "",
+    pdfFileName: primaryPdf?.fileName ?? "",
     submittedAt: FieldValue.serverTimestamp(),
     grade: null,
     feedback: "",
@@ -328,26 +511,70 @@ export async function updateAssignmentSubmissionGrade(
   return toAssignmentSubmission(updated.id, updated.data() ?? {}, assignment.deadline);
 }
 
-export async function getAssignmentPdfBuffer(id: string) {
+export async function getAssignmentPdfBuffer(id: string, pdfId?: string) {
   const assignment = await getAssignmentById(id);
 
   if (!assignment) {
     return null;
   }
 
-  const [buffer] = await getFirebaseAdminStorageBucket().file(assignment.pdfUrl).download();
+  const pdf = assignment.pdfs.find((item) => item.id === pdfId) ?? assignment.pdfs[0];
 
-  return { buffer, fileName: assignment.pdfFileName };
+  if (!pdf) {
+    return null;
+  }
+
+  const [buffer] = await getFirebaseAdminStorageBucket().file(pdf.path).download();
+
+  return { buffer, fileName: pdf.fileName };
 }
 
-export async function getSubmissionPdfBuffer(assignmentId: string, studentId: string) {
+export async function getSubmissionPdfBuffer(assignmentId: string, studentId: string, pdfId?: string) {
   const submission = await getStudentSubmission(assignmentId, studentId);
 
   if (!submission) {
     return null;
   }
 
-  const [buffer] = await getFirebaseAdminStorageBucket().file(submission.pdfUrl).download();
+  const pdf = submission.pdfs.find((item) => item.id === pdfId) ?? submission.pdfs[0];
 
-  return { buffer, fileName: submission.pdfFileName };
+  if (!pdf) {
+    return null;
+  }
+
+  const [buffer] = await getFirebaseAdminStorageBucket().file(pdf.path).download();
+
+  return { buffer, fileName: pdf.fileName };
+}
+
+export async function getSubmissionPdfBufferForAdmin(
+  assignmentId: string,
+  submissionId: string,
+  pdfId?: string,
+) {
+  const assignment = await getAssignmentById(assignmentId);
+
+  if (!assignment) {
+    return null;
+  }
+
+  const snapshot = await getFirebaseAdminDb()
+    .collection(assignmentSubmissionsCollection)
+    .doc(submissionId)
+    .get();
+
+  if (!snapshot.exists || snapshot.data()?.assignmentId !== assignmentId) {
+    return null;
+  }
+
+  const submission = toAssignmentSubmission(snapshot.id, snapshot.data() ?? {}, assignment.deadline);
+  const pdf = submission.pdfs.find((item) => item.id === pdfId) ?? submission.pdfs[0];
+
+  if (!pdf) {
+    return null;
+  }
+
+  const [buffer] = await getFirebaseAdminStorageBucket().file(pdf.path).download();
+
+  return { buffer, fileName: pdf.fileName };
 }

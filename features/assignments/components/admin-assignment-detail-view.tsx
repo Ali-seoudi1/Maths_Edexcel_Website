@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
+import { getFirebaseAuth } from "@/lib/firebase/client";
 
 import {
   getAdminAssignment,
@@ -135,9 +136,13 @@ export function AdminAssignmentDetailView({ assignmentId }: { assignmentId: stri
         <CardContent className="space-y-3 p-5">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-xl font-semibold text-foreground">{assignment.title}</h2>
-            <Badge variant="secondary">PDF assignment</Badge>
+            <Badge variant="secondary">
+              {assignment.pdfs.length} PDF{assignment.pdfs.length === 1 ? "" : "s"}
+            </Badge>
           </div>
-          <p className="text-sm leading-6 text-muted-foreground">{assignment.description}</p>
+          {assignment.description ? (
+            <p className="text-sm leading-6 text-muted-foreground">{assignment.description}</p>
+          ) : null}
           <p className="text-sm font-medium text-foreground">
             Deadline: {formatDate(assignment.deadline)}
           </p>
@@ -176,8 +181,31 @@ export function AdminAssignmentDetailView({ assignmentId }: { assignmentId: stri
                         Submitted {formatDate(submission.submittedAt)}
                       </p>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {submission.pdfFileName || "No file name"}
+                    <div className="flex flex-wrap gap-2">
+                      {submission.pdfs.map((pdf) => (
+                        <Button
+                          key={pdf.id}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            const token = await getFirebaseAuth().currentUser?.getIdToken();
+                            const params = new URLSearchParams({
+                              token: token ?? "",
+                              pdfId: pdf.id,
+                            });
+                            window.open(
+                              `/api/admin/assignments/${assignmentId}/submissions/${
+                                submission.id
+                              }/pdf?${params.toString()}`,
+                              "_blank",
+                              "noopener,noreferrer",
+                            );
+                          }}
+                        >
+                          {pdf.fileName}
+                        </Button>
+                      ))}
                     </div>
                   </div>
 

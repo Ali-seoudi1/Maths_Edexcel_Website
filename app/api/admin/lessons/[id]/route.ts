@@ -52,10 +52,9 @@ export async function PATCH(request: Request, context: RouteContext) {
     const admin = await requireAdmin(request);
     const { id } = await context.params;
     const formData = await request.formData();
-    const maybePdfFile = formData.get("pdf");
-    const pdfFile = maybePdfFile instanceof File ? maybePdfFile : undefined;
+    const pdfFiles = formData.getAll("pdfs").filter((file): file is File => file instanceof File);
     const values = lessonPayloadSchema.parse(formDataToLessonPayload(formData));
-    const lesson = await updateLesson(id, values, admin.uid, pdfFile);
+    const lesson = await updateLesson(id, values, admin.uid, pdfFiles);
 
     return NextResponse.json({ lesson });
   } catch (error) {

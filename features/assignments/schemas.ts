@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const assignmentPayloadSchema = z.object({
   title: z.string().trim().min(2, "Enter the assignment title."),
-  description: z.string().trim().min(1, "Enter the assignment description."),
+  description: z.string().trim(),
   deadline: z
     .string()
     .trim()

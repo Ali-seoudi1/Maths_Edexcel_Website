@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
+import { Button } from "@/components/ui/button";
 import { AdminPageHeader } from "@/features/admin";
 import { AdminAssignmentDetailView } from "@/features/assignments/components/admin-assignment-detail-view";
 
@@ -27,6 +29,11 @@ export default async function AdminAssignmentPage({ params }: AdminAssignmentPag
           { label: "Assignments", href: "/admin/assignments" },
           { label: "Details" },
         ]}
+        actions={
+          <Button asChild variant="outline">
+            <Link href={`/admin/assignments/${id}/edit`}>Edit assignment</Link>
+          </Button>
+        }
       />
       <AdminAssignmentDetailView assignmentId={id} />
     </>

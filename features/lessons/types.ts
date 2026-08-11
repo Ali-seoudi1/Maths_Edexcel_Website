@@ -8,12 +8,19 @@ export type Chapter = {
   updatedAt: string | null;
 };
 
+export type LessonPdf = {
+  id: string;
+  path: string;
+  fileName: string;
+};
+
 export type Lesson = {
   id: string;
   chapterId: string;
   title: string;
   description: string;
   order: number;
+  pdfs: LessonPdf[];
   pdfUrl: string;
   pdfFileName: string;
   published: boolean;

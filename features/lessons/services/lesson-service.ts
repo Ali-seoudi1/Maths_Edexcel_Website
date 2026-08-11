@@ -68,7 +68,7 @@ async function requestFormData<TResponse>(url: string, formData: FormData, metho
   return payload as TResponse;
 }
 
-function appendLessonFormData(values: LessonFormValues, pdfFile?: File) {
+function appendLessonFormData(values: LessonFormValues, pdfFiles: File[] = []) {
   const formData = new FormData();
 
   formData.set("chapterId", values.chapterId);
@@ -77,9 +77,9 @@ function appendLessonFormData(values: LessonFormValues, pdfFile?: File) {
   formData.set("order", String(values.order));
   formData.set("published", String(values.published));
 
-  if (pdfFile) {
-    formData.set("pdf", pdfFile);
-  }
+  pdfFiles.forEach((pdfFile) => {
+    formData.append("pdfs", pdfFile);
+  });
 
   return formData;
 }
@@ -128,18 +128,18 @@ export async function getAdminLesson(id: string) {
   return requestJson<{ lesson: Lesson }>(`/api/admin/lessons/${id}`);
 }
 
-export async function createAdminLesson(values: LessonFormValues, pdfFile: File) {
+export async function createAdminLesson(values: LessonFormValues, pdfFiles: File[]) {
   return requestFormData<{ lesson: Lesson }>(
     "/api/admin/lessons",
-    appendLessonFormData(values, pdfFile),
+    appendLessonFormData(values, pdfFiles),
     "POST",
   );
 }
 
-export async function updateAdminLesson(id: string, values: LessonFormValues, pdfFile?: File) {
+export async function updateAdminLesson(id: string, values: LessonFormValues, pdfFiles: File[]) {
   return requestFormData<{ lesson: Lesson }>(
     `/api/admin/lessons/${id}`,
-    appendLessonFormData(values, pdfFile),
+    appendLessonFormData(values, pdfFiles),
     "PATCH",
   );
 }

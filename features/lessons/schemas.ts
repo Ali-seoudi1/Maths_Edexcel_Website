@@ -10,7 +10,7 @@ export const chapterPayloadSchema = z.object({
 export const lessonPayloadSchema = z.object({
   chapterId: z.string().trim().min(1, "Choose a chapter."),
   title: z.string().trim().min(2, "Enter the lesson title."),
-  description: z.string().trim().min(1, "Enter the lesson description."),
+  description: z.string().trim(),
   order: z.number().int("Enter a whole number.").min(0, "Order must be 0 or higher."),
   published: z.boolean(),
 });

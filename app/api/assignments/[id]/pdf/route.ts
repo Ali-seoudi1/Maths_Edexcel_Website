@@ -20,10 +20,11 @@ export async function GET(request: Request, context: RouteContext) {
     return unavailableResponse;
   }
 
-  try {
+    try {
     await requireActiveUser(request);
     const { id } = await context.params;
-    const pdf = await getAssignmentPdfBuffer(id);
+    const pdfId = new URL(request.url).searchParams.get("pdfId") ?? undefined;
+    const pdf = await getAssignmentPdfBuffer(id, pdfId);
 
     if (!pdf) {
       return NextResponse.json({ error: "Assignment PDF was not found." }, { status: 404 });

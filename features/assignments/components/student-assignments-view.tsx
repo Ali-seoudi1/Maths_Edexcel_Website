@@ -7,12 +7,21 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 
 import {
+  deleteMyAssignmentSubmissionPdf,
   getMyAssignmentSubmission,
   listAssignments,
   submitAssignmentSolution,
@@ -34,8 +43,15 @@ export function StudentAssignmentsView() {
   const { toast } = useToast();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [submissions, setSubmissions] = useState<Record<string, AssignmentSubmission | null>>({});
+  const [selectedFiles, setSelectedFiles] = useState<Record<string, File[]>>({});
   const [loading, setLoading] = useState(true);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    assignmentId: string;
+    pdfId: string;
+    fileName: string;
+  } | null>(null);
+  const [confirmUploadId, setConfirmUploadId] = useState<string | null>(null);
 
   useEffect(() => {
     void listAssignments()
@@ -67,11 +83,11 @@ export function StudentAssignmentsView() {
 
   const submissionMap = useMemo(() => submissions, [submissions]);
 
-  async function handleUpload(assignmentId: string, file: File | undefined) {
-    if (!file) {
+  async function handleUpload(assignmentId: string, files: File[]) {
+    if (files.length === 0) {
       toast({
-        title: "No file selected",
-        description: "Choose a PDF before submitting.",
+        title: "No files selected",
+        description: "Choose at least one PDF before submitting.",
         variant: "destructive",
       });
       return;
@@ -80,8 +96,9 @@ export function StudentAssignmentsView() {
     setUploadingId(assignmentId);
 
     try {
-      const result = await submitAssignmentSolution(assignmentId, file);
+      const result = await submitAssignmentSolution(assignmentId, files);
       setSubmissions((prev) => ({ ...prev, [assignmentId]: result.submission }));
+      setSelectedFiles((prev) => ({ ...prev, [assignmentId]: [] }));
       toast({
         title: "Solution submitted",
         description: result.submission.isLate
@@ -96,6 +113,31 @@ export function StudentAssignmentsView() {
         variant: "destructive",
       });
     } finally {
+      setUploadingId(null);
+    }
+  }
+
+  async function handleDeleteSubmissionPdf(assignmentId: string, pdfId: string) {
+    setUploadingId(assignmentId);
+
+    try {
+      const result = await deleteMyAssignmentSubmissionPdf(assignmentId, pdfId);
+      setSubmissions((prev) => ({ ...prev, [assignmentId]: result.submission }));
+      toast({
+        title: "PDF deleted",
+        description: result.submission
+          ? "The selected PDF was removed from your submission."
+          : "Your submission was removed because no PDFs are left.",
+        variant: "success",
+      });
+    } catch (error) {
+      toast({
+        title: "Delete failed",
+        description: error instanceof Error ? error.message : "Try again in a moment.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteTarget(null);
       setUploadingId(null);
     }
   }
@@ -123,10 +165,8 @@ export function StudentAssignmentsView() {
     <div className="space-y-4">
       {assignments.map((assignment) => {
         const submission = submissionMap[assignment.id] ?? null;
-        const isPastDeadline = assignment.deadline
-          ? new Date().getTime() > new Date(assignment.deadline).getTime()
-          : false;
-
+        const pendingFiles = selectedFiles[assignment.id] ?? [];
+        const isGraded = typeof submission?.grade === "number";
         return (
           <Card key={assignment.id} className="shadow-soft">
             <CardContent className="space-y-4 p-5">
@@ -135,11 +175,17 @@ export function StudentAssignmentsView() {
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-base font-semibold text-foreground">{assignment.title}</h2>
                     <Badge variant="secondary">Assignment</Badge>
-                    {submission?.isLate ? <Badge variant="destructive">Late</Badge> : null}
+                    {submission?.isLate ? (
+                      <Badge variant="destructive">Late</Badge>
+                    ) : submission ? (
+                      <Badge variant="secondary">On time</Badge>
+                    ) : null}
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    {assignment.description}
-                  </p>
+                  {assignment.description ? (
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      {assignment.description}
+                    </p>
+                  ) : null}
                   <p className="mt-2 text-sm font-medium text-foreground">
                     Deadline: {formatDate(assignment.deadline)}
                   </p>
@@ -147,27 +193,39 @@ export function StudentAssignmentsView() {
                     <p className="mt-2 text-sm font-medium text-success">
                       Grade: {submission.grade}/100
                     </p>
-                  ) : submission?.feedback ? (
+                  ) : null}
+                  {submission?.feedback ? (
                     <p className="mt-2 text-sm text-muted-foreground">
                       Feedback: {submission.feedback}
                     </p>
                   ) : null}
                 </div>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={async () => {
-                    const token = await getFirebaseAuth().currentUser?.getIdToken();
-                    window.open(
-                      `/api/assignments/${assignment.id}/pdf?token=${encodeURIComponent(token ?? "")}`,
-                      "_blank",
-                      "noopener,noreferrer",
-                    );
-                  }}
-                >
-                  Open PDF
-                </Button>
+                {assignment.pdfs.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {assignment.pdfs.map((pdf) => (
+                      <Button
+                        key={pdf.id}
+                        type="button"
+                        variant="outline"
+                        onClick={async () => {
+                          const token = await getFirebaseAuth().currentUser?.getIdToken();
+                          const params = new URLSearchParams({
+                            token: token ?? "",
+                            pdfId: pdf.id,
+                          });
+                          window.open(
+                            `/api/assignments/${assignment.id}/pdf?${params.toString()}`,
+                            "_blank",
+                            "noopener,noreferrer",
+                          );
+                        }}
+                      >
+                        Open {pdf.fileName}
+                      </Button>
+                    ))}
+                  </div>
+                ) : null}
               </div>
 
               <div className="rounded-md border bg-secondary/30 p-4">
@@ -176,34 +234,159 @@ export function StudentAssignmentsView() {
                     <p className="text-sm font-medium text-foreground">Your submission</p>
                     <p className="text-xs text-muted-foreground">
                       {submission
-                        ? `Submitted ${formatDate(submission.submittedAt)}`
+                        ? `Submitted ${formatDate(submission.submittedAt)} with ${submission.pdfs.length} PDF${
+                            submission.pdfs.length === 1 ? "" : "s"
+                          }`
                         : "Not submitted yet"}
                     </p>
+                    {submission?.pdfs.length ? (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {submission.pdfs.map((pdf) => (
+                          <div key={pdf.id} className="flex flex-wrap items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                const token = await getFirebaseAuth().currentUser?.getIdToken();
+                                const params = new URLSearchParams({
+                                  token: token ?? "",
+                                  pdfId: pdf.id,
+                                });
+                                window.open(
+                                  `/api/assignments/${assignment.id}/submission-pdf?${params.toString()}`,
+                                  "_blank",
+                                  "noopener,noreferrer",
+                                );
+                              }}
+                            >
+                              {pdf.fileName}
+                            </Button>
+                            {!isGraded ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={uploadingId === assignment.id}
+                                onClick={() =>
+                                  setDeleteTarget({
+                                    assignmentId: assignment.id,
+                                    pdfId: pdf.id,
+                                    fileName: pdf.fileName,
+                                  })
+                                }
+                              >
+                                Delete
+                              </Button>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
 
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <Input
-                      type="file"
-                      accept="application/pdf"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        void handleUpload(assignment.id, file);
-                        event.target.value = "";
-                      }}
-                      disabled={uploadingId === assignment.id}
-                    />
-                    {uploadingId === assignment.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <UploadCloud className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </div>
+                  {!isGraded ? (
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <Input
+                        type="file"
+                        accept="application/pdf"
+                        multiple
+                        onChange={(event) => {
+                          const files = Array.from(event.target.files ?? []);
+                          setSelectedFiles((prev) => ({
+                            ...prev,
+                            [assignment.id]: [...(prev[assignment.id] ?? []), ...files],
+                          }));
+                          event.target.value = "";
+                        }}
+                        disabled={uploadingId === assignment.id}
+                      />
+                      <Button
+                        type="button"
+                        disabled={uploadingId === assignment.id || pendingFiles.length === 0}
+                        onClick={() => setConfirmUploadId(assignment.id)}
+                      >
+                        Upload
+                      </Button>
+                      {uploadingId === assignment.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <UploadCloud className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  ) : null}
                 </div>
+                {!isGraded && pendingFiles.length > 0 ? (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Selected: {pendingFiles.map((file) => file.name).join(", ")}
+                  </p>
+                ) : null}
               </div>
             </CardContent>
           </Card>
         );
       })}
+
+      <Dialog
+        open={Boolean(confirmUploadId)}
+        onOpenChange={(open) => !open && setConfirmUploadId(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload submission?</DialogTitle>
+            <DialogDescription>
+              This will submit the selected PDF files for this assignment. You can delete and
+              upload again later if needed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setConfirmUploadId(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                if (!confirmUploadId) {
+                  return;
+                }
+
+                const files = selectedFiles[confirmUploadId] ?? [];
+                setConfirmUploadId(null);
+                void handleUpload(confirmUploadId, files);
+              }}
+            >
+              Upload
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete this PDF?</DialogTitle>
+            <DialogDescription>
+              This removes {deleteTarget?.fileName ?? "the selected PDF"} from your submission.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (deleteTarget) {
+                  void handleDeleteSubmissionPdf(deleteTarget.assignmentId, deleteTarget.pdfId);
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

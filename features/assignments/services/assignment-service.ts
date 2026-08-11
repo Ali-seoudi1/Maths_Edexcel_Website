@@ -72,16 +72,14 @@ async function requestFormData<TResponse>(url: string, formData: FormData, metho
   return payload as TResponse;
 }
 
-function appendAssignmentFormData(values: AssignmentFormValues, pdfFile?: File) {
+function appendAssignmentFormData(values: AssignmentFormValues, pdfFiles: File[] = []) {
   const formData = new FormData();
 
   formData.set("title", values.title);
   formData.set("description", values.description);
   formData.set("deadline", values.deadline);
 
-  if (pdfFile) {
-    formData.set("pdf", pdfFile);
-  }
+  pdfFiles.forEach((pdfFile) => formData.append("pdfs", pdfFile));
 
   return formData;
 }
@@ -94,11 +92,23 @@ export async function getAdminAssignment(id: string) {
   return requestJson<{ assignment: Assignment }>(`/api/admin/assignments/${id}`);
 }
 
-export async function createAdminAssignment(values: AssignmentFormValues, pdfFile: File) {
+export async function createAdminAssignment(values: AssignmentFormValues, pdfFiles: File[]) {
   return requestFormData<{ assignment: Assignment }>(
     "/api/admin/assignments",
-    appendAssignmentFormData(values, pdfFile),
+    appendAssignmentFormData(values, pdfFiles),
     "POST",
+  );
+}
+
+export async function updateAdminAssignment(
+  id: string,
+  values: AssignmentFormValues,
+  pdfFiles: File[],
+) {
+  return requestFormData<{ assignment: Assignment }>(
+    `/api/admin/assignments/${id}`,
+    appendAssignmentFormData(values, pdfFiles),
+    "PATCH",
   );
 }
 
@@ -138,9 +148,28 @@ export async function getMyAssignmentSubmission(assignmentId: string) {
   return requestJson<{ submission: AssignmentSubmission | null }>(`/api/assignments/${assignmentId}/submission`);
 }
 
-export async function submitAssignmentSolution(assignmentId: string, pdfFile: File) {
+export async function deleteMyAssignmentSubmission(assignmentId: string) {
+  return requestJson<{ deletedSubmissionId: string }>(
+    `/api/assignments/${assignmentId}/submission`,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
+export async function deleteMyAssignmentSubmissionPdf(assignmentId: string, pdfId: string) {
+  const params = new URLSearchParams({ pdfId });
+  return requestJson<{ submission: AssignmentSubmission | null }>(
+    `/api/assignments/${assignmentId}/submission?${params.toString()}`,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
+export async function submitAssignmentSolution(assignmentId: string, pdfFiles: File[]) {
   const formData = new FormData();
-  formData.set("pdf", pdfFile);
+  pdfFiles.forEach((pdfFile) => formData.append("pdfs", pdfFile));
 
   return requestFormData<{ submission: AssignmentSubmission }>(
     `/api/assignments/${assignmentId}/submit`,

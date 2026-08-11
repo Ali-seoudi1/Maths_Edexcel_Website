@@ -107,11 +107,15 @@ export function StudentLessonsView() {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-base font-semibold text-foreground">{lesson.title}</h2>
-                      <Badge variant="secondary">PDF</Badge>
+                      <Badge variant="secondary">
+                        {lesson.pdfs.length} PDF{lesson.pdfs.length === 1 ? "" : "s"}
+                      </Badge>
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      {lesson.description}
-                    </p>
+                    {lesson.description ? (
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                        {lesson.description}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
                 <Button asChild>

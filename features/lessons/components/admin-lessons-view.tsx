@@ -168,7 +168,14 @@ export function AdminLessonsView() {
                   <TableRow key={lesson.id}>
                     <TableCell>
                       <p className="font-medium text-foreground">{lesson.title}</p>
-                      <p className="mt-1 max-w-xl text-sm text-muted-foreground">{lesson.description}</p>
+                      {lesson.description ? (
+                        <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+                          {lesson.description}
+                        </p>
+                      ) : null}
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {lesson.pdfs.length} PDF{lesson.pdfs.length === 1 ? "" : "s"}
+                      </p>
                     </TableCell>
                     <TableCell>{lesson.chapterName ?? lesson.chapterId}</TableCell>
                     <TableCell>{lesson.order}</TableCell>

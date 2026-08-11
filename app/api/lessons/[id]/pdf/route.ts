@@ -23,7 +23,8 @@ export async function GET(request: Request, context: RouteContext) {
   try {
     await requireActiveUser(request);
     const { id } = await context.params;
-    const pdf = await getLessonPdfBuffer(id);
+    const pdfId = new URL(request.url).searchParams.get("pdfId") ?? undefined;
+    const pdf = await getLessonPdfBuffer(id, pdfId);
 
     if (!pdf) {
       return NextResponse.json({ error: "Lesson PDF was not found." }, { status: 404 });

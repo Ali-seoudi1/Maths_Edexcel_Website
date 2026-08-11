@@ -14,7 +14,7 @@ type AssignmentFormProps = {
   assignment?: Assignment;
   submitLabel: string;
   requiresPdf?: boolean;
-  onSubmit: (values: AssignmentFormValues, pdfFile?: File) => Promise<void>;
+  onSubmit: (values: AssignmentFormValues, pdfFiles: File[]) => Promise<void>;
 };
 
 export function AssignmentForm({
@@ -46,14 +46,14 @@ export function AssignmentForm({
 
   async function handleFormSubmit(values: AssignmentFormValues, event?: React.BaseSyntheticEvent) {
     const form = event?.target as HTMLFormElement | undefined;
-    const fileInput = form?.elements.namedItem("pdf") as HTMLInputElement | null;
-    const pdfFile = fileInput?.files?.[0];
+    const fileInput = form?.elements.namedItem("pdfs") as HTMLInputElement | null;
+    const pdfFiles = Array.from(fileInput?.files ?? []);
 
-    if (requiresPdf && !pdfFile) {
-      throw new Error("Upload an assignment PDF.");
+    if (requiresPdf && !values.description.trim() && pdfFiles.length === 0) {
+      throw new Error("Add a description, upload at least one PDF, or both.");
     }
 
-    await onSubmit(values, pdfFile);
+    await onSubmit(values, pdfFiles);
   }
 
   return (
@@ -68,7 +68,7 @@ export function AssignmentForm({
 
       <div className="space-y-2">
         <label htmlFor="description" className="text-sm font-medium text-foreground">
-          Description
+          Description <span className="text-muted-foreground">(optional)</span>
         </label>
         <textarea
           id="description"
@@ -98,12 +98,26 @@ export function AssignmentForm({
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="pdf" className="text-sm font-medium text-foreground">
-          Upload assignment PDF
+        <label htmlFor="pdfs" className="text-sm font-medium text-foreground">
+          Upload assignment PDFs <span className="text-muted-foreground">(optional)</span>
         </label>
-        <Input id="pdf" name="pdf" type="file" accept="application/pdf" disabled={isSubmitting} />
-        {assignment?.pdfFileName ? (
-          <p className="text-xs text-muted-foreground">Current PDF: {assignment.pdfFileName}</p>
+        <Input
+          id="pdfs"
+          name="pdfs"
+          type="file"
+          accept="application/pdf"
+          multiple
+          disabled={isSubmitting}
+        />
+        {assignment?.pdfs.length ? (
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <p>Current PDFs:</p>
+            <ul className="list-inside list-disc">
+              {assignment.pdfs.map((pdf) => (
+                <li key={pdf.id}>{pdf.fileName}</li>
+              ))}
+            </ul>
+          </div>
         ) : null}
       </div>
 
