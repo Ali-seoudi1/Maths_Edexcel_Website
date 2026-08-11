@@ -5,7 +5,7 @@ import { AdminQuizFormView } from "@/features/quizzes/components/admin-quiz-form
 
 export const metadata: Metadata = {
   title: "New quiz",
-  description: "Create a new timed quiz.",
+  description: "Create a new PDF quiz.",
 };
 
 export default function NewQuizPage() {
@@ -13,7 +13,7 @@ export default function NewQuizPage() {
     <>
       <AdminPageHeader
         title="New quiz"
-        description="Create a timed quiz with questions and a countdown duration for students."
+        description="Create a PDF quiz and publish it when the global timer should begin."
         breadcrumbs={[
           { label: "Admin", href: "/admin" },
           { label: "Quizzes", href: "/admin/quizzes" },

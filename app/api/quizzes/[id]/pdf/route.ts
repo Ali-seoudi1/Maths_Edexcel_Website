@@ -23,7 +23,8 @@ export async function GET(request: Request, context: RouteContext) {
   try {
     await requireActiveUser(request);
     const { id } = await context.params;
-    const pdf = await getQuizPdfBuffer(id);
+    const pdfId = new URL(request.url).searchParams.get("pdfId");
+    const pdf = await getQuizPdfBuffer(id, pdfId);
 
     if (!pdf) {
       return NextResponse.json({ error: "Quiz PDF was not found." }, { status: 404 });

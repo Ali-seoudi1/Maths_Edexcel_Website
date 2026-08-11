@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { submitQuizAnswers } from "@/features/quizzes/services/server-quiz-service";
+import { submitQuizPdf } from "@/features/quizzes/services/server-quiz-service";
 import {
   adminSdkUnavailableResponse,
   errorResponse,
@@ -23,16 +23,18 @@ export async function POST(request: Request, context: RouteContext) {
   try {
     const user = await requireActiveUser(request);
     const { id } = await context.params;
-    const payload = (await request.json()) as { answers?: Record<string, number> };
+    const formData = await request.formData();
+    const pdfFile = formData.get("pdf");
 
-    if (!payload.answers || typeof payload.answers !== "object") {
-      throw new Error("Choose at least one answer before submitting.");
+    if (!(pdfFile instanceof File)) {
+      throw new Error("Upload your answer PDF before submitting.");
     }
 
-    const submission = await submitQuizAnswers(id, user.uid, payload.answers);
+    const submission = await submitQuizPdf(id, user.uid, user.role === "admin" ? "Admin" : "Student", pdfFile);
 
     return NextResponse.json({ submission });
   } catch (error) {
+    console.error("[quiz] failed to submit quiz", error);
     return errorResponse(error, "Quiz request failed.");
   }
 }

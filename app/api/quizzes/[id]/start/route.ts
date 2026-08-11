@@ -27,6 +27,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     return NextResponse.json({ submission }, { status: 201 });
   } catch (error) {
+    console.error("[quiz] failed to start quiz", error);
     return errorResponse(error, "Quiz request failed.");
   }
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { AdminPageHeader } from "@/features/admin";
+import { AdminQuizListView } from "@/features/quizzes/components/admin-quiz-list-view";
 
 export const metadata: Metadata = {
   title: "Quizzes",
@@ -14,7 +15,7 @@ export default function AdminQuizzesPage() {
     <>
       <AdminPageHeader
         title="Quizzes"
-        description="Create timed quizzes for students and review their results."
+        description="Create PDF quizzes, publish timed deadlines, and review submissions."
         breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Quizzes" }]}
         actions={
           <Button asChild>
@@ -22,6 +23,7 @@ export default function AdminQuizzesPage() {
           </Button>
         }
       />
+      <AdminQuizListView />
     </>
   );
 }

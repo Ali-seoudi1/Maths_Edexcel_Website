@@ -1,8 +1,9 @@
-export type QuizQuestion = {
+export type QuizStatus = "draft" | "active" | "closed";
+
+export type QuizPdf = {
   id: string;
-  prompt: string;
-  options: string[];
-  correctIndex: number;
+  path: string;
+  fileName: string;
 };
 
 export type Quiz = {
@@ -10,9 +11,11 @@ export type Quiz = {
   title: string;
   description: string;
   durationMinutes: number;
-  pdfUrl: string;
-  pdfFileName: string;
-  questions: QuizQuestion[];
+  pdfs: QuizPdf[];
+  published: boolean;
+  publishedAt: string | null;
+  expiresAt: string | null;
+  status: QuizStatus;
   createdBy: string;
   createdAt: string | null;
   updatedAt: string | null;
@@ -22,24 +25,33 @@ export type QuizFormValues = {
   title: string;
   description: string;
   durationMinutes: number;
+  published?: boolean;
 };
 
-export type QuizQuestionFormValue = {
-  prompt: string;
-  options: string[];
-  correctIndex: number;
-};
+export type QuizSubmissionStatus = "submitted" | "late" | "graded";
 
 export type QuizSubmission = {
   id: string;
   quizId: string;
   studentId: string;
   studentName: string;
-  startedAt: string | null;
+  pdfPath: string;
+  pdfFileName: string;
   submittedAt: string | null;
-  score: number;
-  totalQuestions: number;
-  answers: Record<string, number>;
+  late: boolean;
+  lateBySeconds: number;
+  status: QuizSubmissionStatus;
+  finalized: boolean;
+  graded: boolean;
+  gradedAt: string | null;
+  gradedBy: string;
+  score: number | null;
+  feedback: string;
   createdAt: string | null;
   updatedAt: string | null;
+};
+
+export type QuizGradeValues = {
+  score?: number | null;
+  feedback?: string;
 };

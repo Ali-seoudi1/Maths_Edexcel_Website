@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock3, FileQuestion, Loader2 } from "lucide-react";
+import { Clock3, FileQuestion } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -13,6 +13,17 @@ import { useToast } from "@/components/ui/toast";
 
 import { listQuizzes } from "../services/quiz-service";
 import type { Quiz } from "../types";
+
+function formatDate(value: string | null) {
+  if (!value) return "Not set";
+
+  return new Intl.DateTimeFormat("en", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
 
 export function StudentQuizListView() {
   const { toast } = useToast();
@@ -54,12 +65,14 @@ export function StudentQuizListView() {
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-base font-semibold text-foreground">{quiz.title}</h2>
-                <Badge variant="secondary">Timed quiz</Badge>
+                <Badge variant={quiz.status === "closed" ? "outline" : "secondary"}>
+                  {quiz.status === "closed" ? "Closed" : "Active"}
+                </Badge>
               </div>
-              <p className="text-sm text-muted-foreground">{quiz.description}</p>
+              {quiz.description ? <p className="text-sm text-muted-foreground">{quiz.description}</p> : null}
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <Clock3 className="h-4 w-4" aria-hidden="true" />
-                {quiz.durationMinutes} minutes
+                {quiz.durationMinutes} minutes · closes {formatDate(quiz.expiresAt)}
               </div>
             </div>
             <Button asChild>

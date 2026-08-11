@@ -16,10 +16,11 @@ export async function GET(request: Request) {
 
   try {
     await requireActiveUser(request);
-    const quizzes = await listQuizzes();
+    const quizzes = await listQuizzes({ publishedOnly: true });
 
     return NextResponse.json({ quizzes });
   } catch (error) {
+    console.error("[quiz] failed to list student quizzes", error);
     return errorResponse(error, "Quiz request failed.");
   }
 }
