@@ -6,20 +6,20 @@ import { AdminPageHeader } from "@/features/admin";
 import { AdminChaptersView } from "@/features/lessons/components/admin-chapters-view";
 
 export const metadata: Metadata = {
-  title: "Chapters",
-  description: "Manage lesson chapters.",
+  title: "Topics",
+  description: "Manage lesson topics.",
 };
 
 export default function AdminChaptersPage() {
   return (
     <>
       <AdminPageHeader
-        title="Chapters"
-        description="Create, publish, hide, reorder, and organize lesson chapters."
-        breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Chapters" }]}
+        title="Topics"
+        description="Create, publish, hide, reorder, and organize lesson topics."
+        breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Topics" }]}
         actions={
           <Button asChild>
-            <Link href="/admin/chapters/new">New chapter</Link>
+            <Link href="/admin/chapters/new">New topic</Link>
           </Button>
         }
       />

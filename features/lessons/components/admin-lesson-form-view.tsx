@@ -78,8 +78,8 @@ export function AdminLessonFormView({ lessonId }: AdminLessonFormViewProps) {
   if (chapters.length === 0) {
     return (
       <EmptyState
-        title="Create a chapter first"
-        description="Lessons must reference an existing chapter."
+        title="Create a topic first"
+        description="Lessons must reference an existing topic."
       />
     );
   }

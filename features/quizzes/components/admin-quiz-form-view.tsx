@@ -79,11 +79,11 @@ export function AdminQuizFormView({ quiz, onSaved }: AdminQuizFormViewProps) {
           fileInputRef.current.value = "";
         }
         toast({ title: "Quiz updated", variant: "success" });
-        router.refresh();
+        router.push("/admin/quizzes");
       } else {
-        const result = await createAdminQuiz(values, pdfFiles);
+        await createAdminQuiz(values, pdfFiles);
         toast({ title: publishedOverride ? "Quiz published" : "Quiz created", variant: "success" });
-        router.push(`/admin/quizzes/${result.quiz.id}`);
+        router.push("/admin/quizzes");
       }
     } catch (error) {
       toast({

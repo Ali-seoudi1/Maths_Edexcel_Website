@@ -20,6 +20,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ chapters });
   } catch (error) {
-    return errorResponse(error, "Chapter request failed.");
+    return errorResponse(error, "Topic request failed.");
   }
 }

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { listAssignments } from "@/features/assignments/services/server-assignment-service";
+import {
+  listAssignments,
+  listStudentAssignmentSubmissions,
+} from "@/features/assignments/services/server-assignment-service";
 import {
   adminSdkUnavailableResponse,
   errorResponse,
@@ -15,10 +18,12 @@ export async function GET(request: Request) {
   }
 
   try {
-    await requireActiveUser(request);
+    const user = await requireActiveUser(request);
     const assignments = await listAssignments();
+    const submissionRecords = await listStudentAssignmentSubmissions(user.uid, assignments);
+    const submissions = submissionRecords.map(({ submission }) => submission);
 
-    return NextResponse.json({ assignments });
+    return NextResponse.json({ assignments, submissions });
   } catch (error) {
     return errorResponse(error, "Assignment request failed.");
   }

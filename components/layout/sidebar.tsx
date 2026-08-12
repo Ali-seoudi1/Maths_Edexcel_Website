@@ -1,11 +1,16 @@
 "use client";
 
-import { LogOut, Sigma } from "lucide-react";
+import { Lock, Sigma } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { dashboardNavigation } from "@/constants";
-import { Button } from "@/components/ui/button";
+import { SignOutButton } from "@/components/shared/sign-out-button";
+import {
+  getUnreadAnnouncementCount,
+  unreadAnnouncementCountChangedEvent,
+} from "@/features/announcements/services/announcement-service";
 import { useAuth } from "@/features/auth";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +20,8 @@ type SidebarProps = {
 
 export function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname();
-  const { profile, signOut } = useAuth();
+  const { profile } = useAuth();
+  const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
   const initials =
     profile?.fullName
       .split(" ")
@@ -24,6 +30,33 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       .map((part) => part[0]?.toUpperCase())
       .join("") || "EM";
 
+  useEffect(() => {
+    let mounted = true;
+
+    function handleUnreadCountChanged(event: Event) {
+      const detail = event instanceof CustomEvent ? event.detail : null;
+      const unreadCount =
+        detail && typeof detail.unreadCount === "number" ? detail.unreadCount : 0;
+
+      setUnreadAnnouncements(unreadCount);
+    }
+
+    window.addEventListener(unreadAnnouncementCountChangedEvent, handleUnreadCountChanged);
+
+    void getUnreadAnnouncementCount()
+      .then((result) => {
+        if (mounted) setUnreadAnnouncements(result.unreadCount);
+      })
+      .catch(() => {
+        if (mounted) setUnreadAnnouncements(0);
+      });
+
+    return () => {
+      mounted = false;
+      window.removeEventListener(unreadAnnouncementCountChangedEvent, handleUnreadCountChanged);
+    };
+  }, [pathname]);
+
   return (
     <aside className="flex h-full flex-col bg-sidebar px-4 py-8 text-sidebar-foreground">
       <div className="flex items-center gap-3 px-1">
@@ -31,8 +64,8 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           <Sigma className="h-5 w-5" aria-hidden="true" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-base font-bold leading-5">Mr. Farouk - Math</p>
-          <p className="truncate text-xs text-sidebar-muted">Edexcel iGCSE & A-Level</p>
+          <p className="truncate text-base font-bold leading-5">Mr. Omar - Math</p>
+          <p className="truncate text-xs text-sidebar-muted">Edexcel IGCSE </p>
         </div>
       </div>
 
@@ -40,11 +73,30 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         {dashboardNavigation.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
+          const isLocked = item.locked;
+
+          if (isLocked) {
+            return (
+              <div
+                key={item.href}
+                className={cn(
+                  "flex h-12 cursor-not-allowed items-center gap-3 rounded-xl px-4 text-sm font-semibold text-sidebar-muted/70",
+                  "border border-white/5 bg-white/[0.03]",
+                )}
+                aria-disabled="true"
+              >
+                <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <span className="truncate">{item.title}</span>
+                <Lock className="ml-auto h-4 w-4 shrink-0" aria-hidden="true" />
+              </div>
+            );
+          }
 
           return (
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               onClick={onNavigate}
               className={cn(
                 "flex h-12 items-center gap-3 rounded-xl px-4 text-sm font-semibold text-sidebar-muted transition-colors",
@@ -54,6 +106,11 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             >
               <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
               <span className="truncate">{item.title}</span>
+              {item.href === "/announcements" && unreadAnnouncements > 0 ? (
+                <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
+                  {unreadAnnouncements}
+                </span>
+              ) : null}
             </Link>
           );
         })}
@@ -72,15 +129,10 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             </p>
           </div>
         </div>
-        <Button
-          type="button"
+        <SignOutButton
           variant="ghost"
           className="mt-5 w-full justify-start rounded-xl px-4 text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          onClick={() => void signOut()}
-        >
-          <LogOut className="h-4 w-4" aria-hidden="true" />
-          Sign out
-        </Button>
+        />
       </div>
     </aside>
   );

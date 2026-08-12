@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import { ThemeProvider } from "@/components/shared/theme-provider";
+import { NavigationLoadingProvider, ThemeProvider } from "@/components/shared";
 import { AuthProvider } from "@/features/auth";
 import "./globals.css";
 
@@ -22,7 +22,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
     <html lang="en" suppressHydrationWarning>
       <body>
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <NavigationLoadingProvider>{children}</NavigationLoadingProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -13,7 +13,7 @@ export default function NewStudentPage() {
     <>
       <AdminPageHeader
         title="New student"
-        description="Create a Firebase Authentication user and matching users/{uid} student profile."
+        description="Add a student and send them an email invitation to set their password."
         breadcrumbs={[
           { label: "Admin", href: "/admin" },
           { label: "Students", href: "/admin/students" },

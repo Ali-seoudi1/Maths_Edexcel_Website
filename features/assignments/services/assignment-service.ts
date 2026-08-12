@@ -137,7 +137,9 @@ export async function updateAssignmentSubmissionGrade(
 }
 
 export async function listAssignments() {
-  return requestJson<{ assignments: Assignment[] }>("/api/assignments");
+  return requestJson<{ assignments: Assignment[]; submissions: AssignmentSubmission[] }>(
+    "/api/assignments",
+  );
 }
 
 export async function getAssignment(id: string) {
@@ -146,15 +148,6 @@ export async function getAssignment(id: string) {
 
 export async function getMyAssignmentSubmission(assignmentId: string) {
   return requestJson<{ submission: AssignmentSubmission | null }>(`/api/assignments/${assignmentId}/submission`);
-}
-
-export async function deleteMyAssignmentSubmission(assignmentId: string) {
-  return requestJson<{ deletedSubmissionId: string }>(
-    `/api/assignments/${assignmentId}/submission`,
-    {
-      method: "DELETE",
-    },
-  );
 }
 
 export async function deleteMyAssignmentSubmissionPdf(assignmentId: string, pdfId: string) {

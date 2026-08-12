@@ -134,7 +134,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const refreshProfile = useCallback(
-    async () => loadProfile(firebaseUser),
+    async () => {
+      if (!firebaseUser) {
+        return loadProfile(null);
+      }
+
+      const nextProfile = await getUserProfile(firebaseUser.uid, { forceRefresh: true });
+
+      if (!nextProfile || !nextProfile.active) {
+        await signOutCurrentUser();
+        setFirebaseUser(null);
+        setProfile(null);
+        setStatus("unauthenticated");
+        return null;
+      }
+
+      setProfile(nextProfile);
+      setStatus("authenticated");
+      return nextProfile;
+    },
     [firebaseUser, loadProfile],
   );
 

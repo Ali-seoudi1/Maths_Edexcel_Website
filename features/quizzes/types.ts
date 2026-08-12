@@ -28,6 +28,15 @@ export type QuizFormValues = {
   published?: boolean;
 };
 
+export type QuizAttempt = {
+  id: string;
+  quizId: string;
+  studentId: string;
+  studentName: string;
+  openedAt: string | null;
+  updatedAt: string | null;
+};
+
 export type QuizSubmissionStatus = "submitted" | "late" | "graded";
 
 export type QuizSubmission = {
@@ -35,6 +44,7 @@ export type QuizSubmission = {
   quizId: string;
   studentId: string;
   studentName: string;
+  noSubmission?: boolean;
   pdfPath: string;
   pdfFileName: string;
   submittedAt: string | null;

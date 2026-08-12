@@ -50,10 +50,7 @@ export function SignInForm() {
         <CardContent className="flex min-h-80 flex-col items-center justify-center gap-4 text-center">
           <Loader2 className="h-6 w-6 animate-spin text-primary" aria-hidden="true" />
           <div className="space-y-2">
-            <CardTitle className="text-xl">Restoring your session</CardTitle>
-            <p className="max-w-sm text-sm leading-6 text-muted-foreground">
-              If you are already signed in, you will be taken to your dashboard automatically.
-            </p>
+            <CardTitle className="text-xl">Loading</CardTitle>
           </div>
         </CardContent>
       </Card>

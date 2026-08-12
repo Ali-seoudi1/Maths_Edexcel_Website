@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
-import { listPublishedChapters, listPublishedLessons } from "../services/lesson-service";
+import { listPublishedLessonCatalog } from "../services/lesson-service";
 import type { Chapter, Lesson } from "../types";
 
 export function StudentLessonsView() {
@@ -23,11 +23,11 @@ export function StudentLessonsView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    void Promise.all([listPublishedChapters(), listPublishedLessons()])
-      .then(([chapterResult, lessonResult]) => {
-        setChapters(chapterResult.chapters);
-        setLessons(lessonResult.lessons);
-        setActiveChapterId(chapterResult.chapters[0]?.id ?? "");
+    void listPublishedLessonCatalog()
+      .then((result) => {
+        setChapters(result.chapters);
+        setLessons(result.lessons);
+        setActiveChapterId(result.chapters[0]?.id ?? "");
       })
       .catch((error) => {
         toast({
@@ -47,8 +47,12 @@ export function StudentLessonsView() {
   if (loading) {
     return (
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-        <Skeleton className="h-80" />
-        <Skeleton className="h-80" />
+        <Skeleton className="h-80 rounded-2xl" />
+        <div className="space-y-4">
+          <Skeleton className="h-28 rounded-2xl" />
+          <Skeleton className="h-28 rounded-2xl" />
+          <Skeleton className="h-28 rounded-2xl" />
+        </div>
       </div>
     );
   }
@@ -64,47 +68,50 @@ export function StudentLessonsView() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-      <Card className="h-fit shadow-soft">
-        <CardContent className="p-4">
-          <p className="px-2 py-2 text-sm font-semibold text-foreground">Chapters</p>
-          <div className="mt-2 space-y-2">
+    <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
+      <Card className="h-fit lg:sticky lg:top-28">
+        <CardContent className="p-3">
+          <div className="px-2 py-2">
+            <p className="text-sm font-semibold text-foreground">Topics</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">Select a topic to view its lesson PDFs.</p>
+          </div>
+          <div className="mt-2 space-y-1.5">
             {chapters.map((chapter) => (
               <button
                 key={chapter.id}
                 type="button"
                 className={cn(
-                  "w-full rounded-md px-3 py-3 text-left text-sm transition-colors",
+                  "w-full rounded-xl border px-3 py-3 text-left text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   activeChapterId === chapter.id
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                    ? "border-primary/20 bg-primary/10 text-primary shadow-soft"
+                    : "border-transparent text-muted-foreground hover:border-border hover:bg-secondary/70 hover:text-foreground",
                 )}
                 onClick={() => setActiveChapterId(chapter.id)}
               >
                 <span className="font-semibold">{chapter.name}</span>
-                <span className="mt-1 block text-xs">{chapter.description}</span>
+                {chapter.description ? <span className="mt-1 block text-xs leading-5">{chapter.description}</span> : null}
               </button>
             ))}
           </div>
         </CardContent>
       </Card>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {visibleLessons.length === 0 ? (
           <EmptyState
-            title="No lessons in this chapter"
-            description="Published lesson PDFs for this chapter will appear here."
+            title="No lessons in this topic"
+            description="Published lesson PDFs for this topic will appear here."
             icon={<FileText className="h-8 w-8" aria-hidden="true" />}
           />
         ) : (
           visibleLessons.map((lesson) => (
-            <Card key={lesson.id} className="shadow-soft">
+            <Card key={lesson.id} className="transition-all hover:-translate-y-0.5 hover:shadow-card">
               <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <div className="flex min-w-0 items-start gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <FileText className="h-5 w-5" aria-hidden="true" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-base font-semibold text-foreground">{lesson.title}</h2>
                       <Badge variant="secondary">
@@ -118,7 +125,7 @@ export function StudentLessonsView() {
                     ) : null}
                   </div>
                 </div>
-                <Button asChild>
+                <Button asChild className="w-full sm:w-auto">
                   <Link href={`/lessons/${lesson.id}`}>Open lesson</Link>
                 </Button>
               </CardContent>

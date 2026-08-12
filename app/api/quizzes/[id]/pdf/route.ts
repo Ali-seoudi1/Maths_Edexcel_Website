@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { getQuizPdfBuffer } from "@/features/quizzes/services/server-quiz-service";
+import {
+  getQuizPdfBuffer,
+  getStudentQuizAttempt,
+} from "@/features/quizzes/services/server-quiz-service";
 import {
   adminSdkUnavailableResponse,
   errorResponse,
@@ -21,8 +24,14 @@ export async function GET(request: Request, context: RouteContext) {
   }
 
   try {
-    await requireActiveUser(request);
+    const user = await requireActiveUser(request);
     const { id } = await context.params;
+    const attempt = await getStudentQuizAttempt(id, user.uid);
+
+    if (!attempt) {
+      return NextResponse.json({ error: "Open the quiz before viewing its PDFs." }, { status: 403 });
+    }
+
     const pdfId = new URL(request.url).searchParams.get("pdfId");
     const pdf = await getQuizPdfBuffer(id, pdfId);
 

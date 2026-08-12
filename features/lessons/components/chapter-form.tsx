@@ -35,7 +35,7 @@ export function ChapterForm({ defaultValues, submitLabel, onSubmit }: ChapterFor
       <div className="grid gap-5 sm:grid-cols-[1fr_160px]">
         <div className="space-y-2">
           <label htmlFor="name" className="text-sm font-medium text-foreground">
-            Chapter Name
+            Topic Name
           </label>
           <Input id="name" disabled={isSubmitting} {...register("name")} />
           {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}

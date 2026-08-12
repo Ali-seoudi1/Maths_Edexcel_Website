@@ -4,6 +4,7 @@ import { getFirebaseAdminDb, getFirebaseAdminStorageBucket } from "@/lib/firebas
 
 import type {
   Quiz,
+  QuizAttempt,
   QuizFormValues,
   QuizGradeValues,
   QuizStatus,
@@ -12,6 +13,7 @@ import type {
 
 export const quizzesCollection = "quizzes";
 export const quizSubmissionsCollection = "quizSubmissions";
+export const quizAttemptsCollection = "quizAttempts";
 export const quizPdfFolder = "quiz-pdfs";
 export const quizSubmissionFolder = "quiz-submissions";
 
@@ -141,6 +143,67 @@ function toQuizSubmission(id: string, data: FirebaseFirestore.DocumentData): Qui
   };
 }
 
+function toQuizAttempt(id: string, data: FirebaseFirestore.DocumentData): QuizAttempt {
+  return {
+    id,
+    quizId: typeof data.quizId === "string" ? data.quizId : "",
+    studentId: typeof data.studentId === "string" ? data.studentId : "",
+    studentName: typeof data.studentName === "string" ? data.studentName : "Student",
+    openedAt: normalizeTimestamp(data.openedAt),
+    updatedAt: normalizeTimestamp(data.updatedAt),
+  };
+}
+
+async function hydrateSubmissionStudentNames(submissions: QuizSubmission[]) {
+  const submissionsNeedingNames = submissions.filter(
+    (submission) => !submission.studentName || submission.studentName === "Student",
+  );
+
+  if (submissionsNeedingNames.length === 0) {
+    return submissions;
+  }
+
+  const db = getFirebaseAdminDb();
+  const studentIds = Array.from(new Set(submissionsNeedingNames.map((submission) => submission.studentId)));
+  const studentSnapshots = await db.getAll(...studentIds.map((studentId) => db.collection("users").doc(studentId)));
+  const studentNames = new Map(
+    studentSnapshots.map((snapshot) => {
+      const data = snapshot.data();
+      const fullName = typeof data?.fullName === "string" ? data.fullName : "";
+
+      return [snapshot.id, fullName];
+    }),
+  );
+
+  return submissions.map((submission) => {
+    const fullName = studentNames.get(submission.studentId);
+
+    if (!fullName) {
+      return submission;
+    }
+
+    return {
+      ...submission,
+      studentName: fullName,
+    };
+  });
+}
+
+async function listStudentProfiles() {
+  const snapshot = await getFirebaseAdminDb().collection("users").where("role", "==", "student").get();
+
+  return snapshot.docs
+    .map((studentDoc) => {
+      const data = studentDoc.data();
+
+      return {
+        id: studentDoc.id,
+        fullName: typeof data.fullName === "string" && data.fullName.trim() ? data.fullName : "Student",
+      };
+    })
+    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+}
+
 function getSubmissionDocumentId(quizId: string, studentId: string) {
   return `${quizId}_${studentId}`;
 }
@@ -226,6 +289,11 @@ export async function updateQuiz(
   }
 
   const existing = toQuiz(snapshot.id, snapshot.data() ?? {});
+
+  if (existing.published || existing.status === "closed") {
+    throw new Error("Published quizzes cannot be edited.");
+  }
+
   const nextPdfs = await Promise.all(pdfFiles.map((file) => uploadPdf(file, quizPdfFolder)));
   const removedPdfIdSet = new Set(removedPdfIds);
   const retainedPdfs = existing.pdfs.filter((pdf) => !removedPdfIdSet.has(pdf.id));
@@ -282,6 +350,10 @@ export async function deleteQuiz(id: string) {
     .collection(quizSubmissionsCollection)
     .where("quizId", "==", id)
     .get();
+  const attempts = await getFirebaseAdminDb()
+    .collection(quizAttemptsCollection)
+    .where("quizId", "==", id)
+    .get();
 
   await Promise.all(
     submissions.docs.map(async (doc) => {
@@ -290,6 +362,7 @@ export async function deleteQuiz(id: string) {
       await deleteStorageFile(submission.pdfPath);
     }),
   );
+  await Promise.all(attempts.docs.map((doc) => doc.ref.delete()));
 
   return { deletedQuizId: id };
 }
@@ -305,6 +378,35 @@ export async function getStudentQuizSubmission(quizId: string, studentId: string
   return toQuizSubmission(snapshot.id, snapshot.data() ?? {});
 }
 
+export async function listStudentQuizSubmissions(studentId: string) {
+  const snapshot = await getFirebaseAdminDb()
+    .collection(quizSubmissionsCollection)
+    .where("studentId", "==", studentId)
+    .get();
+
+  return snapshot.docs.map((documentSnapshot) => toQuizSubmission(documentSnapshot.id, documentSnapshot.data()));
+}
+
+export async function getStudentQuizAttempt(quizId: string, studentId: string) {
+  const snapshot = await getFirebaseAdminDb()
+    .collection(quizAttemptsCollection)
+    .doc(getSubmissionDocumentId(quizId, studentId))
+    .get();
+
+  if (!snapshot.exists) return null;
+
+  return toQuizAttempt(snapshot.id, snapshot.data() ?? {});
+}
+
+export async function listStudentQuizAttempts(studentId: string) {
+  const snapshot = await getFirebaseAdminDb()
+    .collection(quizAttemptsCollection)
+    .where("studentId", "==", studentId)
+    .get();
+
+  return snapshot.docs.map((documentSnapshot) => toQuizAttempt(documentSnapshot.id, documentSnapshot.data()));
+}
+
 export async function startQuiz(quizId: string, studentId: string, studentName: string) {
   const quiz = await getQuizById(quizId, { publishedOnly: true });
 
@@ -316,7 +418,7 @@ export async function startQuiz(quizId: string, studentId: string, studentName: 
     throw new Error("This quiz is closed.");
   }
 
-  const ref = getFirebaseAdminDb().collection("quizAttempts").doc(getSubmissionDocumentId(quizId, studentId));
+  const ref = getFirebaseAdminDb().collection(quizAttemptsCollection).doc(getSubmissionDocumentId(quizId, studentId));
   await ref.set(
     {
       quizId,
@@ -327,8 +429,13 @@ export async function startQuiz(quizId: string, studentId: string, studentName: 
     },
     { merge: true },
   );
+  const attemptSnapshot = await ref.get();
 
-  return { quiz, serverNow: getServerNowIso() };
+  return {
+    quiz,
+    attempt: toQuizAttempt(attemptSnapshot.id, attemptSnapshot.data() ?? {}),
+    serverNow: getServerNowIso(),
+  };
 }
 
 export async function submitQuizPdf(
@@ -341,6 +448,16 @@ export async function submitQuizPdf(
 
   if (!quiz) {
     throw new Error("Quiz was not found.");
+  }
+
+  const attempt = await getStudentQuizAttempt(quizId, studentId);
+
+  if (!attempt) {
+    throw new Error(
+      quiz.status === "closed"
+        ? "This quiz is closed and cannot be opened."
+        : "Open the quiz before submitting your answer.",
+    );
   }
 
   const deadline = getTimestamp(quiz.expiresAt);
@@ -400,13 +517,44 @@ export async function listQuizSubmissions(quizId: string) {
     .where("quizId", "==", quizId)
     .get();
 
-  return snapshot.docs
+  const submissions = await hydrateSubmissionStudentNames(snapshot.docs
     .map((documentSnapshot) => toQuizSubmission(documentSnapshot.id, documentSnapshot.data()))
     .sort((a, b) => {
       const aTime = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
       const bTime = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
       return bTime - aTime;
-    });
+    }));
+
+  if (quiz.status !== "closed") {
+    return submissions;
+  }
+
+  const submittedStudentIds = new Set(submissions.map((submission) => submission.studentId));
+  const missingRows = (await listStudentProfiles())
+    .filter((student) => !submittedStudentIds.has(student.id))
+    .map((student): QuizSubmission => ({
+      id: getSubmissionDocumentId(quizId, student.id),
+      quizId,
+      studentId: student.id,
+      studentName: student.fullName,
+      noSubmission: true,
+      pdfPath: "",
+      pdfFileName: "",
+      submittedAt: null,
+      late: false,
+      lateBySeconds: 0,
+      status: "submitted",
+      finalized: false,
+      graded: false,
+      gradedAt: null,
+      gradedBy: "",
+      score: null,
+      feedback: "",
+      createdAt: null,
+      updatedAt: null,
+    }));
+
+  return [...submissions, ...missingRows];
 }
 
 export async function gradeQuizSubmission(
@@ -440,7 +588,11 @@ export async function gradeQuizSubmission(
 
   const updated = await ref.get();
 
-  return toQuizSubmission(updated.id, updated.data() ?? {});
+  const [submission] = await hydrateSubmissionStudentNames([
+    toQuizSubmission(updated.id, updated.data() ?? {}),
+  ]);
+
+  return submission;
 }
 
 export async function getQuizPdfBuffer(id: string, pdfId?: string | null) {

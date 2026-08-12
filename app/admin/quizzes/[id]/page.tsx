@@ -11,7 +11,7 @@ type AdminQuizPageProps = {
 
 export const metadata: Metadata = {
   title: "Quiz details",
-  description: "Manage a PDF quiz and review submissions.",
+  description: "View quiz submissions.",
 };
 
 export default async function AdminQuizPage({ params }: AdminQuizPageProps) {
@@ -21,7 +21,7 @@ export default async function AdminQuizPage({ params }: AdminQuizPageProps) {
     <>
       <AdminPageHeader
         title="Quiz details"
-        description="Edit the quiz, publish the timer, and grade submitted PDFs."
+        description="View student submissions and grade submitted PDFs."
         breadcrumbs={[
           { label: "Admin", href: "/admin" },
           { label: "Quizzes", href: "/admin/quizzes" },

@@ -4,6 +4,7 @@ import { FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/shared/empty-state";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -58,7 +59,12 @@ export function StudentLessonDetailView({ lessonId }: { lessonId: string }) {
   }, [authToken, lessonId, selectedPdfId]);
 
   if (loading) {
-    return <Skeleton className="h-[75vh]" />;
+    return (
+      <div className="space-y-5">
+        <Skeleton className="h-40 rounded-2xl" />
+        <Skeleton className="h-[70vh] rounded-2xl" />
+      </div>
+    );
   }
 
   if (!lesson) {
@@ -73,38 +79,44 @@ export function StudentLessonDetailView({ lessonId }: { lessonId: string }) {
 
   return (
     <div className="space-y-5">
-      <Card className="shadow-soft">
-        <CardContent className="p-5">
-          <p className="text-sm font-medium text-muted-foreground">{lesson.chapterName}</p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-normal text-foreground">
-            {lesson.title}
-          </h1>
-          {lesson.description ? (
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">{lesson.description}</p>
+      <PageHeader
+        eyebrow={lesson.chapterName}
+        title={lesson.title}
+        description={lesson.description || "Open the available PDF resources for this lesson inside the platform."}
+      />
+      <Card>
+        <CardContent className="space-y-4 p-4 sm:p-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-foreground">Lesson resources</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {lesson.pdfs.length} PDF{lesson.pdfs.length === 1 ? "" : "s"} available to view.
+              </p>
+            </div>
+            {lesson.pdfs.length > 1 ? (
+              <div className="flex flex-wrap gap-2">
+                {lesson.pdfs.map((pdf) => (
+                  <Button
+                    key={pdf.id}
+                    type="button"
+                    variant={selectedPdfId === pdf.id ? "default" : "outline"}
+                    onClick={() => setSelectedPdfId(pdf.id)}
+                  >
+                    <FileText className="h-4 w-4" aria-hidden="true" />
+                    {pdf.fileName}
+                  </Button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          {pdfSrc ? (
+            <PdfViewer
+              src={pdfSrc}
+              title={lesson.pdfs.find((pdf) => pdf.id === selectedPdfId)?.fileName ?? lesson.title}
+            />
           ) : null}
         </CardContent>
       </Card>
-      {lesson.pdfs.length > 1 ? (
-        <div className="flex flex-wrap gap-2">
-          {lesson.pdfs.map((pdf) => (
-            <Button
-              key={pdf.id}
-              type="button"
-              variant={selectedPdfId === pdf.id ? "default" : "outline"}
-              onClick={() => setSelectedPdfId(pdf.id)}
-            >
-              <FileText className="h-4 w-4" aria-hidden="true" />
-              {pdf.fileName}
-            </Button>
-          ))}
-        </div>
-      ) : null}
-      {pdfSrc ? (
-        <PdfViewer
-          src={pdfSrc}
-          title={lesson.pdfs.find((pdf) => pdf.id === selectedPdfId)?.fileName ?? lesson.title}
-        />
-      ) : null}
     </div>
   );
 }

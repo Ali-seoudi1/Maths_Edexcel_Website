@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, LogOut, Menu, Search } from "lucide-react";
+import { Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth";
@@ -10,7 +10,7 @@ type TopBarProps = {
 };
 
 export function TopBar({ onMenuClick }: TopBarProps) {
-  const { profile, signOut } = useAuth();
+  const { profile } = useAuth();
   const initials =
     profile?.fullName
       .split(" ")
@@ -34,26 +34,6 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         </Button>
 
         <div className="ml-auto flex items-center gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="h-11 w-11 rounded-xl bg-card shadow-soft"
-            aria-label="Search"
-          >
-            <Search className="h-5 w-5" aria-hidden="true" />
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="h-11 w-11 rounded-xl bg-card shadow-soft"
-            aria-label="Sign out"
-            onClick={() => void signOut()}
-          >
-            <LogOut className="h-5 w-5" aria-hidden="true" />
-          </Button>
           <button
             type="button"
             className="flex h-11 w-11 items-center justify-center rounded-xl bg-warning-soft text-sm font-bold text-amber-700 shadow-soft"

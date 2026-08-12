@@ -1,13 +1,12 @@
 import {
-  BarChart3,
   Archive,
+  BarChart3,
   BookOpen,
   ClipboardCheck,
   FileQuestion,
   LayoutDashboard,
   Megaphone,
   PenSquare,
-  UserRound,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -15,6 +14,7 @@ export type DashboardNavItem = {
   title: string;
   href: string;
   icon: LucideIcon;
+  locked?: boolean;
 };
 
 export const dashboardNavigation: DashboardNavItem[] = [
@@ -37,6 +37,7 @@ export const dashboardNavigation: DashboardNavItem[] = [
     title: "Model Answers",
     href: "/model-answers",
     icon: FileQuestion,
+    locked: true,
   },
   {
     title: "Assignments",
@@ -49,18 +50,13 @@ export const dashboardNavigation: DashboardNavItem[] = [
     icon: ClipboardCheck,
   },
   {
-    title: "Reports",
-    href: "/reports",
-    icon: BarChart3,
-  },
-  {
     title: "Announcements",
     href: "/announcements",
     icon: Megaphone,
   },
   {
-    title: "Profile",
-    href: "/profile",
-    icon: UserRound,
+    title: "Reports",
+    href: "/reports",
+    icon: BarChart3,
   },
 ];

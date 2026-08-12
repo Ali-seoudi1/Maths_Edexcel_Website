@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { listQuizzes } from "@/features/quizzes/services/server-quiz-service";
+import {
+  listQuizzes,
+  listStudentQuizAttempts,
+  listStudentQuizSubmissions,
+} from "@/features/quizzes/services/server-quiz-service";
 import {
   adminSdkUnavailableResponse,
   errorResponse,
@@ -15,10 +19,14 @@ export async function GET(request: Request) {
   }
 
   try {
-    await requireActiveUser(request);
+    const user = await requireActiveUser(request);
     const quizzes = await listQuizzes({ publishedOnly: true });
+    const [submissions, attempts] = await Promise.all([
+      listStudentQuizSubmissions(user.uid),
+      listStudentQuizAttempts(user.uid),
+    ]);
 
-    return NextResponse.json({ quizzes });
+    return NextResponse.json({ quizzes, submissions, attempts });
   } catch (error) {
     console.error("[quiz] failed to list student quizzes", error);
     return errorResponse(error, "Quiz request failed.");

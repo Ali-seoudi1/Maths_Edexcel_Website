@@ -26,7 +26,7 @@ export function AdminChapterFormView({ chapter }: AdminChapterFormViewProps) {
         await createAdminChapter(values);
       }
 
-      toast({ title: chapter ? "Chapter updated" : "Chapter created", variant: "success" });
+      toast({ title: chapter ? "Topic updated" : "Topic created", variant: "success" });
       router.push("/admin/chapters");
     } catch (error) {
       toast({
@@ -40,7 +40,7 @@ export function AdminChapterFormView({ chapter }: AdminChapterFormViewProps) {
   return (
     <Card className="max-w-3xl shadow-soft">
       <CardHeader>
-        <CardTitle>Chapter details</CardTitle>
+        <CardTitle>Topic details</CardTitle>
       </CardHeader>
       <CardContent>
         <ChapterForm
@@ -54,7 +54,7 @@ export function AdminChapterFormView({ chapter }: AdminChapterFormViewProps) {
                 }
               : undefined
           }
-          submitLabel={chapter ? "Save chapter" : "Create chapter"}
+          submitLabel={chapter ? "Save topic" : "Create topic"}
           onSubmit={handleSubmit}
         />
       </CardContent>

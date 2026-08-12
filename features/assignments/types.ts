@@ -22,6 +22,7 @@ export type AssignmentSubmission = {
   assignmentId: string;
   studentId: string;
   studentName: string;
+  noSubmission?: boolean;
   submittedAt: string | null;
   pdfs: AssignmentPdf[];
   pdfUrl: string;

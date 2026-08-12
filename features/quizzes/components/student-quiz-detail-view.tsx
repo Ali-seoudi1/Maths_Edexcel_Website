@@ -1,9 +1,11 @@
 "use client";
 
 import { Clock3, FileQuestion, Loader2, UploadCloud } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 
 import { EmptyState } from "@/components/shared/empty-state";
+import { ScoreDisplay } from "@/components/shared/score-display";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,7 +20,7 @@ import {
   startQuiz,
   submitQuizPdf,
 } from "../services/quiz-service";
-import type { Quiz, QuizSubmission } from "../types";
+import type { Quiz, QuizAttempt, QuizSubmission } from "../types";
 import { QuizPdfViewer } from "./quiz-pdf-viewer";
 
 function formatTimeLeft(totalSeconds: number) {
@@ -56,8 +58,10 @@ function formatLateBy(seconds: number) {
 }
 
 export function StudentQuizDetailView({ quizId }: { quizId: string }) {
+  const router = useRouter();
   const { toast } = useToast();
   const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [attempt, setAttempt] = useState<QuizAttempt | null>(null);
   const [submission, setSubmission] = useState<QuizSubmission | null>(null);
   const [selectedPdfId, setSelectedPdfId] = useState("");
   const [pdfSrc, setPdfSrc] = useState("");
@@ -74,10 +78,12 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
       .then(async ([quizResult, submissionResult]) => {
         if (!mounted) return;
 
-        const firstPdfId = quizResult.quiz.pdfs[0]?.id ?? "";
+        const canRestoreQuizAccess = Boolean(submissionResult.attempt);
+        const firstPdfId = canRestoreQuizAccess ? quizResult.quiz.pdfs[0]?.id ?? "" : "";
         const protectedPdfSrc = firstPdfId ? await getProtectedQuizPdfSrc(quizId, firstPdfId) : "";
 
         setQuiz(quizResult.quiz);
+        setAttempt(submissionResult.attempt);
         setSubmission(submissionResult.submission);
         setSelectedPdfId(firstPdfId);
         setPdfSrc(protectedPdfSrc);
@@ -113,13 +119,32 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
   }, [now, quiz?.expiresAt, serverOffset]);
 
   const isClosed = remainingSeconds === 0 || quiz?.status === "closed";
+  const hasOpenedQuiz = Boolean(attempt);
+  const canOpenQuiz = Boolean(quiz) && !isClosed && !hasOpenedQuiz;
+  const canViewQuiz = hasOpenedQuiz;
+  const canSubmitQuiz = canViewQuiz && !submission;
 
   async function handleStart() {
     if (!quiz) return;
 
+    if (!canOpenQuiz) {
+      toast({
+        title: "Quiz is closed",
+        description: "This quiz can no longer be opened.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const result = await startQuiz(quiz.id);
+      const firstPdfId = result.quiz.pdfs[0]?.id ?? "";
+      const protectedPdfSrc = firstPdfId ? await getProtectedQuizPdfSrc(quiz.id, firstPdfId) : "";
+
       setQuiz(result.quiz);
+      setAttempt(result.attempt);
+      setSelectedPdfId(firstPdfId);
+      setPdfSrc(protectedPdfSrc);
       setServerOffset(new Date(result.serverNow).getTime() - Date.now());
       toast({ title: "Quiz opened", description: "Use the global deadline shown on this page.", variant: "success" });
     } catch (error) {
@@ -132,12 +157,23 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
   }
 
   async function handleSelectPdf(pdfId: string) {
+    if (!canViewQuiz) return;
+
     setSelectedPdfId(pdfId);
     setPdfSrc(await getProtectedQuizPdfSrc(quizId, pdfId));
   }
 
   async function handleSubmit() {
     if (!quiz || !answerFile || isSubmitting) return;
+
+    if (!canSubmitQuiz) {
+      toast({
+        title: "Quiz submission unavailable",
+        description: "Open the quiz before submitting your answer.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       setIsSubmitting(true);
@@ -149,6 +185,7 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
         description: result.submission.late ? `Marked late by ${formatLateBy(result.submission.lateBySeconds)}.` : "Submitted on time.",
         variant: "success",
       });
+      router.push("/quizzes");
     } catch (error) {
       toast({
         title: "Could not submit quiz",
@@ -161,7 +198,12 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
   }
 
   if (loading) {
-    return <Skeleton className="h-[75vh]" />;
+    return (
+      <div className="space-y-5">
+        <Skeleton className="h-56 rounded-2xl" />
+        <Skeleton className="h-[60vh] rounded-2xl" />
+      </div>
+    );
   }
 
   if (!quiz) {
@@ -176,10 +218,10 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
 
   return (
     <div className="space-y-5">
-      <Card className="shadow-soft">
-        <CardContent className="space-y-5 p-5">
+      <Card>
+        <CardContent className="space-y-5 p-5 sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-2">
+            <div className="min-w-0 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-semibold tracking-normal text-foreground">{quiz.title}</h1>
                 <Badge variant={isClosed ? "outline" : "secondary"}>{isClosed ? "Closed" : "Active"}</Badge>
@@ -188,24 +230,28 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
                 <p className="max-w-3xl text-sm leading-6 text-muted-foreground">{quiz.description}</p>
               ) : null}
             </div>
-            <Button type="button" variant="outline" onClick={() => void handleStart()} disabled={isClosed}>
-              Open quiz
-            </Button>
+            {hasOpenedQuiz ? (
+              <Badge variant="secondary">Opened</Badge>
+            ) : (
+              <Button type="button" variant="outline" onClick={() => void handleStart()} disabled={!canOpenQuiz}>
+                Open quiz
+              </Button>
+            )}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border bg-secondary/30 p-4">
+            <div className="rounded-xl border bg-secondary/30 p-4">
               <p className="text-xs font-medium uppercase text-muted-foreground">Time remaining</p>
               <p className="mt-2 flex items-center gap-2 text-2xl font-semibold text-foreground">
                 <Clock3 className="h-5 w-5" aria-hidden="true" />
                 {remainingSeconds === null ? "--:--" : formatTimeLeft(remainingSeconds)}
               </p>
             </div>
-            <div className="rounded-lg border bg-secondary/30 p-4">
+            <div className="rounded-xl border bg-secondary/30 p-4">
               <p className="text-xs font-medium uppercase text-muted-foreground">Deadline</p>
               <p className="mt-2 text-sm font-semibold text-foreground">{formatDate(quiz.expiresAt)}</p>
             </div>
-            <div className="rounded-lg border bg-secondary/30 p-4">
+            <div className="rounded-xl border bg-secondary/30 p-4">
               <p className="text-xs font-medium uppercase text-muted-foreground">Submission</p>
               <p className="mt-2 text-sm font-semibold text-foreground">
                 {submission?.submittedAt ? `Submitted ${formatDate(submission.submittedAt)}` : "Not submitted"}
@@ -213,10 +259,17 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
             </div>
           </div>
 
-          {isClosed ? (
+          {isClosed && hasOpenedQuiz && !submission ? (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
               <p className="font-semibold">Quiz closed</p>
-              <p>This quiz deadline has passed. Late answer PDFs can still be submitted and will be marked late.</p>
+              <p>You opened this quiz before the deadline, so a late PDF submission is still allowed.</p>
+            </div>
+          ) : null}
+
+          {isClosed && !hasOpenedQuiz ? (
+            <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
+              <p className="font-semibold">Quiz closed</p>
+              <p>This quiz deadline has passed and it can no longer be opened.</p>
             </div>
           ) : null}
 
@@ -232,18 +285,15 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
                 {submission.late ? `, ${formatLateBy(submission.lateBySeconds)}` : "."}
               </p>
               {submission.graded ? (
-                <p className="mt-2 text-sm font-medium text-foreground">
-                  Score: {submission.score ?? 0}/100
-                  {submission.feedback ? ` - ${submission.feedback}` : ""}
-                </p>
+                <ScoreDisplay className="mt-4" score={submission.score ?? 0} feedback={submission.feedback} />
               ) : null}
             </div>
           ) : null}
         </CardContent>
       </Card>
 
-      {quiz.pdfs.length > 0 ? (
-        <Card className="shadow-soft">
+      {canViewQuiz && quiz.pdfs.length > 0 ? (
+        <Card>
           <CardContent className="space-y-4 p-4">
             {quiz.pdfs.length > 1 ? (
               <div className="flex flex-wrap gap-2">
@@ -270,35 +320,37 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
         </Card>
       ) : null}
 
-      <Card className="shadow-soft">
-        <CardContent className="space-y-4 p-5">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">Your answer</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Upload one PDF containing your completed work.</p>
-          </div>
-          <div className="flex flex-col gap-3 md:flex-row md:items-center">
-            <Input
-              type="file"
-              accept="application/pdf"
-              onChange={(event: ChangeEvent<HTMLInputElement>) => setAnswerFile(event.target.files?.[0] ?? null)}
-              disabled={isSubmitting}
-            />
-            <Button type="button" onClick={() => void handleSubmit()} disabled={!answerFile || isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <UploadCloud className="h-4 w-4" aria-hidden="true" />
-                  Submit quiz
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {canSubmitQuiz ? (
+        <Card>
+          <CardContent className="space-y-4 p-5">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Your answer</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Upload one PDF containing your completed work.</p>
+            </div>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+              <Input
+                type="file"
+                accept="application/pdf"
+                onChange={(event: ChangeEvent<HTMLInputElement>) => setAnswerFile(event.target.files?.[0] ?? null)}
+                disabled={isSubmitting}
+              />
+              <Button type="button" className="w-full md:w-auto" onClick={() => void handleSubmit()} disabled={!answerFile || isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="h-4 w-4" aria-hidden="true" />
+                    Submit quiz
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

@@ -1,13 +1,13 @@
 "use client";
 
-import { FileText, Loader2 } from "lucide-react";
-import { useEffect, useState, type ChangeEvent } from "react";
+import { FileText } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/shared/empty-state";
+import { SubmissionGradePanel } from "@/components/shared/submission-grade-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 import { getFirebaseAuth } from "@/lib/firebase/client";
@@ -38,6 +38,7 @@ export function AdminAssignmentDetailView({ assignmentId }: { assignmentId: stri
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, { grade: string; feedback: string }>>({});
+  const [editingSubmissionIds, setEditingSubmissionIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     void Promise.all([getAdminAssignment(assignmentId), listAssignmentSubmissions(assignmentId)])
@@ -53,6 +54,13 @@ export function AdminAssignmentDetailView({ assignmentId }: { assignmentId: stri
                 feedback: submission.feedback ?? "",
               },
             ]),
+          ),
+        );
+        setEditingSubmissionIds(
+          new Set(
+            submissionsResult.submissions
+              .filter((submission) => !submission.noSubmission && typeof submission.grade !== "number")
+              .map((submission) => submission.id),
           ),
         );
       })
@@ -100,6 +108,18 @@ export function AdminAssignmentDetailView({ assignmentId }: { assignmentId: stri
           submission.id === submissionId ? result.submission : submission,
         ),
       );
+      setDrafts((current) => ({
+        ...current,
+        [submissionId]: {
+          grade: result.submission.grade === null ? "" : String(result.submission.grade),
+          feedback: result.submission.feedback ?? "",
+        },
+      }));
+      setEditingSubmissionIds((current) => {
+        const next = new Set(current);
+        next.delete(submissionId);
+        return next;
+      });
       toast({
         title: "Grade saved",
         description: "The student can now see their grade and feedback.",
@@ -161,6 +181,7 @@ export function AdminAssignmentDetailView({ assignmentId }: { assignmentId: stri
         ) : (
           submissions.map((submission) => {
             const draft = drafts[submission.id] ?? { grade: "", feedback: "" };
+            const isEditingGrade = editingSubmissionIds.has(submission.id);
 
             return (
               <Card key={submission.id} className="shadow-soft">
@@ -173,15 +194,20 @@ export function AdminAssignmentDetailView({ assignmentId }: { assignmentId: stri
                         </p>
                         {submission.isLate ? (
                           <Badge variant="destructive">Late</Badge>
+                        ) : submission.noSubmission ? (
+                          <Badge variant="outline">No submission</Badge>
                         ) : (
                           <Badge variant="secondary">On time</Badge>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Submitted {formatDate(submission.submittedAt)}
+                        {submission.noSubmission
+                          ? "No PDF has been submitted."
+                          : `Submitted ${formatDate(submission.submittedAt)}`}
                       </p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    {!submission.noSubmission ? (
+                      <div className="flex flex-wrap gap-2">
                       {submission.pdfs.map((pdf) => (
                         <Button
                           key={pdf.id}
@@ -206,64 +232,44 @@ export function AdminAssignmentDetailView({ assignmentId }: { assignmentId: stri
                           {pdf.fileName}
                         </Button>
                       ))}
-                    </div>
+                      </div>
+                    ) : null}
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-[140px_1fr] md:items-start">
-                    <label className="text-sm font-medium text-foreground">Grade</label>
-                    <Input
-                      type="number"
-                      min={0}
+                  {!submission.noSubmission ? (
+                    <SubmissionGradePanel
+                      editing={isEditingGrade}
+                      feedback={draft.feedback}
                       max={100}
-                      value={draft.grade}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                      saving={savingId === submission.id}
+                      scoreLabel="Grade"
+                      scorePlaceholder="0-100"
+                      scoreSummaryLabel="Grade"
+                      scoreValue={draft.grade}
+                      onEdit={() =>
+                        setEditingSubmissionIds((current) => new Set(current).add(submission.id))
+                      }
+                      onFeedbackChange={(value) =>
                         setDrafts((current) => ({
                           ...current,
                           [submission.id]: {
                             ...(current[submission.id] ?? { grade: "", feedback: "" }),
-                            grade: event.target.value,
+                            feedback: value,
                           },
                         }))
                       }
-                      placeholder="0-100"
-                    />
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-[140px_1fr] md:items-start">
-                    <label className="text-sm font-medium text-foreground">Feedback</label>
-                    <textarea
-                      value={draft.feedback}
-                      onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
+                      onSave={() => void handleSave(submission.id)}
+                      onScoreChange={(value) =>
                         setDrafts((current) => ({
                           ...current,
                           [submission.id]: {
                             ...(current[submission.id] ?? { grade: "", feedback: "" }),
-                            feedback: event.target.value,
+                            grade: value,
                           },
                         }))
                       }
-                      placeholder="Add feedback for the student"
-                      rows={4}
-                      className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
-                  </div>
-
-                  <div className="flex justify-end">
-                    <Button
-                      type="button"
-                      onClick={() => void handleSave(submission.id)}
-                      disabled={savingId === submission.id}
-                    >
-                      {savingId === submission.id ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                          Saving...
-                        </>
-                      ) : (
-                        "Save grade"
-                      )}
-                    </Button>
-                  </div>
+                  ) : null}
                 </CardContent>
               </Card>
             );

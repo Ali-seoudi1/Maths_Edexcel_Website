@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock3, FileQuestion, Loader2, Trash2 } from "lucide-react";
+import { Clock3, Eye, FileQuestion, Loader2, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -132,8 +132,24 @@ export function AdminQuizListView() {
                   <TableCell>
                     <div className="flex justify-end gap-2">
                       <Button asChild variant="outline" size="sm">
-                        <Link href={`/admin/quizzes/${quiz.id}`}>View</Link>
+                        <Link href={`/admin/quizzes/${quiz.id}`}>
+                          <Eye className="h-4 w-4" aria-hidden="true" />
+                          View
+                        </Link>
                       </Button>
+                      {quiz.published || quiz.status === "closed" ? (
+                        <Button type="button" variant="outline" size="sm" disabled>
+                          <Pencil className="h-4 w-4" aria-hidden="true" />
+                          Edit
+                        </Button>
+                      ) : (
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={`/admin/quizzes/${quiz.id}/edit`}>
+                            <Pencil className="h-4 w-4" aria-hidden="true" />
+                            Edit
+                          </Link>
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         variant="outline"

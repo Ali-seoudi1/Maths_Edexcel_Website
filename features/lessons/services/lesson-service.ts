@@ -5,6 +5,8 @@ import { getFirebaseAuth } from "@/lib/firebase/client";
 import type { ChapterFormValues, LessonFormValues } from "../schemas";
 import type { Chapter, Lesson } from "../types";
 
+let publishedLessonCatalogRequest: Promise<{ chapters: Chapter[]; lessons: Lesson[] }> | null = null;
+
 async function getIdToken() {
   const user = getFirebaseAuth().currentUser;
 
@@ -152,6 +154,18 @@ export async function deleteAdminLesson(id: string) {
 
 export async function listPublishedChapters() {
   return requestJson<{ chapters: Chapter[] }>("/api/chapters");
+}
+
+export async function listPublishedLessonCatalog() {
+  if (!publishedLessonCatalogRequest) {
+    publishedLessonCatalogRequest = requestJson<{ chapters: Chapter[]; lessons: Lesson[] }>(
+      "/api/lessons/catalog",
+    ).finally(() => {
+      publishedLessonCatalogRequest = null;
+    });
+  }
+
+  return publishedLessonCatalogRequest;
 }
 
 export async function listPublishedLessons(chapterId?: string) {

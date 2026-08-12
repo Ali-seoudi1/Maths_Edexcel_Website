@@ -13,7 +13,7 @@ export default function NewLessonPage() {
     <>
       <AdminPageHeader
         title="New lesson"
-        description="Upload a PDF lesson note and connect it to a chapter."
+        description="Upload a PDF lesson note and connect it to a topic."
         breadcrumbs={[
           { label: "Admin", href: "/admin" },
           { label: "Lessons", href: "/admin/lessons" },

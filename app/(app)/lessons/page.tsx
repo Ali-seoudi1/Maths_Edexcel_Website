@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { ToastProvider } from "@/components/ui/toast";
-import { PageTitle } from "@/components/dashboard";
+import { PageHeader } from "@/components/shared";
 import { StudentLessonsView } from "@/features/lessons/components/student-lessons-view";
 
 export const metadata: Metadata = {
@@ -12,8 +12,12 @@ export const metadata: Metadata = {
 export default function LessonsPage() {
   return (
     <ToastProvider>
-      <div className="space-y-8">
-        <PageTitle eyebrow="PDF Lessons" title="Lessons" />
+      <div className="space-y-7">
+        <PageHeader
+          eyebrow="PDF Lessons"
+          title="Lessons"
+          description="Choose a topic, then open the lesson PDFs and solved examples inside the platform."
+        />
         <StudentLessonsView />
       </div>
     </ToastProvider>

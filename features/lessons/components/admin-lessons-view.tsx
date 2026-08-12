@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Plus, Search, Trash2 } from "lucide-react";
+import { Eye, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -128,7 +128,7 @@ export function AdminLessonsView() {
             onChange={(event) => void handleChapterFilter(event.target.value)}
             className="h-10 rounded-md border border-input bg-background px-3 text-sm shadow-sm"
           >
-            <option value="">All chapters</option>
+            <option value="">All topics</option>
             {chapters.map((chapter) => (
               <option key={chapter.id} value={chapter.id}>
                 {chapter.name}
@@ -136,12 +136,6 @@ export function AdminLessonsView() {
             ))}
           </select>
         </div>
-        <Button asChild>
-          <Link href="/admin/lessons/new">
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            New lesson
-          </Link>
-        </Button>
       </div>
 
       {filteredLessons.length === 0 ? (
@@ -157,7 +151,7 @@ export function AdminLessonsView() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Lesson</TableHead>
-                  <TableHead>Chapter</TableHead>
+                  <TableHead>Topic</TableHead>
                   <TableHead>Order</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>

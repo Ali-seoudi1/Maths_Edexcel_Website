@@ -101,12 +101,7 @@ export function StudentForm(props: StudentFormProps) {
           />
           Active student account
         </label>
-      ) : (
-        <div className="rounded-md border bg-secondary/60 p-4 text-sm leading-6 text-muted-foreground">
-          New accounts are created with role{" "}
-          <span className="font-semibold text-foreground">student</span> and active status enabled.
-        </div>
-      )}
+      ) : null}
 
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? (

@@ -1,193 +1,103 @@
-import { Play } from "lucide-react";
+import { ArrowRight, BookOpen, ClipboardList, FileQuestion, Library, Lock, Search } from "lucide-react";
 import Link from "next/link";
 
-import {
-  AnnouncementCard,
-  CountdownCard,
-  DashboardCard,
-  LessonCard,
-  PageTitle,
-  QuestionCard,
-  QuizResultCard,
-  SectionCard,
-} from "@/components/dashboard";
-import { Button } from "@/components/ui/button";
+import { PageHeader, SectionHeader } from "@/components/shared";
+import { Card, CardContent } from "@/components/ui/card";
 
-const lessons = [
+const studyAreas = [
   {
-    topic: "Factorization",
-    title: "Difference of Two Squares",
-    progress: 68,
+    title: "Lessons",
+    description: "Open lesson PDFs and solved examples organized by topic.",
+    href: "/lessons",
+    icon: BookOpen,
   },
   {
-    topic: "Functions",
-    title: "Composite Functions",
-    progress: 35,
+    title: "Model Answers",
+    description: "Search exam questions by year, session, paper, and question number.",
+    href: "/model-answers",
+    icon: Search,
+    locked: true,
   },
   {
-    topic: "Algebra",
-    title: "Simultaneous Equations",
-    progress: 90,
+    title: "Assignments",
+    description: "View coursework, upload PDF solutions, and check grades.",
+    href: "/assignments",
+    icon: ClipboardList,
   },
   {
-    topic: "Trigonometry",
-    title: "Sine & Cosine Rule",
-    progress: 12,
+    title: "Quizzes",
+    description: "Open active timed quizzes and review graded scores.",
+    href: "/quizzes",
+    icon: FileQuestion,
+  },
+  {
+    title: "Past Papers",
+    description: "Use past paper resources for revision practice.",
+    href: "/past-papers",
+    icon: Library,
   },
 ];
-
-const bookmarkedQuestions = [
-  {
-    title: "Circle Theorems - Q9",
-    meta: "Jun 2022 · Paper 1H",
-  },
-  {
-    title: "Vectors - Q14",
-    meta: "Nov 2021 · Paper 2H",
-  },
-  {
-    title: "Probability Trees - Q6",
-    meta: "Jun 2023 · Paper 1H",
-  },
-];
-
-const recentlyViewed = [
-  {
-    title: "Surds - Q3",
-    meta: "May 2023 · Paper 1H",
-  },
-  {
-    title: "Algebraic Fractions - Q11",
-    meta: "Jun 2022 · Paper 2H",
-  },
-  {
-    title: "Straight Line Graphs - Q8",
-    meta: "Nov 2022 · Paper 1H",
-  },
-];
-
-const announcements = [
-  {
-    title: "Paper 2H mock exam moved to Sunday",
-    timestamp: "Posted 2 hours ago",
-  },
-  {
-    title: "New model answers added for June 2024",
-    timestamp: "Posted yesterday",
-  },
-  {
-    title: "Half-term revision schedule is up",
-    timestamp: "Posted 3 days ago",
-  },
-];
-
-const quizResults = [
-  {
-    title: "Algebra Basics Quiz",
-    score: "17/20",
-    tone: "success" as const,
-  },
-  {
-    title: "Trigonometry Check",
-    score: "12/20",
-    tone: "warning" as const,
-  },
-  {
-    title: "Number Skills",
-    score: "19/20",
-    tone: "success" as const,
-  },
-];
-
-function ViewAllLink({ href = "#" }: { href?: string }) {
-  return (
-    <Link
-      href={href}
-      className="text-sm font-bold text-success transition-colors hover:text-primary"
-    >
-      View all
-    </Link>
-  );
-}
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-9">
-      <PageTitle eyebrow="Wednesday, 27 June" title="Welcome back" />
+    <div className="space-y-7">
+      <PageHeader
+        eyebrow="Student Dashboard"
+        title="Welcome back"
+        description="Choose what you want to study next. Your lessons, model answers, assignments, and quizzes are grouped into focused areas."
+      />
 
-      <section className="space-y-5" aria-labelledby="continue-watching-title">
-        <div className="flex items-center justify-between gap-4">
-          <h2
-            id="continue-watching-title"
-            className="text-xl font-bold tracking-normal text-slate-950"
-          >
-            Continue Watching
-          </h2>
-          <Link
-            href="#"
-            className="text-sm font-bold text-success transition-colors hover:text-primary"
-          >
-            View all lessons
-          </Link>
-        </div>
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {lessons.map((lesson) => (
-            <LessonCard key={lesson.title} {...lesson} />
-          ))}
-        </div>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-2">
-        <DashboardCard className="min-h-52">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            Upcoming Live Lesson
-          </p>
-          <h2 className="mt-3 text-xl font-bold text-slate-950">Quadratic Graphs - Live Review</h2>
-          <p className="mt-2 text-base font-medium text-muted-foreground">
-            Today · 6:00 PM - 7:00 PM · via Zoom
-          </p>
-          <Button type="button" className="mt-6 rounded-xl bg-success hover:bg-success/90">
-            <Play className="h-4 w-4 fill-current" aria-hidden="true" />
-            Join Zoom Link
-          </Button>
-        </DashboardCard>
-
-        <CountdownCard
-          eyebrow="Upcoming Homework"
-          title="Paper 2H Mixed Revision Set"
-          actionLabel="Submit Homework"
-          units={[
-            { value: "1", label: "Day" },
-            { value: "14", label: "Hrs" },
-            { value: "05", label: "Min" },
-          ]}
+      <section className="space-y-4">
+        <SectionHeader
+          title="Study areas"
+          description="Start with the section that matches what you need to do today."
         />
-      </section>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {studyAreas.map((area) => {
+            const Icon = area.icon;
 
-      <section className="grid gap-6 xl:grid-cols-2">
-        <SectionCard title="Bookmarked Questions" action={<ViewAllLink />}>
-          {bookmarkedQuestions.map((question) => (
-            <QuestionCard key={question.title} {...question} />
-          ))}
-        </SectionCard>
+            if (area.locked) {
+              return (
+                <Card key={area.href} className="h-full opacity-80">
+                  <CardContent className="flex h-full flex-col gap-5 p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+                        <Icon className="h-5 w-5" aria-hidden="true" />
+                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-full border bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                        <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+                        Locked
+                      </span>
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-foreground">{area.title}</h2>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{area.description}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            }
 
-        <SectionCard title="Recently Viewed" action={<ViewAllLink />}>
-          {recentlyViewed.map((question) => (
-            <QuestionCard key={question.title} {...question} variant="recent" />
-          ))}
-        </SectionCard>
-
-        <SectionCard title="Latest Announcements" action={<ViewAllLink />}>
-          {announcements.map((announcement) => (
-            <AnnouncementCard key={announcement.title} {...announcement} />
-          ))}
-        </SectionCard>
-
-        <SectionCard title="Latest Quiz Results" action={<ViewAllLink />}>
-          {quizResults.map((quizResult) => (
-            <QuizResultCard key={quizResult.title} {...quizResult} />
-          ))}
-        </SectionCard>
+            return (
+              <Link key={area.href} href={area.href} className="group focus-visible:outline-none">
+                <Card className="h-full transition-all group-hover:-translate-y-0.5 group-hover:shadow-card group-focus-visible:ring-2 group-focus-visible:ring-ring">
+                  <CardContent className="flex h-full flex-col gap-5 p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                        <Icon className="h-5 w-5" aria-hidden="true" />
+                      </div>
+                      <ArrowRight className="mt-3 h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-foreground">{area.title}</h2>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{area.description}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
       </section>
     </div>
   );

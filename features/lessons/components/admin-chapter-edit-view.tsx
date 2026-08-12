@@ -20,7 +20,7 @@ export function AdminChapterEditView({ chapterId }: { chapterId: string }) {
       .then((result) => setChapter(result.chapter))
       .catch((error) => {
         toast({
-          title: "Could not load chapter",
+          title: "Could not load topic",
           description: error instanceof Error ? error.message : "Try again in a moment.",
           variant: "destructive",
         });
@@ -33,7 +33,7 @@ export function AdminChapterEditView({ chapterId }: { chapterId: string }) {
   }
 
   if (!chapter) {
-    return <EmptyState title="Chapter not found" description="This chapter could not be loaded." />;
+    return <EmptyState title="Topic not found" description="This topic could not be loaded." />;
   }
 
   return <AdminChapterFormView chapter={chapter} />;

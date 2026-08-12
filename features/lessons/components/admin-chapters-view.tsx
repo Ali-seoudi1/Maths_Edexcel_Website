@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Plus, Search, Trash2 } from "lucide-react";
+import { Eye, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -38,7 +38,7 @@ export function AdminChaptersView() {
       setChapters(result.chapters);
     } catch (error) {
       toast({
-        title: "Could not load chapters",
+        title: "Could not load topics",
         description: error instanceof Error ? error.message : "Try again in a moment.",
         variant: "destructive",
       });
@@ -72,7 +72,7 @@ export function AdminChaptersView() {
 
     try {
       await deleteAdminChapter(chapterToDelete.id);
-      toast({ title: "Chapter deleted", variant: "success" });
+      toast({ title: "Topic deleted", variant: "success" });
       setChapterToDelete(null);
       await loadChapters();
     } catch (error) {
@@ -102,22 +102,16 @@ export function AdminChaptersView() {
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search chapters"
+            placeholder="Search topics"
             className="pl-9"
           />
         </div>
-        <Button asChild>
-          <Link href="/admin/chapters/new">
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            New chapter
-          </Link>
-        </Button>
       </div>
 
       {filteredChapters.length === 0 ? (
         <EmptyState
-          title="No chapters found"
-          description="Create chapters to organize PDF lessons."
+          title="No topics found"
+          description="Create topics to organize PDF lessons."
           icon={<Search className="h-8 w-8" aria-hidden="true" />}
         />
       ) : (
@@ -147,7 +141,7 @@ export function AdminChaptersView() {
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-2">
-                        <Button asChild variant="outline" size="icon" aria-label="View chapter">
+                        <Button asChild variant="outline" size="icon" aria-label="View topic">
                           <Link href={`/admin/chapters/${chapter.id}`}>
                             <Eye className="h-4 w-4" aria-hidden="true" />
                           </Link>
@@ -156,7 +150,7 @@ export function AdminChaptersView() {
                           type="button"
                           variant="outline"
                           size="icon"
-                          aria-label="Delete chapter"
+                          aria-label="Delete topic"
                           onClick={() => setChapterToDelete(chapter)}
                         >
                           <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -174,9 +168,9 @@ export function AdminChaptersView() {
       <Dialog open={Boolean(chapterToDelete)} onOpenChange={(open) => !open && setChapterToDelete(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete chapter?</DialogTitle>
+            <DialogTitle>Delete topic?</DialogTitle>
             <DialogDescription>
-              Chapters can only be deleted when no lessons reference them.
+              Topics can only be deleted when no lessons reference them.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

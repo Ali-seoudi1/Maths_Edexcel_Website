@@ -90,10 +90,25 @@ function sortByOrderThenName<T extends { order: number; title?: string; name?: s
 }
 
 export async function listChapters(options: { publishedOnly?: boolean } = {}) {
-  let query: FirebaseFirestore.Query = getFirebaseAdminDb().collection(chaptersCollection);
+  const db = getFirebaseAdminDb();
+  const query: FirebaseFirestore.Query = db.collection(chaptersCollection);
 
   if (options.publishedOnly) {
-    query = query.where("published", "==", true);
+    const [chapterSnapshot, lessonSnapshot] = await Promise.all([
+      db.collection(chaptersCollection).get(),
+      db.collection(lessonsCollection).where("published", "==", true).get(),
+    ]);
+    const chapterIdsWithPublishedLessons = new Set(
+      lessonSnapshot.docs
+        .map((documentSnapshot) => documentSnapshot.data().chapterId)
+        .filter((chapterId): chapterId is string => typeof chapterId === "string" && chapterId.length > 0),
+    );
+
+    return sortByOrderThenName(
+      chapterSnapshot.docs
+        .map((documentSnapshot) => toChapter(documentSnapshot.id, documentSnapshot.data()))
+        .filter((chapter) => chapter.published || chapterIdsWithPublishedLessons.has(chapter.id)),
+    );
   }
 
   const snapshot = await query.get();
@@ -101,6 +116,36 @@ export async function listChapters(options: { publishedOnly?: boolean } = {}) {
   return sortByOrderThenName(
     snapshot.docs.map((documentSnapshot) => toChapter(documentSnapshot.id, documentSnapshot.data())),
   );
+}
+
+export async function listPublishedLessonCatalog() {
+  const db = getFirebaseAdminDb();
+  const [chapterSnapshot, lessonSnapshot] = await Promise.all([
+    db.collection(chaptersCollection).get(),
+    db.collection(lessonsCollection).where("published", "==", true).get(),
+  ]);
+  const chapterIdsWithPublishedLessons = new Set(
+    lessonSnapshot.docs
+      .map((documentSnapshot) => documentSnapshot.data().chapterId)
+      .filter((chapterId): chapterId is string => typeof chapterId === "string" && chapterId.length > 0),
+  );
+  const chapters = sortByOrderThenName(
+    chapterSnapshot.docs
+      .map((documentSnapshot) => toChapter(documentSnapshot.id, documentSnapshot.data()))
+      .filter((chapter) => chapter.published || chapterIdsWithPublishedLessons.has(chapter.id)),
+  );
+  const chapterNames = new Map(chapters.map((chapter) => [chapter.id, chapter.name]));
+  const lessons = sortByOrderThenName(
+    lessonSnapshot.docs.map((documentSnapshot) =>
+      toLesson(
+        documentSnapshot.id,
+        documentSnapshot.data(),
+        chapterNames.get(String(documentSnapshot.data().chapterId)),
+      ),
+    ),
+  );
+
+  return { chapters, lessons };
 }
 
 export async function getChapterById(id: string) {
@@ -132,7 +177,7 @@ export async function updateChapter(id: string, values: ChapterFormValues) {
   const snapshot = await ref.get();
 
   if (!snapshot.exists) {
-    throw new Error("Chapter was not found.");
+    throw new Error("Topic was not found.");
   }
 
   await ref.update({ ...values, updatedAt: FieldValue.serverTimestamp() });
@@ -146,7 +191,7 @@ export async function deleteChapter(id: string) {
   const lessons = await db.collection(lessonsCollection).where("chapterId", "==", id).limit(1).get();
 
   if (!lessons.empty) {
-    throw new Error("Move or delete this chapter's lessons before deleting the chapter.");
+    throw new Error("Move or delete this topic's lessons before deleting the topic.");
   }
 
   await db.collection(chaptersCollection).doc(id).delete();
@@ -196,10 +241,6 @@ export async function getLessonById(id: string, options: { publishedOnly?: boole
   }
 
   const chapter = await getChapterById(lesson.chapterId);
-
-  if (options.publishedOnly && !chapter?.published) {
-    return null;
-  }
 
   return { ...lesson, chapterName: chapter?.name };
 }
@@ -336,6 +377,6 @@ async function assertChapterExists(chapterId: string) {
   const chapter = await getChapterById(chapterId);
 
   if (!chapter) {
-    throw new Error("Choose an existing chapter.");
+    throw new Error("Choose an existing topic.");
   }
 }

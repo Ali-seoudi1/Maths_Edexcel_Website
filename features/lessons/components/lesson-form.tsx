@@ -64,7 +64,7 @@ export function LessonForm({
     <form className="space-y-5" onSubmit={handleSubmit(handleFormSubmit)}>
       <div className="space-y-2">
         <label htmlFor="chapterId" className="text-sm font-medium text-foreground">
-          Chapter
+          Topic
         </label>
         <select
           id="chapterId"

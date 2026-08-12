@@ -4,6 +4,7 @@ import { FileText, Loader2, UploadCloud } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/shared/empty-state";
+import { ScoreDisplay } from "@/components/shared/score-display";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +23,6 @@ import { getFirebaseAuth } from "@/lib/firebase/client";
 
 import {
   deleteMyAssignmentSubmissionPdf,
-  getMyAssignmentSubmission,
   listAssignments,
   submitAssignmentSolution,
 } from "../services/assignment-service";
@@ -37,6 +37,10 @@ function formatDate(value: string | null) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+function isPast(value: string | null) {
+  return Boolean(value && Date.now() > new Date(value).getTime());
 }
 
 export function StudentAssignmentsView() {
@@ -55,19 +59,18 @@ export function StudentAssignmentsView() {
 
   useEffect(() => {
     void listAssignments()
-      .then(async (assignmentResult) => {
+      .then((assignmentResult) => {
         const items = assignmentResult.assignments;
         setAssignments(items);
 
-        const nextSubmissions: Record<string, AssignmentSubmission | null> = {};
-        for (const assignment of items) {
-          try {
-            const found = await getMyAssignmentSubmission(assignment.id);
-            nextSubmissions[assignment.id] = found.submission ?? null;
-          } catch {
-            nextSubmissions[assignment.id] = null;
-          }
-        }
+        const nextSubmissions = Object.fromEntries(
+          items.map((assignment) => [
+            assignment.id,
+            assignmentResult.submissions.find(
+              (submission) => submission.assignmentId === assignment.id,
+            ) ?? null,
+          ]),
+        );
 
         setSubmissions(nextSubmissions);
       })
@@ -145,8 +148,9 @@ export function StudentAssignmentsView() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-24" />
-        <Skeleton className="h-24" />
+        <Skeleton className="h-36 rounded-2xl" />
+        <Skeleton className="h-36 rounded-2xl" />
+        <Skeleton className="h-36 rounded-2xl" />
       </div>
     );
   }
@@ -167,11 +171,12 @@ export function StudentAssignmentsView() {
         const submission = submissionMap[assignment.id] ?? null;
         const pendingFiles = selectedFiles[assignment.id] ?? [];
         const isGraded = typeof submission?.grade === "number";
+        const isMissingSubmission = !submission && isPast(assignment.deadline);
         return (
-          <Card key={assignment.id} className="shadow-soft">
+          <Card key={assignment.id} className="transition-all hover:-translate-y-0.5 hover:shadow-card">
             <CardContent className="space-y-4 p-5">
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div>
+                <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-base font-semibold text-foreground">{assignment.title}</h2>
                     <Badge variant="secondary">Assignment</Badge>
@@ -179,6 +184,8 @@ export function StudentAssignmentsView() {
                       <Badge variant="destructive">Late</Badge>
                     ) : submission ? (
                       <Badge variant="secondary">On time</Badge>
+                    ) : isMissingSubmission ? (
+                      <Badge variant="outline">No submission</Badge>
                     ) : null}
                   </div>
                   {assignment.description ? (
@@ -189,20 +196,10 @@ export function StudentAssignmentsView() {
                   <p className="mt-2 text-sm font-medium text-foreground">
                     Deadline: {formatDate(assignment.deadline)}
                   </p>
-                  {submission?.grade !== null && typeof submission?.grade === "number" ? (
-                    <p className="mt-2 text-sm font-medium text-success">
-                      Grade: {submission.grade}/100
-                    </p>
-                  ) : null}
-                  {submission?.feedback ? (
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Feedback: {submission.feedback}
-                    </p>
-                  ) : null}
                 </div>
 
                 {assignment.pdfs.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 md:justify-end">
                     {assignment.pdfs.map((pdf) => (
                       <Button
                         key={pdf.id}
@@ -228,7 +225,15 @@ export function StudentAssignmentsView() {
                 ) : null}
               </div>
 
-              <div className="rounded-md border bg-secondary/30 p-4">
+              {submission?.grade !== null && typeof submission?.grade === "number" ? (
+                <ScoreDisplay
+                  score={submission.grade}
+                  label="Assignment grade"
+                  feedback={submission.feedback}
+                />
+              ) : null}
+
+              <div className="rounded-xl border bg-secondary/30 p-4">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="text-sm font-medium text-foreground">Your submission</p>
@@ -237,6 +242,8 @@ export function StudentAssignmentsView() {
                         ? `Submitted ${formatDate(submission.submittedAt)} with ${submission.pdfs.length} PDF${
                             submission.pdfs.length === 1 ? "" : "s"
                           }`
+                        : isMissingSubmission
+                          ? "No submission yet. A late PDF can still be uploaded."
                         : "Not submitted yet"}
                     </p>
                     {submission?.pdfs.length ? (
@@ -286,7 +293,7 @@ export function StudentAssignmentsView() {
                   </div>
 
                   {!isGraded ? (
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center md:w-auto">
                       <Input
                         type="file"
                         accept="application/pdf"
@@ -303,6 +310,7 @@ export function StudentAssignmentsView() {
                       />
                       <Button
                         type="button"
+                        className="sm:w-auto"
                         disabled={uploadingId === assignment.id || pendingFiles.length === 0}
                         onClick={() => setConfirmUploadId(assignment.id)}
                       >

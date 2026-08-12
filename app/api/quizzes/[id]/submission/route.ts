@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { getStudentQuizSubmission } from "@/features/quizzes/services/server-quiz-service";
+import {
+  getStudentQuizAttempt,
+  getStudentQuizSubmission,
+} from "@/features/quizzes/services/server-quiz-service";
 import {
   adminSdkUnavailableResponse,
   errorResponse,
@@ -23,9 +26,10 @@ export async function GET(request: Request, context: RouteContext) {
   try {
     const user = await requireActiveUser(request);
     const { id } = await context.params;
+    const attempt = await getStudentQuizAttempt(id, user.uid);
     const submission = await getStudentQuizSubmission(id, user.uid);
 
-    return NextResponse.json({ submission });
+    return NextResponse.json({ attempt, submission });
   } catch (error) {
     return errorResponse(error, "Quiz request failed.");
   }

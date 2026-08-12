@@ -10,8 +10,8 @@ type AdminChapterPageProps = {
 };
 
 export const metadata: Metadata = {
-  title: "Chapter Details",
-  description: "Edit a lesson chapter.",
+  title: "Topic Details",
+  description: "Edit a lesson topic.",
 };
 
 export default async function AdminChapterPage({ params }: AdminChapterPageProps) {
@@ -20,11 +20,11 @@ export default async function AdminChapterPage({ params }: AdminChapterPageProps
   return (
     <>
       <AdminPageHeader
-        title="Chapter details"
-        description="Edit chapter metadata, visibility, and display order."
+        title="Topic details"
+        description="Edit topic metadata, visibility, and display order."
         breadcrumbs={[
           { label: "Admin", href: "/admin" },
-          { label: "Chapters", href: "/admin/chapters" },
+          { label: "Topics", href: "/admin/chapters" },
           { label: "Details" },
         ]}
       />

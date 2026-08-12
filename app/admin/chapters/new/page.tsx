@@ -4,19 +4,19 @@ import { AdminPageHeader } from "@/features/admin";
 import { AdminChapterFormView } from "@/features/lessons/components/admin-chapter-form-view";
 
 export const metadata: Metadata = {
-  title: "New Chapter",
-  description: "Create a lesson chapter.",
+  title: "New Topic",
+  description: "Create a lesson topic.",
 };
 
 export default function NewChapterPage() {
   return (
     <>
       <AdminPageHeader
-        title="New chapter"
-        description="Add a chapter that PDF lessons can reference."
+        title="New topic"
+        description="Add a topic that PDF lessons can reference."
         breadcrumbs={[
           { label: "Admin", href: "/admin" },
-          { label: "Chapters", href: "/admin/chapters" },
+          { label: "Topics", href: "/admin/chapters" },
           { label: "New" },
         ]}
       />

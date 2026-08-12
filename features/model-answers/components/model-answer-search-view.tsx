@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { EmptyState } from "@/components/shared/empty-state";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -47,25 +48,19 @@ export function ModelAnswerSearchView() {
   }
 
   return (
-    <div className="space-y-8">
-      <header className="space-y-3">
-        <p className="text-sm font-semibold uppercase tracking-wide text-primary">Model Answers</p>
-        <div className="max-w-3xl space-y-2">
-          <h1 className="text-3xl font-bold tracking-normal text-foreground sm:text-4xl">
-            Find an official mark scheme and teacher solution.
-          </h1>
-          <p className="text-sm leading-6 text-muted-foreground">
-            Search by exam year, session, paper, and question number.
-          </p>
-        </div>
-      </header>
+    <div className="space-y-7">
+      <PageHeader
+        eyebrow="Model Answers"
+        title="Find an official mark scheme and teacher solution."
+        description="Search by exam year, session, paper, and question number."
+      />
 
-      <Card className="rounded-xl shadow-card">
+      <Card>
         <CardHeader>
           <CardTitle>Question search</CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-4 md:grid-cols-5" onSubmit={handleSubmit(handleSearch)}>
+          <form className="grid gap-4 lg:grid-cols-[1fr_1.35fr_1fr_1fr_auto]" onSubmit={handleSubmit(handleSearch)}>
             <div className="space-y-2">
               <label htmlFor="examYear" className="text-sm font-medium">
                 Year
@@ -82,7 +77,7 @@ export function ModelAnswerSearchView() {
               <select
                 id="session"
                 disabled={isSubmitting}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 {...register("session")}
               >
                 {Object.entries(examSessionLabels).map(([value, label]) => (
@@ -135,7 +130,7 @@ export function ModelAnswerSearchView() {
             </div>
           </form>
           {searchError ? (
-            <div className="mt-4 rounded-md border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+            <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
               {searchError}
             </div>
           ) : null}
@@ -144,7 +139,7 @@ export function ModelAnswerSearchView() {
 
       {result ? (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-          <Card className="rounded-xl shadow-card">
+          <Card>
             <CardHeader>
               <CardTitle>Official Mark Scheme</CardTitle>
             </CardHeader>
@@ -157,13 +152,13 @@ export function ModelAnswerSearchView() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-xl shadow-card">
+          <Card>
             <CardHeader>
               <CardTitle>Teacher Written Solution</CardTitle>
             </CardHeader>
             <CardContent>
               <div
-                className="min-h-96 rounded-lg border bg-background p-5 text-sm leading-7 text-foreground"
+                className="min-h-96 rounded-xl border bg-background p-5 text-sm leading-7 text-foreground"
                 dangerouslySetInnerHTML={{ __html: result.teacherSolutionHtml }}
               />
             </CardContent>

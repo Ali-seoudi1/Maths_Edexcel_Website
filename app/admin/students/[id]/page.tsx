@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { AdminPageHeader } from "@/features/admin";
-import { StudentDetailView } from "@/features/admin/students/components/student-detail-view";
+import { StudentMonthlyReportView } from "@/features/reports/components/student-monthly-report-view";
 
 type StudentDetailPageProps = {
   params: Promise<{
@@ -10,8 +10,8 @@ type StudentDetailPageProps = {
 };
 
 export const metadata: Metadata = {
-  title: "Student Details",
-  description: "View and edit a student account.",
+  title: "Student Report",
+  description: "View a student's monthly performance report.",
 };
 
 export default async function StudentDetailPage({ params }: StudentDetailPageProps) {
@@ -20,15 +20,15 @@ export default async function StudentDetailPage({ params }: StudentDetailPagePro
   return (
     <>
       <AdminPageHeader
-        title="Student details"
-        description="View profile information, edit account details, and manage access."
+        title="Student report"
+        description="View the same monthly performance report shown in the student dashboard."
         breadcrumbs={[
           { label: "Admin", href: "/admin" },
           { label: "Students", href: "/admin/students" },
-          { label: "Details" },
+          { label: "Report" },
         ]}
       />
-      <StudentDetailView studentId={id} />
+      <StudentMonthlyReportView studentId={id} />
     </>
   );
 }

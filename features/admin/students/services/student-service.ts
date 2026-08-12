@@ -1,5 +1,3 @@
-import { sendPasswordResetEmail } from "firebase/auth";
-
 import { getFirebaseAuth } from "@/lib/firebase/client";
 
 import type { CreateStudentResponse, DeleteStudentResponse, Student } from "../types";
@@ -70,8 +68,4 @@ export async function deleteStudent(uid: string): Promise<DeleteStudentResponse>
   return requestJson<DeleteStudentResponse>(`/api/admin/students/${uid}`, {
     method: "DELETE",
   });
-}
-
-export async function sendStudentPasswordReset(email: string) {
-  await sendPasswordResetEmail(getFirebaseAuth(), email);
 }

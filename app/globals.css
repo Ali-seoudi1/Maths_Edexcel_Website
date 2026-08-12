@@ -99,6 +99,21 @@ html {
   scroll-behavior: smooth;
 }
 
+html[data-route-loading="true"],
+html[data-route-loading="true"] * {
+  cursor: progress !important;
+}
+
+@keyframes route-progress {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(320%);
+  }
+}
+
 body {
   min-height: 100vh;
   background: hsl(var(--background));

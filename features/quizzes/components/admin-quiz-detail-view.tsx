@@ -1,13 +1,14 @@
 "use client";
 
-import { FileQuestion, Loader2 } from "lucide-react";
-import { useEffect, useState, type ChangeEvent } from "react";
+import { FileQuestion, Pencil } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { EmptyState } from "@/components/shared/empty-state";
+import { SubmissionGradePanel } from "@/components/shared/submission-grade-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 
@@ -18,7 +19,6 @@ import {
   updateQuizSubmissionGrade,
 } from "../services/quiz-service";
 import type { Quiz, QuizSubmission } from "../types";
-import { AdminQuizFormView } from "./admin-quiz-form-view";
 
 function formatDate(value: string | null) {
   if (!value) return "Not set";
@@ -48,6 +48,7 @@ export function AdminQuizDetailView({ quizId }: { quizId: string }) {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, { score: string; feedback: string }>>({});
+  const [editingSubmissionIds, setEditingSubmissionIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     void Promise.all([getAdminQuiz(quizId), listQuizSubmissions(quizId)])
@@ -63,6 +64,13 @@ export function AdminQuizDetailView({ quizId }: { quizId: string }) {
                 feedback: submission.feedback ?? "",
               },
             ]),
+          ),
+        );
+        setEditingSubmissionIds(
+          new Set(
+            submissionsResult.submissions
+              .filter((submission) => !submission.graded)
+              .map((submission) => submission.id),
           ),
         );
       })
@@ -115,6 +123,18 @@ export function AdminQuizDetailView({ quizId }: { quizId: string }) {
       setSubmissions((current) =>
         current.map((submission) => (submission.id === submissionId ? result.submission : submission)),
       );
+      setDrafts((current) => ({
+        ...current,
+        [submissionId]: {
+          score: result.submission.score === null ? "" : String(result.submission.score),
+          feedback: result.submission.feedback ?? "",
+        },
+      }));
+      setEditingSubmissionIds((current) => {
+        const next = new Set(current);
+        next.delete(submissionId);
+        return next;
+      });
       toast({ title: "Grade saved", variant: "success" });
     } catch (error) {
       toast({
@@ -169,10 +189,23 @@ export function AdminQuizDetailView({ quizId }: { quizId: string }) {
               <p className="mt-2 text-sm font-semibold text-foreground">{formatDate(quiz.expiresAt)}</p>
             </div>
           </div>
+          <div className="flex justify-end">
+            {quiz.published || quiz.status === "closed" ? (
+              <Button type="button" variant="outline" disabled>
+                <Pencil className="h-4 w-4" aria-hidden="true" />
+                Edit locked
+              </Button>
+            ) : (
+              <Button asChild variant="outline">
+                <Link href={`/admin/quizzes/${quiz.id}/edit`}>
+                  <Pencil className="h-4 w-4" aria-hidden="true" />
+                  Edit quiz
+                </Link>
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
-
-      <AdminQuizFormView quiz={quiz} onSaved={setQuiz} />
 
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-foreground">Student submissions</h3>
@@ -185,6 +218,7 @@ export function AdminQuizDetailView({ quizId }: { quizId: string }) {
         ) : (
           submissions.map((submission) => {
             const draft = drafts[submission.id] ?? { score: "", feedback: "" };
+            const isEditingGrade = editingSubmissionIds.has(submission.id);
 
             return (
               <Card key={submission.id} className="shadow-soft">
@@ -193,74 +227,64 @@ export function AdminQuizDetailView({ quizId }: { quizId: string }) {
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-base font-semibold text-foreground">{submission.studentName}</p>
-                        {submission.late ? <Badge variant="destructive">Late</Badge> : <Badge variant="secondary">On time</Badge>}
+                        {submission.noSubmission ? (
+                          <Badge variant="outline">No submission</Badge>
+                        ) : submission.late ? (
+                          <Badge variant="destructive">Late</Badge>
+                        ) : (
+                          <Badge variant="secondary">On time</Badge>
+                        )}
                         {submission.graded ? <Badge variant="default">Graded</Badge> : null}
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Submitted {formatDate(submission.submittedAt)}
-                        {submission.late ? ` · ${formatLateBy(submission.lateBySeconds)}` : ""}
+                        {submission.noSubmission
+                          ? "No PDF has been submitted."
+                          : `Submitted ${formatDate(submission.submittedAt)}${
+                              submission.late ? ` · ${formatLateBy(submission.lateBySeconds)}` : ""
+                            }`}
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">{submission.pdfFileName}</p>
                     </div>
-                    <Button type="button" variant="outline" onClick={() => void handleOpenSubmissionPdf(submission.id)}>
-                      Open PDF
-                    </Button>
+                    {!submission.noSubmission ? (
+                      <Button type="button" variant="outline" onClick={() => void handleOpenSubmissionPdf(submission.id)}>
+                        Open PDF
+                      </Button>
+                    ) : null}
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-[140px_1fr] md:items-start">
-                    <label className="text-sm font-medium text-foreground">Score</label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={draft.score}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  {!submission.noSubmission ? (
+                    <SubmissionGradePanel
+                      editing={isEditingGrade}
+                      feedback={draft.feedback}
+                      saving={savingId === submission.id}
+                      scoreLabel="Score"
+                      scorePlaceholder="Score"
+                      scoreSummaryLabel="Score"
+                      scoreValue={draft.score}
+                      onEdit={() =>
+                        setEditingSubmissionIds((current) => new Set(current).add(submission.id))
+                      }
+                      onFeedbackChange={(value) =>
                         setDrafts((current) => ({
                           ...current,
                           [submission.id]: {
                             ...(current[submission.id] ?? { score: "", feedback: "" }),
-                            score: event.target.value,
+                            feedback: value,
                           },
                         }))
                       }
-                      placeholder="Score"
-                    />
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-[140px_1fr] md:items-start">
-                    <label className="text-sm font-medium text-foreground">Feedback</label>
-                    <textarea
-                      value={draft.feedback}
-                      onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
+                      onSave={() => void handleSave(submission.id)}
+                      onScoreChange={(value) =>
                         setDrafts((current) => ({
                           ...current,
                           [submission.id]: {
                             ...(current[submission.id] ?? { score: "", feedback: "" }),
-                            feedback: event.target.value,
+                            score: value,
                           },
                         }))
                       }
-                      placeholder="Add feedback for the student"
-                      rows={4}
-                      className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
-                  </div>
-
-                  <div className="flex justify-end">
-                    <Button
-                      type="button"
-                      onClick={() => void handleSave(submission.id)}
-                      disabled={savingId === submission.id}
-                    >
-                      {savingId === submission.id ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                          Saving...
-                        </>
-                      ) : (
-                        "Save grade"
-                      )}
-                    </Button>
-                  </div>
+                  ) : null}
                 </CardContent>
               </Card>
             );

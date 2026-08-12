@@ -2,7 +2,11 @@
 
 import { getFirebaseAuth } from "@/lib/firebase/client";
 
-import type { Quiz, QuizFormValues, QuizGradeValues, QuizSubmission } from "../types";
+import type { Quiz, QuizAttempt, QuizFormValues, QuizGradeValues, QuizSubmission } from "../types";
+
+let studentQuizListRequest:
+  | Promise<{ quizzes: Quiz[]; submissions: QuizSubmission[]; attempts: QuizAttempt[] }>
+  | null = null;
 
 async function getIdToken() {
   const user = getFirebaseAuth().currentUser;
@@ -178,7 +182,17 @@ export async function updateQuizSubmissionGrade(
 }
 
 export async function listQuizzes() {
-  return requestJson<{ quizzes: Quiz[] }>("/api/quizzes");
+  if (!studentQuizListRequest) {
+    studentQuizListRequest = requestJson<{
+      quizzes: Quiz[];
+      submissions: QuizSubmission[];
+      attempts: QuizAttempt[];
+    }>("/api/quizzes").finally(() => {
+      studentQuizListRequest = null;
+    });
+  }
+
+  return studentQuizListRequest;
 }
 
 export async function getQuiz(id: string) {
@@ -186,7 +200,7 @@ export async function getQuiz(id: string) {
 }
 
 export async function startQuiz(quizId: string) {
-  return requestJson<{ quiz: Quiz; serverNow: string }>(`/api/quizzes/${quizId}/start`, {
+  return requestJson<{ quiz: Quiz; attempt: QuizAttempt; serverNow: string }>(`/api/quizzes/${quizId}/start`, {
     method: "POST",
   });
 }
@@ -203,5 +217,7 @@ export async function submitQuizPdf(quizId: string, pdfFile: File) {
 }
 
 export async function getMyQuizSubmission(quizId: string) {
-  return requestJson<{ submission: QuizSubmission | null }>(`/api/quizzes/${quizId}/submission`);
+  return requestJson<{ attempt: QuizAttempt | null; submission: QuizSubmission | null }>(
+    `/api/quizzes/${quizId}/submission`,
+  );
 }

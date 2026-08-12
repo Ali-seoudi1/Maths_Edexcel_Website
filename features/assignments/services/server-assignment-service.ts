@@ -57,6 +57,10 @@ function isLateSubmission(deadline: string | null, submittedAt: string | null) {
   return new Date(submittedAt).getTime() > new Date(deadline).getTime();
 }
 
+function hasDeadlinePassed(deadline: string | null) {
+  return Boolean(deadline && Date.now() > new Date(deadline).getTime());
+}
+
 function toAssignment(id: string, data: FirebaseFirestore.DocumentData): Assignment {
   const pdfs = normalizePdfs(data);
 
@@ -201,6 +205,21 @@ async function getStudentDisplayName(studentId: string, fallback: string) {
   return typeof data?.fullName === "string" && data.fullName.trim() ? data.fullName : fallback;
 }
 
+async function listStudentProfiles() {
+  const snapshot = await getFirebaseAdminDb().collection("users").where("role", "==", "student").get();
+
+  return snapshot.docs
+    .map((studentDoc) => {
+      const data = studentDoc.data();
+
+      return {
+        id: studentDoc.id,
+        fullName: typeof data.fullName === "string" && data.fullName.trim() ? data.fullName : "Student",
+      };
+    })
+    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+}
+
 export async function listAssignments() {
   const snapshot = await getFirebaseAdminDb().collection(assignmentsCollection).get();
 
@@ -317,13 +336,39 @@ export async function listAssignmentSubmissions(assignmentId: string) {
     .where("assignmentId", "==", assignmentId)
     .get();
 
-  return snapshot.docs
+  const submissions = snapshot.docs
     .map((documentSnapshot) => toAssignmentSubmission(documentSnapshot.id, documentSnapshot.data(), assignment.deadline))
     .sort((a, b) => {
       const aTime = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
       const bTime = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
       return bTime - aTime;
     });
+
+  if (!hasDeadlinePassed(assignment.deadline)) {
+    return submissions;
+  }
+
+  const submittedStudentIds = new Set(submissions.map((submission) => submission.studentId));
+  const missingRows = (await listStudentProfiles())
+    .filter((student) => !submittedStudentIds.has(student.id))
+    .map((student): AssignmentSubmission => ({
+      id: getSubmissionDocumentId(assignmentId, student.id),
+      assignmentId,
+      studentId: student.id,
+      studentName: student.fullName,
+      noSubmission: true,
+      submittedAt: null,
+      pdfs: [],
+      pdfUrl: "",
+      pdfFileName: "",
+      grade: null,
+      feedback: "",
+      isLate: false,
+      createdAt: null,
+      updatedAt: null,
+    }));
+
+  return [...submissions, ...missingRows];
 }
 
 export async function getStudentSubmission(assignmentId: string, studentId: string) {
@@ -343,6 +388,30 @@ export async function getStudentSubmission(assignmentId: string, studentId: stri
   }
 
   return toAssignmentSubmission(snapshot.id, snapshot.data() ?? {}, assignment.deadline);
+}
+
+export async function listStudentAssignmentSubmissions(
+  studentId: string,
+  assignmentList?: Assignment[],
+) {
+  const [assignments, snapshot] = await Promise.all([
+    assignmentList ? Promise.resolve(assignmentList) : listAssignments(),
+    getFirebaseAdminDb()
+      .collection(assignmentSubmissionsCollection)
+      .where("studentId", "==", studentId)
+      .get(),
+  ]);
+  const assignmentMap = new Map(assignments.map((assignment) => [assignment.id, assignment]));
+
+  return snapshot.docs.map((documentSnapshot) => {
+    const assignmentId = String(documentSnapshot.data().assignmentId ?? "");
+    const assignment = assignmentMap.get(assignmentId);
+
+    return {
+      assignment,
+      submission: toAssignmentSubmission(documentSnapshot.id, documentSnapshot.data(), assignment?.deadline ?? null),
+    };
+  });
 }
 
 export async function deleteStudentSubmission(assignmentId: string, studentId: string) {

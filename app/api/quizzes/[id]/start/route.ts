@@ -23,9 +23,9 @@ export async function POST(request: Request, context: RouteContext) {
   try {
     const user = await requireActiveUser(request);
     const { id } = await context.params;
-    const submission = await startQuiz(id, user.uid, user.role === "admin" ? "Admin" : "Student");
+    const result = await startQuiz(id, user.uid, user.role === "admin" ? "Admin" : "Student");
 
-    return NextResponse.json({ submission }, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
     console.error("[quiz] failed to start quiz", error);
     return errorResponse(error, "Quiz request failed.");

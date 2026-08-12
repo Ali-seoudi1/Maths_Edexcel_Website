@@ -35,7 +35,7 @@ export function AppShell({ children, className }: AppShellProps) {
 
       <div className="lg:pl-72">
         <TopBar onMenuClick={() => setIsMobileSidebarOpen(true)} />
-        <main className={cn("mx-auto w-full max-w-[1540px] px-5 py-8 sm:px-8 lg:px-11", className)}>
+        <main className={cn("mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10", className)}>
           {children}
         </main>
       </div>

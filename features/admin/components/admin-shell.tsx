@@ -5,9 +5,9 @@ import {
   FileQuestion,
   GraduationCap,
   Archive,
+  Megaphone,
   LibraryBig,
   LayoutDashboard,
-  LogOut,
   Menu,
   PenSquare,
   UserRoundPlus,
@@ -19,6 +19,7 @@ import { useState, type ReactNode } from "react";
 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { SignOutButton } from "@/components/shared/sign-out-button";
 import { ToastProvider } from "@/components/ui/toast";
 import { useAuth } from "@/features/auth";
 import { cn } from "@/lib/utils";
@@ -27,11 +28,12 @@ const adminNavigation = [
   { title: "Overview", href: "/admin", icon: LayoutDashboard },
   { title: "Students", href: "/admin/students", icon: UsersRound },
   { title: "New Student", href: "/admin/students/new", icon: UserRoundPlus },
-  { title: "Chapters", href: "/admin/chapters", icon: LibraryBig },
+  { title: "Topics", href: "/admin/chapters", icon: LibraryBig },
   { title: "Lessons", href: "/admin/lessons", icon: GraduationCap },
   { title: "Past Papers", href: "/admin/past-papers", icon: Archive },
   { title: "Assignments", href: "/admin/assignments", icon: PenSquare },
   { title: "Quizzes", href: "/admin/quizzes", icon: ClipboardCheck },
+  { title: "Announcements", href: "/admin/announcements", icon: Megaphone },
   { title: "Model Answers", href: "/admin/model-answers", icon: FileQuestion },
 ];
 
@@ -41,7 +43,7 @@ type AdminShellProps = {
 
 function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const { profile, signOut } = useAuth();
+  const { profile } = useAuth();
 
   return (
     <aside className="flex h-full flex-col border-r bg-card px-4 py-6">
@@ -66,6 +68,7 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
             (item.href === "/admin/past-papers" && pathname.startsWith("/admin/past-papers/")) ||
             (item.href === "/admin/assignments" && pathname.startsWith("/admin/assignments/")) ||
             (item.href === "/admin/quizzes" && pathname.startsWith("/admin/quizzes/")) ||
+            (item.href === "/admin/announcements" && pathname.startsWith("/admin/announcements/")) ||
             (item.href === "/admin/model-answers" && pathname.startsWith("/admin/model-answers/"));
 
           return (
@@ -91,15 +94,10 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
         <p className="mt-1 truncate text-sm font-semibold text-foreground">
           {profile?.fullName ?? "Admin"}
         </p>
-        <Button
-          type="button"
+        <SignOutButton
           variant="outline"
           className="mt-4 w-full justify-start"
-          onClick={() => void signOut()}
-        >
-          <LogOut className="h-4 w-4" aria-hidden="true" />
-          Sign out
-        </Button>
+        />
       </div>
     </aside>
   );

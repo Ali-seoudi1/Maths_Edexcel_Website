@@ -28,12 +28,12 @@ export async function GET(request: Request, context: RouteContext) {
     const chapter = await getChapterById(id);
 
     if (!chapter) {
-      return NextResponse.json({ error: "Chapter was not found." }, { status: 404 });
+      return NextResponse.json({ error: "Topic was not found." }, { status: 404 });
     }
 
     return NextResponse.json({ chapter });
   } catch (error) {
-    return errorResponse(error, "Chapter request failed.");
+    return errorResponse(error, "Topic request failed.");
   }
 }
 
@@ -52,7 +52,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     return NextResponse.json({ chapter });
   } catch (error) {
-    return errorResponse(error, "Chapter request failed.");
+    return errorResponse(error, "Topic request failed.");
   }
 }
 
@@ -70,6 +70,6 @@ export async function DELETE(request: Request, context: RouteContext) {
 
     return NextResponse.json(result);
   } catch (error) {
-    return errorResponse(error, "Chapter request failed.");
+    return errorResponse(error, "Topic request failed.");
   }
 }

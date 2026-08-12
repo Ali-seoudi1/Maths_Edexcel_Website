@@ -4,6 +4,8 @@ import { getFirebaseDb } from "@/lib/firebase/client";
 
 import type { UserProfile } from "../types";
 
+const userProfileCache = new Map<string, UserProfile | null>();
+
 function isUserRole(value: unknown): value is UserProfile["role"] {
   return value === "admin" || value === "student";
 }
@@ -34,12 +36,31 @@ function parseUserProfile(data: unknown, uid: string): UserProfile | null {
   };
 }
 
-export async function getUserProfile(uid: string): Promise<UserProfile | null> {
+export function cacheUserProfile(profile: UserProfile) {
+  userProfileCache.set(profile.uid, profile);
+}
+
+export function clearUserProfileCache() {
+  userProfileCache.clear();
+}
+
+export async function getUserProfile(
+  uid: string,
+  options: { forceRefresh?: boolean } = {},
+): Promise<UserProfile | null> {
+  if (!options.forceRefresh && userProfileCache.has(uid)) {
+    return userProfileCache.get(uid) ?? null;
+  }
+
   const snapshot = await getDoc(doc(getFirebaseDb(), "users", uid));
 
   if (!snapshot.exists()) {
+    userProfileCache.set(uid, null);
     return null;
   }
 
-  return parseUserProfile(snapshot.data(), uid);
+  const profile = parseUserProfile(snapshot.data(), uid);
+  userProfileCache.set(uid, profile);
+
+  return profile;
 }

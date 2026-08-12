@@ -10,7 +10,7 @@ import {
 
 import { getFirebaseAuth } from "@/lib/firebase/client";
 
-import { getUserProfile } from "./user-service";
+import { cacheUserProfile, clearUserProfileCache, getUserProfile } from "./user-service";
 import type { UserProfile } from "../types";
 
 export type SignInResult = {
@@ -76,6 +76,8 @@ export async function signInWithEmail(email: string, password: string): Promise<
       throw new AuthError("Your account is inactive. Please contact the teacher.");
     }
 
+    cacheUserProfile(profile);
+
     return {
       user: credential.user,
       profile,
@@ -90,6 +92,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
 }
 
 export async function signOutCurrentUser() {
+  clearUserProfileCache();
   await signOut(getFirebaseAuth());
 }
 

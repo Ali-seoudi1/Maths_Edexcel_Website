@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, KeyRound, Plus, Search, Trash2 } from "lucide-react";
+import { Eye, Plus, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -28,7 +28,7 @@ import {
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/features/auth";
 
-import { deleteStudent, getStudents, sendStudentPasswordReset } from "../services/student-service";
+import { deleteStudent, getStudents } from "../services/student-service";
 import type { Student } from "../types";
 import { StudentStatusBadge } from "./student-status-badge";
 
@@ -116,27 +116,6 @@ export function StudentsTable() {
   useEffect(() => {
     setPage(1);
   }, [query]);
-
-  async function handlePasswordReset(student: Student) {
-    setBusyStudentId(student.uid);
-
-    try {
-      await sendStudentPasswordReset(student.email);
-      toast({
-        title: "Password reset sent",
-        description: `A reset email was sent to ${student.email}.`,
-        variant: "success",
-      });
-    } catch (error) {
-      toast({
-        title: "Password reset failed",
-        description: error instanceof Error ? error.message : "Try again in a moment.",
-        variant: "destructive",
-      });
-    } finally {
-      setBusyStudentId(null);
-    }
-  }
 
   async function handleDelete() {
     if (!studentToDelete) {
@@ -232,20 +211,10 @@ export function StudentsTable() {
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-2">
-                        <Button asChild variant="outline" size="icon" aria-label="View student">
+                        <Button asChild variant="outline" size="icon" aria-label="View student report">
                           <Link href={`/admin/students/${student.uid}`}>
                             <Eye className="h-4 w-4" aria-hidden="true" />
                           </Link>
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          aria-label="Reset password"
-                          disabled={busyStudentId === student.uid}
-                          onClick={() => void handlePasswordReset(student)}
-                        >
-                          <KeyRound className="h-4 w-4" aria-hidden="true" />
                         </Button>
                         <Button
                           type="button"
