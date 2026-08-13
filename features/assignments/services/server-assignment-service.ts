@@ -69,6 +69,7 @@ function toAssignment(id: string, data: FirebaseFirestore.DocumentData): Assignm
     title: typeof data.title === "string" ? data.title : "",
     description: typeof data.description === "string" ? data.description : "",
     deadline: normalizeDeadline(data.deadline),
+    maxGrade: typeof data.maxGrade === "number" && data.maxGrade > 0 ? data.maxGrade : 100,
     pdfs,
     pdfUrl: typeof data.pdfUrl === "string" ? data.pdfUrl : "",
     pdfFileName: typeof data.pdfFileName === "string" ? data.pdfFileName : "",
@@ -82,6 +83,7 @@ function toAssignmentSubmission(
   id: string,
   data: FirebaseFirestore.DocumentData,
   assignmentDeadline?: string | null,
+  assignmentMaxGrade?: number,
 ): AssignmentSubmission {
   const submittedAt = normalizeTimestamp(data.submittedAt);
   const pdfs = normalizePdfs(data);
@@ -96,6 +98,12 @@ function toAssignmentSubmission(
     pdfUrl: typeof data.pdfUrl === "string" ? data.pdfUrl : "",
     pdfFileName: typeof data.pdfFileName === "string" ? data.pdfFileName : "",
     grade: typeof data.grade === "number" ? data.grade : null,
+    maxGrade:
+      typeof assignmentMaxGrade === "number" && assignmentMaxGrade > 0
+        ? assignmentMaxGrade
+        : typeof data.maxGrade === "number" && data.maxGrade > 0
+          ? data.maxGrade
+          : 100,
     feedback: typeof data.feedback === "string" ? data.feedback : "",
     isLate: isLateSubmission(assignmentDeadline ?? null, submittedAt),
     createdAt: normalizeTimestamp(data.createdAt),
@@ -131,12 +139,20 @@ function normalizePdfs(data: FirebaseFirestore.DocumentData): AssignmentPdf[] {
   return [];
 }
 
-function sortByDeadline<T extends { deadline: string | null }>(items: T[]) {
+function sortByCreatedAt<T extends { createdAt: string | null; deadline: string | null }>(items: T[]) {
   return [...items].sort((a, b) => {
-    const aValue = a.deadline ? new Date(a.deadline).getTime() : Number.POSITIVE_INFINITY;
-    const bValue = b.deadline ? new Date(b.deadline).getTime() : Number.POSITIVE_INFINITY;
+    const aValue = a.createdAt
+      ? new Date(a.createdAt).getTime()
+      : a.deadline
+        ? new Date(a.deadline).getTime()
+        : 0;
+    const bValue = b.createdAt
+      ? new Date(b.createdAt).getTime()
+      : b.deadline
+        ? new Date(b.deadline).getTime()
+        : 0;
 
-    return aValue - bValue;
+    return bValue - aValue;
   });
 }
 
@@ -223,7 +239,7 @@ async function listStudentProfiles() {
 export async function listAssignments() {
   const snapshot = await getFirebaseAdminDb().collection(assignmentsCollection).get();
 
-  return sortByDeadline(
+  return sortByCreatedAt(
     snapshot.docs.map((documentSnapshot) => toAssignment(documentSnapshot.id, documentSnapshot.data())),
   );
 }
@@ -315,7 +331,7 @@ export async function deleteAssignment(id: string) {
 
   await Promise.all(
     submissions.docs.map(async (doc) => {
-      const data = toAssignmentSubmission(doc.id, doc.data(), assignment.deadline);
+      const data = toAssignmentSubmission(doc.id, doc.data(), assignment.deadline, assignment.maxGrade);
       await doc.ref.delete();
       await Promise.all(data.pdfs.map((pdf) => deleteStorageFile(pdf.path)));
     }),
@@ -337,7 +353,9 @@ export async function listAssignmentSubmissions(assignmentId: string) {
     .get();
 
   const submissions = snapshot.docs
-    .map((documentSnapshot) => toAssignmentSubmission(documentSnapshot.id, documentSnapshot.data(), assignment.deadline))
+    .map((documentSnapshot) =>
+      toAssignmentSubmission(documentSnapshot.id, documentSnapshot.data(), assignment.deadline, assignment.maxGrade),
+    )
     .sort((a, b) => {
       const aTime = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
       const bTime = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
@@ -362,6 +380,7 @@ export async function listAssignmentSubmissions(assignmentId: string) {
       pdfUrl: "",
       pdfFileName: "",
       grade: null,
+      maxGrade: assignment.maxGrade,
       feedback: "",
       isLate: false,
       createdAt: null,
@@ -387,7 +406,7 @@ export async function getStudentSubmission(assignmentId: string, studentId: stri
     return null;
   }
 
-  return toAssignmentSubmission(snapshot.id, snapshot.data() ?? {}, assignment.deadline);
+  return toAssignmentSubmission(snapshot.id, snapshot.data() ?? {}, assignment.deadline, assignment.maxGrade);
 }
 
 export async function listStudentAssignmentSubmissions(
@@ -409,7 +428,12 @@ export async function listStudentAssignmentSubmissions(
 
     return {
       assignment,
-      submission: toAssignmentSubmission(documentSnapshot.id, documentSnapshot.data(), assignment?.deadline ?? null),
+      submission: toAssignmentSubmission(
+        documentSnapshot.id,
+        documentSnapshot.data(),
+        assignment?.deadline ?? null,
+        assignment?.maxGrade,
+      ),
     };
   });
 }
@@ -430,7 +454,7 @@ export async function deleteStudentSubmission(assignmentId: string, studentId: s
     throw new Error("Submission was not found.");
   }
 
-  const submission = toAssignmentSubmission(snapshot.id, snapshot.data() ?? {}, assignment.deadline);
+  const submission = toAssignmentSubmission(snapshot.id, snapshot.data() ?? {}, assignment.deadline, assignment.maxGrade);
 
   if (typeof submission.grade === "number") {
     throw new Error("This assignment has already been graded.");
@@ -462,7 +486,7 @@ export async function deleteStudentSubmissionPdf(
     throw new Error("Submission was not found.");
   }
 
-  const submission = toAssignmentSubmission(snapshot.id, snapshot.data() ?? {}, assignment.deadline);
+  const submission = toAssignmentSubmission(snapshot.id, snapshot.data() ?? {}, assignment.deadline, assignment.maxGrade);
 
   if (typeof submission.grade === "number") {
     throw new Error("This assignment has already been graded.");
@@ -493,7 +517,7 @@ export async function deleteStudentSubmissionPdf(
   const updated = await ref.get();
 
   return {
-    submission: toAssignmentSubmission(updated.id, updated.data() ?? {}, assignment.deadline),
+    submission: toAssignmentSubmission(updated.id, updated.data() ?? {}, assignment.deadline, assignment.maxGrade),
   };
 }
 
@@ -515,7 +539,7 @@ export async function submitAssignmentSolution(
     .doc(getSubmissionDocumentId(assignmentId, studentId));
   const existingSnapshot = await ref.get();
   const existingSubmission = existingSnapshot.exists
-    ? toAssignmentSubmission(existingSnapshot.id, existingSnapshot.data() ?? {}, assignment.deadline)
+    ? toAssignmentSubmission(existingSnapshot.id, existingSnapshot.data() ?? {}, assignment.deadline, assignment.maxGrade)
     : null;
 
   if (typeof existingSubmission?.grade === "number") {
@@ -543,7 +567,7 @@ export async function submitAssignmentSolution(
   await ref.set(record, { merge: true });
   const snapshot = await ref.get();
 
-  return toAssignmentSubmission(snapshot.id, snapshot.data() ?? record, assignment.deadline);
+  return toAssignmentSubmission(snapshot.id, snapshot.data() ?? record, assignment.deadline, assignment.maxGrade);
 }
 
 export async function updateAssignmentSubmissionGrade(
@@ -567,17 +591,23 @@ export async function updateAssignmentSubmissionGrade(
   }
 
   const grade = values.grade ?? null;
+  const maxGrade = assignment.maxGrade;
   const feedback = values.feedback ?? "";
+
+  if (grade !== null && grade > maxGrade) {
+    throw new Error("Grade cannot be greater than the total score.");
+  }
 
   await ref.update({
     grade,
+    maxGrade,
     feedback,
     updatedAt: FieldValue.serverTimestamp(),
   });
 
   const updated = await ref.get();
 
-  return toAssignmentSubmission(updated.id, updated.data() ?? {}, assignment.deadline);
+  return toAssignmentSubmission(updated.id, updated.data() ?? {}, assignment.deadline, assignment.maxGrade);
 }
 
 export async function getAssignmentPdfBuffer(id: string, pdfId?: string) {
@@ -636,7 +666,7 @@ export async function getSubmissionPdfBufferForAdmin(
     return null;
   }
 
-  const submission = toAssignmentSubmission(snapshot.id, snapshot.data() ?? {}, assignment.deadline);
+  const submission = toAssignmentSubmission(snapshot.id, snapshot.data() ?? {}, assignment.deadline, assignment.maxGrade);
   const pdf = submission.pdfs.find((item) => item.id === pdfId) ?? submission.pdfs[0];
 
   if (!pdf) {

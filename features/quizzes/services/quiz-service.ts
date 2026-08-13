@@ -18,6 +18,10 @@ async function getIdToken() {
   return user.getIdToken();
 }
 
+export async function getQuizAuthToken() {
+  return getIdToken();
+}
+
 async function requestJson<TResponse>(url: string, init: RequestInit = {}): Promise<TResponse> {
   const token = await getIdToken();
   const response = await fetch(url, {
@@ -77,6 +81,7 @@ function appendQuizFormData(values: QuizFormValues, pdfFiles: File[] = [], remov
   formData.set("title", values.title);
   formData.set("description", values.description);
   formData.set("durationMinutes", String(values.durationMinutes));
+  formData.set("maxScore", String(values.maxScore));
   formData.set("published", String(values.published === true));
 
   pdfFiles.forEach((pdfFile) => formData.append("pdfs", pdfFile));
@@ -214,6 +219,24 @@ export async function submitQuizPdf(quizId: string, pdfFile: File) {
     formData,
     "POST",
   );
+}
+
+export async function markQuizNoSubmission(quizId: string) {
+  return requestJson<{ submission: QuizSubmission }>(`/api/quizzes/${quizId}/no-submission`, {
+    method: "POST",
+  });
+}
+
+export function markQuizNoSubmissionWithToken(quizId: string, token: string) {
+  return fetch(`/api/quizzes/${quizId}/no-submission`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: "{}",
+    keepalive: true,
+  });
 }
 
 export async function getMyQuizSubmission(quizId: string) {

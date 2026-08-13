@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, FileText } from "lucide-react";
+import { BookOpen, ChevronRight, FileText } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -68,7 +68,7 @@ export function StudentLessonsView() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
+    <section className="grid gap-6 lg:grid-cols-[300px_1fr]">
       <Card className="h-fit lg:sticky lg:top-28">
         <CardContent className="p-3">
           <div className="px-2 py-2">
@@ -96,7 +96,23 @@ export function StudentLessonsView() {
         </CardContent>
       </Card>
 
-      <div className="space-y-3">
+      <Card>
+        <CardContent className="space-y-4 p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+            <div>
+              <h2 className="text-base font-semibold text-foreground">
+                {chapters.find((chapter) => chapter.id === activeChapterId)?.name ?? "Lessons"}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Lesson PDFs and solved examples for this topic.
+              </p>
+            </div>
+            <Badge variant="secondary">
+              {visibleLessons.length} lesson{visibleLessons.length === 1 ? "" : "s"}
+            </Badge>
+          </div>
+
+          <div className="space-y-3">
         {visibleLessons.length === 0 ? (
           <EmptyState
             title="No lessons in this topic"
@@ -105,13 +121,15 @@ export function StudentLessonsView() {
           />
         ) : (
           visibleLessons.map((lesson) => (
-            <Card key={lesson.id} className="transition-all hover:-translate-y-0.5 hover:shadow-card">
-              <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex min-w-0 items-start gap-4">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <div
+              key={lesson.id}
+              className="grid gap-4 rounded-xl border bg-background p-4 transition-all hover:-translate-y-0.5 hover:shadow-card sm:grid-cols-[1fr_auto] sm:items-center"
+            >
+                <div className="flex min-w-0 gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                     <FileText className="h-5 w-5" aria-hidden="true" />
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-base font-semibold text-foreground">{lesson.title}</h2>
                       <Badge variant="secondary">
@@ -119,20 +137,24 @@ export function StudentLessonsView() {
                       </Badge>
                     </div>
                     {lesson.description ? (
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      <p className="text-sm leading-6 text-muted-foreground">
                         {lesson.description}
                       </p>
                     ) : null}
                   </div>
                 </div>
                 <Button asChild className="w-full sm:w-auto">
-                  <Link href={`/lessons/${lesson.id}`}>Open lesson</Link>
+                  <Link href={`/lessons/${lesson.id}`}>
+                    Open lesson
+                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                  </Link>
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
           ))
         )}
-      </div>
-    </div>
+          </div>
+        </CardContent>
+      </Card>
+    </section>
   );
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import { Maximize2, Minimize2, Minus, Plus } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type QuizPdfViewerProps = {
   src: string;
@@ -15,6 +16,18 @@ export function QuizPdfViewer({ src, title }: QuizPdfViewerProps) {
   const [zoom, setZoom] = useState(100);
   const [fullscreen, setFullscreen] = useState(false);
 
+  useEffect(() => {
+    function handleFullscreenChange() {
+      setFullscreen(document.fullscreenElement === containerRef.current);
+    }
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
   async function toggleFullscreen() {
     const element = containerRef.current;
 
@@ -24,20 +37,21 @@ export function QuizPdfViewer({ src, title }: QuizPdfViewerProps) {
 
     if (document.fullscreenElement) {
       await document.exitFullscreen();
-      setFullscreen(false);
       return;
     }
 
     await element.requestFullscreen();
-    setFullscreen(true);
   }
 
   return (
     <div
       ref={containerRef}
-      className="overflow-hidden rounded-lg border bg-card shadow-soft fullscreen:h-screen fullscreen:w-screen fullscreen:rounded-none"
+      className={cn(
+        "overflow-hidden rounded-lg border bg-card shadow-soft",
+        fullscreen && "flex h-screen w-screen flex-col rounded-none",
+      )}
     >
-      <div className="flex flex-col gap-3 border-b bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="shrink-0 flex flex-col gap-3 border-b bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-foreground">{title}</p>
           <p className="text-xs text-muted-foreground">Protected PDF preview</p>
@@ -80,7 +94,7 @@ export function QuizPdfViewer({ src, title }: QuizPdfViewerProps) {
           </Button>
         </div>
       </div>
-      <div className="h-[72vh] overflow-auto bg-secondary p-3 fullscreen:h-[calc(100vh-73px)]">
+      <div className={cn("h-[72vh] overflow-auto bg-secondary p-3", fullscreen && "min-h-0 flex-1")}>
         <iframe
           src={`${src}#toolbar=0&navpanes=0&scrollbar=1`}
           title={title}

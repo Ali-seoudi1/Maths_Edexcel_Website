@@ -83,14 +83,12 @@ export function AdminAssignmentDetailView({ assignmentId }: { assignmentId: stri
 
     const rawGrade = draft.grade.trim();
     const parsedGrade = rawGrade === "" ? null : Number(rawGrade);
+    const maxGrade = assignment?.maxGrade ?? 100;
 
-    if (
-      parsedGrade !== null &&
-      (Number.isNaN(parsedGrade) || parsedGrade < 0 || parsedGrade > 100)
-    ) {
+    if (parsedGrade !== null && (Number.isNaN(parsedGrade) || parsedGrade < 0 || parsedGrade > maxGrade)) {
       toast({
         title: "Invalid grade",
-        description: "Enter a grade between 0 and 100.",
+        description: "Enter a grade between 0 and the total score.",
         variant: "destructive",
       });
       return;
@@ -193,7 +191,7 @@ export function AdminAssignmentDetailView({ assignmentId }: { assignmentId: stri
                           {submission.studentName}
                         </p>
                         {submission.isLate ? (
-                          <Badge variant="destructive">Late</Badge>
+                          <span className="text-sm font-semibold text-destructive">Late</span>
                         ) : submission.noSubmission ? (
                           <Badge variant="outline">No submission</Badge>
                         ) : (
@@ -240,10 +238,11 @@ export function AdminAssignmentDetailView({ assignmentId }: { assignmentId: stri
                     <SubmissionGradePanel
                       editing={isEditingGrade}
                       feedback={draft.feedback}
-                      max={100}
+                      max={assignment.maxGrade}
+                      maxScoreValue={String(assignment.maxGrade)}
                       saving={savingId === submission.id}
                       scoreLabel="Grade"
-                      scorePlaceholder="0-100"
+                      scorePlaceholder="Score"
                       scoreSummaryLabel="Grade"
                       scoreValue={draft.grade}
                       onEdit={() =>

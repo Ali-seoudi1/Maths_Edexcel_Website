@@ -37,6 +37,7 @@ export async function POST(request: Request) {
       title: String(formData.get("title") ?? ""),
       description: String(formData.get("description") ?? ""),
       deadline: String(formData.get("deadline") ?? ""),
+      maxGrade: Number(formData.get("maxGrade") ?? 100),
     });
     if (!values.description.trim() && pdfFiles.length === 0) {
       throw new Error("Add a description, upload at least one PDF, or both.");

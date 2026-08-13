@@ -62,6 +62,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       title: String(formData.get("title") ?? ""),
       description: String(formData.get("description") ?? ""),
       durationMinutes: Number(formData.get("durationMinutes") ?? 0),
+      maxScore: Number(formData.get("maxScore") ?? 100),
       published: formData.get("published") === "true",
     });
 

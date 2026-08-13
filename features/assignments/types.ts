@@ -9,6 +9,7 @@ export type Assignment = {
   title: string;
   description: string;
   deadline: string | null;
+  maxGrade: number;
   pdfs: AssignmentPdf[];
   pdfUrl: string;
   pdfFileName: string;
@@ -28,6 +29,7 @@ export type AssignmentSubmission = {
   pdfUrl: string;
   pdfFileName: string;
   grade: number | null;
+  maxGrade: number;
   feedback: string;
   isLate: boolean;
   createdAt: string | null;
@@ -38,6 +40,7 @@ export type AssignmentFormValues = {
   title: string;
   description: string;
   deadline: string;
+  maxGrade: number;
 };
 
 export type AssignmentGradeValues = {

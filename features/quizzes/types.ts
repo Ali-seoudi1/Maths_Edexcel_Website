@@ -11,6 +11,7 @@ export type Quiz = {
   title: string;
   description: string;
   durationMinutes: number;
+  maxScore: number;
   pdfs: QuizPdf[];
   published: boolean;
   publishedAt: string | null;
@@ -25,6 +26,7 @@ export type QuizFormValues = {
   title: string;
   description: string;
   durationMinutes: number;
+  maxScore: number;
   published?: boolean;
 };
 
@@ -56,6 +58,7 @@ export type QuizSubmission = {
   gradedAt: string | null;
   gradedBy: string;
   score: number | null;
+  maxScore: number;
   feedback: string;
   createdAt: string | null;
   updatedAt: string | null;

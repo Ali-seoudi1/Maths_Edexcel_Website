@@ -103,11 +103,12 @@ export function AdminQuizDetailView({ quizId }: { quizId: string }) {
 
     const rawScore = draft.score.trim();
     const parsedScore = rawScore === "" ? null : Number(rawScore);
+    const maxScore = quiz?.maxScore ?? 100;
 
-    if (parsedScore !== null && (Number.isNaN(parsedScore) || parsedScore < 0)) {
+    if (parsedScore !== null && (Number.isNaN(parsedScore) || parsedScore < 0 || parsedScore > maxScore)) {
       toast({
         title: "Invalid score",
-        description: "Enter a score of 0 or higher.",
+        description: "Enter a score between 0 and the total score.",
         variant: "destructive",
       });
       return;
@@ -230,7 +231,7 @@ export function AdminQuizDetailView({ quizId }: { quizId: string }) {
                         {submission.noSubmission ? (
                           <Badge variant="outline">No submission</Badge>
                         ) : submission.late ? (
-                          <Badge variant="destructive">Late</Badge>
+                          <span className="text-sm font-semibold text-destructive">Late</span>
                         ) : (
                           <Badge variant="secondary">On time</Badge>
                         )}
@@ -256,6 +257,8 @@ export function AdminQuizDetailView({ quizId }: { quizId: string }) {
                     <SubmissionGradePanel
                       editing={isEditingGrade}
                       feedback={draft.feedback}
+                      max={quiz.maxScore}
+                      maxScoreValue={String(quiz.maxScore)}
                       saving={savingId === submission.id}
                       scoreLabel="Score"
                       scorePlaceholder="Score"

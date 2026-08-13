@@ -10,6 +10,7 @@ type SubmissionGradePanelProps = {
   feedback: string;
   feedbackPlaceholder?: string;
   max?: number;
+  maxScoreValue?: string;
   min?: number;
   saving: boolean;
   scoreLabel: string;
@@ -27,6 +28,7 @@ export function SubmissionGradePanel({
   feedback,
   feedbackPlaceholder = "Add feedback for the student",
   max,
+  maxScoreValue,
   min = 0,
   saving,
   scoreLabel,
@@ -44,6 +46,7 @@ export function SubmissionGradePanel({
         <div>
           <p className="text-sm font-semibold text-foreground">
             {scoreSummaryLabel}: {scoreValue.trim() ? scoreValue : "Not set"}
+            {scoreValue.trim() && maxScoreValue ? ` / ${maxScoreValue}` : ""}
           </p>
           {feedback ? (
             <p className="mt-1 text-sm text-muted-foreground">Feedback: {feedback}</p>
@@ -61,14 +64,19 @@ export function SubmissionGradePanel({
     <>
       <div className="grid gap-4 md:grid-cols-[140px_1fr] md:items-start">
         <label className="text-sm font-medium text-foreground">{scoreLabel}</label>
-        <Input
-          type="number"
-          min={min}
-          max={max}
-          value={scoreValue}
-          onChange={(event) => onScoreChange(event.target.value)}
-          placeholder={scorePlaceholder}
-        />
+        <div className="space-y-2">
+          <Input
+            type="number"
+            min={min}
+            max={max}
+            value={scoreValue}
+            onChange={(event) => onScoreChange(event.target.value)}
+            placeholder={scorePlaceholder}
+          />
+          {maxScoreValue ? (
+            <p className="text-xs font-medium text-muted-foreground">Out of {maxScoreValue}</p>
+          ) : null}
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-[140px_1fr] md:items-start">

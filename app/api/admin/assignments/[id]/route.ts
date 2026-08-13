@@ -71,6 +71,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       title: String(formData.get("title") ?? ""),
       description: String(formData.get("description") ?? ""),
       deadline: String(formData.get("deadline") ?? ""),
+      maxGrade: Number(formData.get("maxGrade") ?? 100),
     });
     const assignment = await updateAssignment(id, values, pdfFiles, admin.uid);
 

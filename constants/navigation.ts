@@ -3,10 +3,12 @@ import {
   BarChart3,
   BookOpen,
   ClipboardCheck,
+  ClipboardList,
   FileQuestion,
   LayoutDashboard,
   Megaphone,
   PenSquare,
+  Video,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -48,6 +50,16 @@ export const dashboardNavigation: DashboardNavItem[] = [
     title: "Quizzes",
     href: "/quizzes",
     icon: ClipboardCheck,
+  },
+  {
+    title: "Exams",
+    href: "/exams",
+    icon: ClipboardList,
+  },
+  {
+    title: "Live Meeting",
+    href: "/live-meeting",
+    icon: Video,
   },
   {
     title: "Announcements",

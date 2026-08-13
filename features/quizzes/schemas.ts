@@ -4,6 +4,7 @@ export const quizPayloadSchema = z.object({
   title: z.string().trim().min(2, "Enter the quiz title."),
   description: z.string().trim().optional().default(""),
   durationMinutes: z.number().int().min(1, "Quiz duration must be at least 1 minute."),
+  maxScore: z.number().min(1, "Total score must be at least 1."),
   published: z.boolean().optional(),
 });
 

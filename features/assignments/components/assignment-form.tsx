@@ -36,11 +36,13 @@ export function AssignmentForm({
           deadline: assignment.deadline
             ? new Date(assignment.deadline).toISOString().slice(0, 16)
             : "",
+          maxGrade: assignment.maxGrade,
         }
       : {
           title: "",
           description: "",
           deadline: "",
+          maxGrade: 100,
         },
   });
 
@@ -94,6 +96,22 @@ export function AssignmentForm({
         />
         {errors.deadline ? (
           <p className="text-sm text-destructive">{errors.deadline.message}</p>
+        ) : null}
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="maxGrade" className="text-sm font-medium text-foreground">
+          Total score
+        </label>
+        <Input
+          id="maxGrade"
+          type="number"
+          min={1}
+          disabled={isSubmitting}
+          {...register("maxGrade", { valueAsNumber: true })}
+        />
+        {errors.maxGrade ? (
+          <p className="text-sm text-destructive">{errors.maxGrade.message}</p>
         ) : null}
       </div>
 

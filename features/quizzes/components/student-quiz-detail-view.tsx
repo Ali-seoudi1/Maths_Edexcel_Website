@@ -1,8 +1,8 @@
 "use client";
 
-import { Clock3, FileQuestion, Loader2, UploadCloud } from "lucide-react";
+import { AlertTriangle, Clock3, FileQuestion, Loader2, UploadCloud } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { ScoreDisplay } from "@/components/shared/score-display";
@@ -15,8 +15,11 @@ import { useToast } from "@/components/ui/toast";
 
 import {
   getMyQuizSubmission,
+  getQuizAuthToken,
   getProtectedQuizPdfSrc,
   getQuiz,
+  markQuizNoSubmission,
+  markQuizNoSubmissionWithToken,
   startQuiz,
   submitQuizPdf,
 } from "../services/quiz-service";
@@ -70,18 +73,26 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [serverOffset, setServerOffset] = useState(0);
+  const authTokenRef = useRef("");
+  const abandonArmedRef = useRef(false);
+  const hasSubmissionRef = useRef(false);
+  const isSubmittingRef = useRef(false);
+  const pageUnloadingRef = useRef(false);
+  const visibilityTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
-    void Promise.all([getQuiz(quizId), getMyQuizSubmission(quizId)])
-      .then(async ([quizResult, submissionResult]) => {
+    void Promise.all([getQuiz(quizId), getMyQuizSubmission(quizId), getQuizAuthToken()])
+      .then(async ([quizResult, submissionResult, token]) => {
         if (!mounted) return;
 
         const canRestoreQuizAccess = Boolean(submissionResult.attempt);
-        const firstPdfId = canRestoreQuizAccess ? quizResult.quiz.pdfs[0]?.id ?? "" : "";
+        const hasFinalRecord = Boolean(submissionResult.submission);
+        const firstPdfId = canRestoreQuizAccess && !hasFinalRecord ? (quizResult.quiz.pdfs[0]?.id ?? "") : "";
         const protectedPdfSrc = firstPdfId ? await getProtectedQuizPdfSrc(quizId, firstPdfId) : "";
 
+        authTokenRef.current = token;
         setQuiz(quizResult.quiz);
         setAttempt(submissionResult.attempt);
         setSubmission(submissionResult.submission);
@@ -120,9 +131,71 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
 
   const isClosed = remainingSeconds === 0 || quiz?.status === "closed";
   const hasOpenedQuiz = Boolean(attempt);
-  const canOpenQuiz = Boolean(quiz) && !isClosed && !hasOpenedQuiz;
-  const canViewQuiz = hasOpenedQuiz;
+  const hasFinalSubmission = Boolean(submission);
+  const canOpenQuiz = Boolean(quiz) && !isClosed && !hasOpenedQuiz && !hasFinalSubmission;
+  const canViewQuiz = hasOpenedQuiz && !submission;
   const canSubmitQuiz = canViewQuiz && !submission;
+  const showQuizRuleNotice = canOpenQuiz || canViewQuiz;
+
+  useEffect(() => {
+    abandonArmedRef.current = canViewQuiz && !isSubmitting;
+    hasSubmissionRef.current = Boolean(submission);
+    isSubmittingRef.current = isSubmitting;
+  }, [canViewQuiz, isSubmitting, submission]);
+
+  const markCurrentQuizNoSubmission = useCallback(() => {
+    if (!abandonArmedRef.current || hasSubmissionRef.current || isSubmittingRef.current) {
+      return;
+    }
+
+    abandonArmedRef.current = false;
+
+    const token = authTokenRef.current;
+
+    if (token) {
+      void markQuizNoSubmissionWithToken(quizId, token);
+      return;
+    }
+
+    void markQuizNoSubmission(quizId).catch(() => undefined);
+  }, [quizId]);
+
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        visibilityTimerRef.current = window.setTimeout(() => {
+          if (!pageUnloadingRef.current && document.hidden) {
+            markCurrentQuizNoSubmission();
+          }
+        }, 500);
+      } else if (visibilityTimerRef.current !== null) {
+        window.clearTimeout(visibilityTimerRef.current);
+        visibilityTimerRef.current = null;
+      }
+    }
+
+    function handleBeforeUnload() {
+      pageUnloadingRef.current = true;
+
+      if (visibilityTimerRef.current !== null) {
+        window.clearTimeout(visibilityTimerRef.current);
+        visibilityTimerRef.current = null;
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      markCurrentQuizNoSubmission();
+      if (visibilityTimerRef.current !== null) {
+        window.clearTimeout(visibilityTimerRef.current);
+        visibilityTimerRef.current = null;
+      }
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [markCurrentQuizNoSubmission]);
 
   async function handleStart() {
     if (!quiz) return;
@@ -141,12 +214,17 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
       const firstPdfId = result.quiz.pdfs[0]?.id ?? "";
       const protectedPdfSrc = firstPdfId ? await getProtectedQuizPdfSrc(quiz.id, firstPdfId) : "";
 
+      authTokenRef.current = await getQuizAuthToken();
       setQuiz(result.quiz);
       setAttempt(result.attempt);
       setSelectedPdfId(firstPdfId);
       setPdfSrc(protectedPdfSrc);
       setServerOffset(new Date(result.serverNow).getTime() - Date.now());
-      toast({ title: "Quiz opened", description: "Use the global deadline shown on this page.", variant: "success" });
+      toast({
+        title: "Quiz opened",
+        description: "Please submit your answers before the deadline.",
+        variant: "success",
+      });
     } catch (error) {
       toast({
         title: "Could not open quiz",
@@ -176,13 +254,18 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
     }
 
     try {
+      isSubmittingRef.current = true;
       setIsSubmitting(true);
       const result = await submitQuizPdf(quiz.id, answerFile);
+      abandonArmedRef.current = false;
+      hasSubmissionRef.current = true;
       setSubmission(result.submission);
       setAnswerFile(null);
       toast({
         title: "Submission successful",
-        description: result.submission.late ? `Marked late by ${formatLateBy(result.submission.lateBySeconds)}.` : "Submitted on time.",
+        description: result.submission.late
+          ? `Marked late by ${formatLateBy(result.submission.lateBySeconds)}.`
+          : "Submitted on time.",
         variant: "success",
       });
       router.push("/quizzes");
@@ -193,6 +276,7 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
         variant: "destructive",
       });
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   }
@@ -223,17 +307,30 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0 space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-semibold tracking-normal text-foreground">{quiz.title}</h1>
-                <Badge variant={isClosed ? "outline" : "secondary"}>{isClosed ? "Closed" : "Active"}</Badge>
+                <h1 className="text-2xl font-semibold tracking-normal text-foreground">
+                  {quiz.title}
+                </h1>
+                <Badge variant={isClosed ? "outline" : "secondary"}>
+                  {isClosed ? "Closed" : "Active"}
+                </Badge>
               </div>
               {quiz.description ? (
-                <p className="max-w-3xl text-sm leading-6 text-muted-foreground">{quiz.description}</p>
+                <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+                  {quiz.description}
+                </p>
               ) : null}
             </div>
-            {hasOpenedQuiz ? (
+            {hasFinalSubmission ? (
+              <Badge variant="outline">Closed</Badge>
+            ) : hasOpenedQuiz ? (
               <Badge variant="secondary">Opened</Badge>
             ) : (
-              <Button type="button" variant="outline" onClick={() => void handleStart()} disabled={!canOpenQuiz}>
+              <Button
+                type="button"
+                className="bg-amber-500 text-white shadow-md hover:bg-amber-600"
+                onClick={() => void handleStart()}
+                disabled={!canOpenQuiz}
+              >
                 Open quiz
               </Button>
             )}
@@ -249,12 +346,16 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
             </div>
             <div className="rounded-xl border bg-secondary/30 p-4">
               <p className="text-xs font-medium uppercase text-muted-foreground">Deadline</p>
-              <p className="mt-2 text-sm font-semibold text-foreground">{formatDate(quiz.expiresAt)}</p>
+              <p className="mt-2 text-sm font-semibold text-foreground">
+                {formatDate(quiz.expiresAt)}
+              </p>
             </div>
             <div className="rounded-xl border bg-secondary/30 p-4">
               <p className="text-xs font-medium uppercase text-muted-foreground">Submission</p>
               <p className="mt-2 text-sm font-semibold text-foreground">
-                {submission?.submittedAt ? `Submitted ${formatDate(submission.submittedAt)}` : "Not submitted"}
+                {submission?.submittedAt
+                  ? `Submitted ${formatDate(submission.submittedAt)}`
+                  : "Not submitted"}
               </p>
             </div>
           </div>
@@ -262,7 +363,26 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
           {isClosed && hasOpenedQuiz && !submission ? (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
               <p className="font-semibold">Quiz closed</p>
-              <p>You opened this quiz before the deadline, so a late PDF submission is still allowed.</p>
+              <p>
+                You opened this quiz before the deadline, so a late PDF submission is still allowed.
+              </p>
+            </div>
+          ) : null}
+
+          {showQuizRuleNotice ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+              <div className="flex gap-3">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+                <div>
+                  <p className="font-semibold">Important quiz rule</p>
+                  <p className="mt-1 leading-6">
+                    If you leave this quiz page, go to another page, press back, or switch away
+                    from this tab before submitting your PDF solution, this will be considered
+                    cheating. The quiz will be marked as no solution (cheating) with a score of 0
+                    and you will not be able to open it again.
+                  </p>
+                </div>
+              </div>
             </div>
           ) : null}
 
@@ -276,16 +396,30 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
           {submission ? (
             <div className="rounded-lg border bg-card p-4">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-semibold text-foreground">Submission successful</p>
-                {submission.late ? <Badge variant="destructive">Late</Badge> : <Badge variant="secondary">On time</Badge>}
+                <p className="text-sm font-semibold text-foreground">
+                  {submission.noSubmission ? "No solution (cheating)" : "Submission successful"}
+                </p>
+                {submission.noSubmission ? null : submission.late ? (
+                  <span className="text-sm font-semibold text-destructive">Late</span>
+                ) : (
+                  <Badge variant="secondary">On time</Badge>
+                )}
                 {submission.graded ? <Badge variant="default">Graded</Badge> : null}
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Submitted at {formatDate(submission.submittedAt)}
-                {submission.late ? `, ${formatLateBy(submission.lateBySeconds)}` : "."}
+                {submission.noSubmission
+                  ? "You violated the quiz rule before submitting a solution."
+                  : `Submitted at ${formatDate(submission.submittedAt)}${
+                      submission.late ? `, ${formatLateBy(submission.lateBySeconds)}` : "."
+                    }`}
               </p>
               {submission.graded ? (
-                <ScoreDisplay className="mt-4" score={submission.score ?? 0} feedback={submission.feedback} />
+                <ScoreDisplay
+                  className="mt-4"
+                  score={submission.score ?? 0}
+                  maxScore={quiz.maxScore}
+                  feedback={submission.feedback}
+                />
               ) : null}
             </div>
           ) : null}
@@ -325,16 +459,25 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
           <CardContent className="space-y-4 p-5">
             <div>
               <h2 className="text-lg font-semibold text-foreground">Your answer</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Upload one PDF containing your completed work.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Upload one PDF containing your completed work.
+              </p>
             </div>
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
               <Input
                 type="file"
                 accept="application/pdf"
-                onChange={(event: ChangeEvent<HTMLInputElement>) => setAnswerFile(event.target.files?.[0] ?? null)}
+                onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  setAnswerFile(event.target.files?.[0] ?? null)
+                }
                 disabled={isSubmitting}
               />
-              <Button type="button" className="w-full md:w-auto" onClick={() => void handleSubmit()} disabled={!answerFile || isSubmitting}>
+              <Button
+                type="button"
+                className="w-full md:w-auto"
+                onClick={() => void handleSubmit()}
+                disabled={!answerFile || isSubmitting}
+              >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

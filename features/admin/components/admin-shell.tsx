@@ -2,6 +2,7 @@
 
 import {
   ClipboardCheck,
+  ClipboardList,
   FileQuestion,
   GraduationCap,
   Archive,
@@ -12,6 +13,7 @@ import {
   PenSquare,
   UserRoundPlus,
   UsersRound,
+  Video,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -33,6 +35,8 @@ const adminNavigation = [
   { title: "Past Papers", href: "/admin/past-papers", icon: Archive },
   { title: "Assignments", href: "/admin/assignments", icon: PenSquare },
   { title: "Quizzes", href: "/admin/quizzes", icon: ClipboardCheck },
+  { title: "Exams", href: "/admin/exams", icon: ClipboardList },
+  { title: "Live Meeting", href: "/admin/live-meeting", icon: Video },
   { title: "Announcements", href: "/admin/announcements", icon: Megaphone },
   { title: "Model Answers", href: "/admin/model-answers", icon: FileQuestion },
 ];
@@ -68,6 +72,8 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
             (item.href === "/admin/past-papers" && pathname.startsWith("/admin/past-papers/")) ||
             (item.href === "/admin/assignments" && pathname.startsWith("/admin/assignments/")) ||
             (item.href === "/admin/quizzes" && pathname.startsWith("/admin/quizzes/")) ||
+            (item.href === "/admin/exams" && pathname.startsWith("/admin/exams/")) ||
+            (item.href === "/admin/live-meeting" && pathname.startsWith("/admin/live-meeting/")) ||
             (item.href === "/admin/announcements" && pathname.startsWith("/admin/announcements/")) ||
             (item.href === "/admin/model-answers" && pathname.startsWith("/admin/model-answers/"));
 

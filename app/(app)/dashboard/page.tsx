@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, ClipboardList, FileQuestion, Library, Lock, Search } from "lucide-react";
+import { ArrowRight, BookOpen, ClipboardList, FileQuestion, Library, Lock, Search, Video } from "lucide-react";
 import Link from "next/link";
 
 import { PageHeader, SectionHeader } from "@/components/shared";
@@ -29,6 +29,18 @@ const studyAreas = [
     description: "Open active timed quizzes and review graded scores.",
     href: "/quizzes",
     icon: FileQuestion,
+  },
+  {
+    title: "Exams",
+    description: "Open active timed exams and review graded scores.",
+    href: "/exams",
+    icon: FileQuestion,
+  },
+  {
+    title: "Live Meeting",
+    description: "Join the current live class link when your teacher posts one.",
+    href: "/live-meeting",
+    icon: Video,
   },
   {
     title: "Past Papers",

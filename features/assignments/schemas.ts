@@ -8,10 +8,11 @@ export const assignmentPayloadSchema = z.object({
     .trim()
     .min(1, "Choose a deadline.")
     .refine((value) => !Number.isNaN(Date.parse(value)), "Deadline must be a valid date."),
+  maxGrade: z.number().min(1, "Total score must be at least 1."),
 });
 
 export const assignmentGradeSchema = z.object({
-  grade: z.number().min(0).max(100).nullable().optional(),
+  grade: z.number().min(0).nullable().optional(),
   feedback: z.string().trim().max(500).optional(),
 });
 

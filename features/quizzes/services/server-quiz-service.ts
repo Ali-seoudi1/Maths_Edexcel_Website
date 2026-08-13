@@ -101,6 +101,7 @@ function toQuiz(id: string, data: FirebaseFirestore.DocumentData): Quiz {
     title: typeof data.title === "string" ? data.title : "",
     description: typeof data.description === "string" ? data.description : "",
     durationMinutes: typeof data.durationMinutes === "number" ? data.durationMinutes : 0,
+    maxScore: typeof data.maxScore === "number" && data.maxScore > 0 ? data.maxScore : 100,
     pdfs: normalizedPdfs,
     published,
     publishedAt: normalizeTimestamp(data.publishedAt),
@@ -126,6 +127,7 @@ function toQuizSubmission(id: string, data: FirebaseFirestore.DocumentData): Qui
     quizId: typeof data.quizId === "string" ? data.quizId : "",
     studentId: typeof data.studentId === "string" ? data.studentId : "",
     studentName: typeof data.studentName === "string" ? data.studentName : "Student",
+    noSubmission: data.noSubmission === true,
     pdfPath,
     pdfFileName: typeof data.pdfFileName === "string" ? data.pdfFileName : "",
     submittedAt: normalizeTimestamp(data.submittedAt),
@@ -137,6 +139,7 @@ function toQuizSubmission(id: string, data: FirebaseFirestore.DocumentData): Qui
     gradedAt: normalizeTimestamp(data.gradedAt),
     gradedBy: typeof data.gradedBy === "string" ? data.gradedBy : "",
     score: typeof data.score === "number" ? data.score : null,
+    maxScore: typeof data.maxScore === "number" && data.maxScore > 0 ? data.maxScore : 100,
     feedback: typeof data.feedback === "string" ? data.feedback : "",
     createdAt: normalizeTimestamp(data.createdAt),
     updatedAt: normalizeTimestamp(data.updatedAt),
@@ -260,6 +263,7 @@ export async function createQuiz(values: QuizFormValues, pdfFiles: File[], admin
     title: values.title,
     description: values.description,
     durationMinutes: values.durationMinutes,
+    maxScore: values.maxScore,
     pdfs,
     published: shouldPublish,
     publishedAt,
@@ -309,6 +313,7 @@ export async function updateQuiz(
     title: values.title,
     description: values.description,
     durationMinutes: values.durationMinutes,
+    maxScore: values.maxScore,
     pdfs,
     published: shouldPublish,
     updatedAt: FieldValue.serverTimestamp(),
@@ -418,6 +423,12 @@ export async function startQuiz(quizId: string, studentId: string, studentName: 
     throw new Error("This quiz is closed.");
   }
 
+  const existingSubmission = await getStudentQuizSubmission(quizId, studentId);
+
+  if (existingSubmission) {
+    throw new Error("This quiz already has a final submission record.");
+  }
+
   const ref = getFirebaseAdminDb().collection(quizAttemptsCollection).doc(getSubmissionDocumentId(quizId, studentId));
   await ref.set(
     {
@@ -436,6 +447,55 @@ export async function startQuiz(quizId: string, studentId: string, studentName: 
     attempt: toQuizAttempt(attemptSnapshot.id, attemptSnapshot.data() ?? {}),
     serverNow: getServerNowIso(),
   };
+}
+
+export async function markQuizNoSubmission(quizId: string, studentId: string, studentName: string) {
+  const quiz = await getQuizById(quizId, { publishedOnly: true });
+
+  if (!quiz) {
+    throw new Error("Quiz was not found.");
+  }
+
+  const attempt = await getStudentQuizAttempt(quizId, studentId);
+
+  if (!attempt) {
+    throw new Error("Open the quiz before it can be marked as no solution.");
+  }
+
+  const ref = getFirebaseAdminDb()
+    .collection(quizSubmissionsCollection)
+    .doc(getSubmissionDocumentId(quizId, studentId));
+  const existing = await ref.get();
+
+  if (existing.exists) {
+    return toQuizSubmission(existing.id, existing.data() ?? {});
+  }
+
+  await ref.set({
+    quizId,
+    studentId,
+    studentName,
+    noSubmission: true,
+    pdfPath: "",
+    pdfFileName: "",
+    submittedAt: null,
+    late: false,
+    lateBySeconds: 0,
+    status: "graded",
+    finalized: true,
+    graded: true,
+    gradedAt: FieldValue.serverTimestamp(),
+    gradedBy: "system",
+    score: 0,
+    maxScore: quiz.maxScore,
+    feedback: "No solution (cheating).",
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  const saved = await ref.get();
+
+  return toQuizSubmission(saved.id, saved.data() ?? {});
 }
 
 export async function submitQuizPdf(
@@ -466,12 +526,21 @@ export async function submitQuizPdf(
     ? Math.max(0, Math.floor((submittedAt.toMillis() - deadline.toMillis()) / 1000))
     : 0;
   const late = lateBySeconds > 0;
-  const pdf = await uploadPdf(pdfFile, quizSubmissionFolder);
   const ref = getFirebaseAdminDb()
     .collection(quizSubmissionsCollection)
     .doc(getSubmissionDocumentId(quizId, studentId));
   const existing = await ref.get();
   const existingSubmission = existing.exists ? toQuizSubmission(existing.id, existing.data() ?? {}) : null;
+
+  if (existingSubmission) {
+    throw new Error(
+      existingSubmission.noSubmission
+        ? "You violated the quiz rule, this quiz was marked as no solution (cheating) and cannot be submitted again."
+        : "This quiz already has a submitted solution.",
+    );
+  }
+
+  const pdf = await uploadPdf(pdfFile, quizSubmissionFolder);
 
   await ref.set(
     {
@@ -489,16 +558,13 @@ export async function submitQuizPdf(
       gradedAt: null,
       gradedBy: "",
       score: null,
+      maxScore: quiz.maxScore,
       feedback: "",
       createdAt: existing.exists ? existing.data()?.createdAt ?? FieldValue.serverTimestamp() : FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     },
     { merge: true },
   );
-
-  if (existingSubmission?.pdfPath) {
-    await deleteStorageFile(existingSubmission.pdfPath);
-  }
 
   const saved = await ref.get();
 
@@ -549,6 +615,7 @@ export async function listQuizSubmissions(quizId: string) {
       gradedAt: null,
       gradedBy: "",
       score: null,
+      maxScore: quiz.maxScore,
       feedback: "",
       createdAt: null,
       updatedAt: null,
@@ -576,8 +643,16 @@ export async function gradeQuizSubmission(
     throw new Error("Submission was not found.");
   }
 
+  const score = typeof values.score === "number" ? values.score : null;
+  const maxScore = quiz.maxScore;
+
+  if (score !== null && score > maxScore) {
+    throw new Error("Score cannot be greater than the total score.");
+  }
+
   await ref.update({
-    score: typeof values.score === "number" ? values.score : null,
+    score,
+    maxScore,
     feedback: values.feedback ?? "",
     status: "graded",
     graded: true,

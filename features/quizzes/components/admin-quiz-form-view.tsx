@@ -25,6 +25,7 @@ export function AdminQuizFormView({ quiz, onSaved }: AdminQuizFormViewProps) {
   const [title, setTitle] = useState(quiz?.title ?? "");
   const [description, setDescription] = useState(quiz?.description ?? "");
   const [durationMinutes, setDurationMinutes] = useState(quiz?.durationMinutes ?? 10);
+  const [maxScore, setMaxScore] = useState(quiz?.maxScore ?? 100);
   const [published, setPublished] = useState(quiz?.published ?? false);
   const [removedPdfIds, setRemovedPdfIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -61,12 +62,22 @@ export function AdminQuizFormView({ quiz, onSaved }: AdminQuizFormViewProps) {
       return;
     }
 
+    if (!Number.isFinite(maxScore) || maxScore < 1) {
+      toast({
+        title: "Invalid total score",
+        description: "Enter a total score of 1 or higher.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setSubmitting(true);
       const values = {
         title: title.trim(),
         description: description.trim(),
         durationMinutes,
+        maxScore,
         published: publishedOverride,
       };
 
@@ -139,6 +150,15 @@ export function AdminQuizFormView({ quiz, onSaved }: AdminQuizFormViewProps) {
             min={1}
             value={durationMinutes}
             onChange={(event) => setDurationMinutes(Number(event.target.value) || 1)}
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Total score</label>
+          <Input
+            type="number"
+            min={1}
+            value={maxScore}
+            onChange={(event) => setMaxScore(Number(event.target.value) || 1)}
           />
         </div>
         <label className="flex items-start gap-3 rounded-lg border bg-secondary/30 p-4">

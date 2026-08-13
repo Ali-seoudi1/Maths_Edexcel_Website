@@ -78,6 +78,7 @@ function appendAssignmentFormData(values: AssignmentFormValues, pdfFiles: File[]
   formData.set("title", values.title);
   formData.set("description", values.description);
   formData.set("deadline", values.deadline);
+  formData.set("maxGrade", String(values.maxGrade));
 
   pdfFiles.forEach((pdfFile) => formData.append("pdfs", pdfFile));
 
@@ -133,6 +134,21 @@ export async function updateAssignmentSubmissionGrade(
       method: "PATCH",
       body: JSON.stringify(values),
     },
+  );
+}
+
+export async function openProtectedAdminAssignmentSubmissionPdf(
+  assignmentId: string,
+  submissionId: string,
+  pdfId: string,
+) {
+  const token = await getIdToken();
+  const params = new URLSearchParams({ token, pdfId });
+
+  window.open(
+    `/api/admin/assignments/${assignmentId}/submissions/${submissionId}/pdf?${params.toString()}`,
+    "_blank",
+    "noopener,noreferrer",
   );
 }
 
