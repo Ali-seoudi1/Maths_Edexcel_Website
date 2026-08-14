@@ -1,6 +1,7 @@
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 import { getFirebaseAdminDb, getFirebaseAdminStorageBucket } from "@/lib/firebase/admin";
+import { createNotification } from "@/features/notifications/services/server-notification-service";
 
 import type {
   Exam,
@@ -643,6 +644,7 @@ export async function gradeExamSubmission(
     throw new Error("Submission was not found.");
   }
 
+  const wasGraded = snapshot.data()?.graded === true || snapshot.data()?.status === "graded";
   const score = typeof values.score === "number" ? values.score : null;
   const maxScore = exam.maxScore;
 
@@ -666,6 +668,17 @@ export async function gradeExamSubmission(
   const [submission] = await hydrateSubmissionStudentNames([
     toExamSubmission(updated.id, updated.data() ?? {}),
   ]);
+
+  if (!wasGraded) {
+    await createNotification({
+      studentId: submission.studentId,
+      type: "exam_grade",
+      title: "Your exam grade is available",
+      message: `Your grade for ${exam.title} is now available. Check it out.`,
+      link: `/exams/${exam.id}`,
+      relatedId: submission.id,
+    });
+  }
 
   return submission;
 }

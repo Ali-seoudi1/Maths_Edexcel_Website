@@ -1,6 +1,7 @@
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 import { getFirebaseAdminDb, getFirebaseAdminStorageBucket } from "@/lib/firebase/admin";
+import { createNotification } from "@/features/notifications/services/server-notification-service";
 
 import type {
   Quiz,
@@ -643,6 +644,7 @@ export async function gradeQuizSubmission(
     throw new Error("Submission was not found.");
   }
 
+  const wasGraded = snapshot.data()?.graded === true || snapshot.data()?.status === "graded";
   const score = typeof values.score === "number" ? values.score : null;
   const maxScore = quiz.maxScore;
 
@@ -666,6 +668,17 @@ export async function gradeQuizSubmission(
   const [submission] = await hydrateSubmissionStudentNames([
     toQuizSubmission(updated.id, updated.data() ?? {}),
   ]);
+
+  if (!wasGraded) {
+    await createNotification({
+      studentId: submission.studentId,
+      type: "quiz_grade",
+      title: "Your quiz grade is available",
+      message: `Your grade for ${quiz.title} is now available. Check it out.`,
+      link: `/quizzes/${quiz.id}`,
+      relatedId: submission.id,
+    });
+  }
 
   return submission;
 }

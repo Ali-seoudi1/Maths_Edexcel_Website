@@ -4,6 +4,7 @@ import { Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth";
+import { NotificationBell } from "@/features/notifications/components/notification-bell";
 
 type TopBarProps = {
   onMenuClick: () => void;
@@ -34,6 +35,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         </Button>
 
         <div className="ml-auto flex items-center gap-3">
+          {profile?.role === "student" ? <NotificationBell /> : null}
           <button
             type="button"
             className="flex h-11 w-11 items-center justify-center rounded-xl bg-warning-soft text-sm font-bold text-amber-700 shadow-soft"

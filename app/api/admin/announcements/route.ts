@@ -6,6 +6,7 @@ import {
   listAnnouncements,
 } from "@/features/announcements/services/server-announcement-service";
 import { adminSdkUnavailableResponse, errorResponse } from "@/features/lessons/services/route-helpers";
+import { createNotificationForAllActiveStudents } from "@/features/notifications/services/server-notification-service";
 
 function parsePayload(payload: unknown) {
   if (!payload || typeof payload !== "object") {
@@ -55,6 +56,18 @@ export async function POST(request: Request) {
     const admin = await requireAdmin(request);
     const values = parsePayload(await request.json());
     const announcement = await createAnnouncement(values, admin.uid);
+
+    if (announcement.published) {
+      await createNotificationForAllActiveStudents({
+        type: "announcement",
+        title: "New announcement",
+        message: announcement.title
+          ? `${announcement.title} has been posted by your teacher.`
+          : "A new announcement has been posted by your teacher.",
+        link: "/announcements",
+        relatedId: announcement.id,
+      });
+    }
 
     return NextResponse.json({ announcement }, { status: 201 });
   } catch (error) {

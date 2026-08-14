@@ -4,6 +4,7 @@ import { requireAdmin } from "@/features/admin/students/services/admin-auth";
 import { assignmentPayloadSchema } from "@/features/assignments/schemas";
 import { createAssignment, listAssignments } from "@/features/assignments/services/server-assignment-service";
 import { adminSdkUnavailableResponse, errorResponse } from "@/features/lessons/services/route-helpers";
+import { createNotificationForAllActiveStudents } from "@/features/notifications/services/server-notification-service";
 
 export async function GET(request: Request) {
   const unavailableResponse = adminSdkUnavailableResponse();
@@ -44,6 +45,14 @@ export async function POST(request: Request) {
     }
 
     const assignment = await createAssignment(values, pdfFiles, admin.uid);
+    await createNotificationForAllActiveStudents({
+      type: "assignment",
+      title: `New assignment: ${assignment.title}`,
+      message: "A new assignment is available for you.",
+      link: "/assignments",
+      relatedId: assignment.id,
+    });
+
     return NextResponse.json({ assignment }, { status: 201 });
   } catch (error) {
     return errorResponse(error, "Assignment request failed.");

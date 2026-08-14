@@ -1,8 +1,11 @@
+"use client";
+
 import { ArrowRight, BookOpen, ClipboardList, FileQuestion, Library, Lock, Search, Video } from "lucide-react";
 import Link from "next/link";
 
 import { PageHeader, SectionHeader } from "@/components/shared";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/features/auth";
 
 const studyAreas = [
   {
@@ -51,11 +54,14 @@ const studyAreas = [
 ];
 
 export default function DashboardPage() {
+  const { profile } = useAuth();
+  const firstName = profile?.fullName?.trim().split(/\s+/)[0];
+
   return (
     <div className="space-y-7">
       <PageHeader
         eyebrow="Student Dashboard"
-        title="Welcome back"
+        title={firstName ? `Welcome back, ${firstName}!` : "Welcome back"}
         description="Choose what you want to study next. Your lessons, model answers, assignments, and quizzes are grouped into focused areas."
       />
 

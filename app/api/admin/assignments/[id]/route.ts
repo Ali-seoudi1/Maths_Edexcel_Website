@@ -8,6 +8,7 @@ import {
   updateAssignment,
 } from "@/features/assignments/services/server-assignment-service";
 import { adminSdkUnavailableResponse, errorResponse } from "@/features/lessons/services/route-helpers";
+import { deleteNotificationsByTypeAndRelatedId } from "@/features/notifications/services/server-notification-service";
 
 type RouteContext = {
   params: Promise<{
@@ -48,6 +49,7 @@ export async function DELETE(request: Request, context: RouteContext) {
     await requireAdmin(request);
     const { id } = await context.params;
     const result = await deleteAssignment(id);
+    await deleteNotificationsByTypeAndRelatedId("assignment", id);
 
     return NextResponse.json(result);
   } catch (error) {
