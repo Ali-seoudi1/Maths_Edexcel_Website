@@ -1,5 +1,6 @@
 export type NotificationType =
   | "assignment"
+  | "assignment_grade"
   | "quiz_grade"
   | "exam_grade"
   | "announcement"

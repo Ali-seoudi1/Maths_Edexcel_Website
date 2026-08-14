@@ -32,6 +32,7 @@ function toNotification(id: string, data: FirebaseFirestore.DocumentData): Stude
 function isNotificationType(value: unknown): value is NotificationType {
   return (
     value === "assignment" ||
+    value === "assignment_grade" ||
     value === "quiz_grade" ||
     value === "exam_grade" ||
     value === "announcement" ||
@@ -134,10 +135,19 @@ export async function ensureMonthlyReportNotification(studentId: string) {
     studentId,
     type: "monthly_report",
     title: `Your ${monthName} report is ready`,
-    message: "Check your monthly report to see your progress from last month.",
+    message: `Your report for ${monthName} is now done. Don't forget to check it out.`,
     link: "/reports",
     relatedId,
   });
+}
+
+export async function ensureMonthlyReportNotificationsForAllActiveStudents() {
+  const studentIds = await listActiveStudentIds();
+  const notifications = await Promise.all(
+    studentIds.map((studentId) => ensureMonthlyReportNotification(studentId)),
+  );
+
+  return { createdOrExistingCount: notifications.filter(Boolean).length };
 }
 
 export async function deleteNotificationsByTypeAndRelatedId(type: NotificationType, relatedId: string) {

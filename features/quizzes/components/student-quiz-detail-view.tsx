@@ -77,8 +77,6 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
   const abandonArmedRef = useRef(false);
   const hasSubmissionRef = useRef(false);
   const isSubmittingRef = useRef(false);
-  const pageUnloadingRef = useRef(false);
-  const visibilityTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -89,7 +87,8 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
 
         const canRestoreQuizAccess = Boolean(submissionResult.attempt);
         const hasFinalRecord = Boolean(submissionResult.submission);
-        const firstPdfId = canRestoreQuizAccess && !hasFinalRecord ? (quizResult.quiz.pdfs[0]?.id ?? "") : "";
+        const firstPdfId =
+          canRestoreQuizAccess && !hasFinalRecord ? (quizResult.quiz.pdfs[0]?.id ?? "") : "";
         const protectedPdfSrc = firstPdfId ? await getProtectedQuizPdfSrc(quizId, firstPdfId) : "";
 
         authTokenRef.current = token;
@@ -161,39 +160,8 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
   }, [quizId]);
 
   useEffect(() => {
-    function handleVisibilityChange() {
-      if (document.hidden) {
-        visibilityTimerRef.current = window.setTimeout(() => {
-          if (!pageUnloadingRef.current && document.hidden) {
-            markCurrentQuizNoSubmission();
-          }
-        }, 500);
-      } else if (visibilityTimerRef.current !== null) {
-        window.clearTimeout(visibilityTimerRef.current);
-        visibilityTimerRef.current = null;
-      }
-    }
-
-    function handleBeforeUnload() {
-      pageUnloadingRef.current = true;
-
-      if (visibilityTimerRef.current !== null) {
-        window.clearTimeout(visibilityTimerRef.current);
-        visibilityTimerRef.current = null;
-      }
-    }
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
     return () => {
       markCurrentQuizNoSubmission();
-      if (visibilityTimerRef.current !== null) {
-        window.clearTimeout(visibilityTimerRef.current);
-        visibilityTimerRef.current = null;
-      }
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [markCurrentQuizNoSubmission]);
 
@@ -376,10 +344,11 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
                 <div>
                   <p className="font-semibold">Important quiz rule</p>
                   <p className="mt-1 leading-6">
-                    If you leave this quiz page, go to another page, press back, or switch away
-                    from this tab before submitting your PDF solution, this will be considered
-                    cheating. The quiz will be marked as no solution (cheating) with a score of 0
-                    and you will not be able to open it again.
+                    If you leave this quiz page or press back before submitting your PDF solution,
+                    this will be considered cheating. The quiz will be marked as no solution
+                    (cheating) with a score of 0 and you will not be able to open it again. Opening
+                    another tab is allowed only if you need to download your quiz solution file for
+                    upload.
                   </p>
                 </div>
               </div>

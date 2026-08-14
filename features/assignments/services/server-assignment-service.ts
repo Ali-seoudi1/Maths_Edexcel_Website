@@ -1,6 +1,7 @@
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 import { getFirebaseAdminDb, getFirebaseAdminStorageBucket } from "@/lib/firebase/admin";
+import { createNotification } from "@/features/notifications/services/server-notification-service";
 
 import type {
   Assignment,
@@ -590,6 +591,7 @@ export async function updateAssignmentSubmissionGrade(
     throw new Error("Submission was not found.");
   }
 
+  const wasGraded = typeof snapshot.data()?.grade === "number";
   const grade = values.grade ?? null;
   const maxGrade = assignment.maxGrade;
   const feedback = values.feedback ?? "";
@@ -606,8 +608,20 @@ export async function updateAssignmentSubmissionGrade(
   });
 
   const updated = await ref.get();
+  const submission = toAssignmentSubmission(updated.id, updated.data() ?? {}, assignment.deadline, assignment.maxGrade);
 
-  return toAssignmentSubmission(updated.id, updated.data() ?? {}, assignment.deadline, assignment.maxGrade);
+  if (!wasGraded && grade !== null) {
+    await createNotification({
+      studentId: submission.studentId,
+      type: "assignment_grade",
+      title: "Your assignment grade is available",
+      message: `Your grade for ${assignment.title} is now available. Check it out.`,
+      link: "/assignments",
+      relatedId: submission.id,
+    });
+  }
+
+  return submission;
 }
 
 export async function getAssignmentPdfBuffer(id: string, pdfId?: string) {
