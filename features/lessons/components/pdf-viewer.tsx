@@ -41,9 +41,9 @@ export function PdfViewer({ src, title }: PdfViewerProps) {
 
   return (
     <div ref={viewerRef} className="overflow-hidden rounded-lg border bg-card shadow-soft">
-      <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-semibold text-foreground">{title}</p>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-3 border-b p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+        <p className="min-w-0 break-words text-sm font-semibold text-foreground">{title}</p>
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
             variant="outline"
@@ -81,13 +81,13 @@ export function PdfViewer({ src, title }: PdfViewerProps) {
       <div
         className={cn(
           "h-[75vh] overflow-auto bg-secondary p-3",
-          isFullscreen && "h-[calc(100vh-73px)]",
+          isFullscreen && "h-[calc(100dvh-73px)]",
         )}
       >
         <iframe
           src={`${src}#toolbar=0&navpanes=0&scrollbar=1`}
           title={title}
-          className="mx-auto h-full min-h-[620px] w-full rounded-md bg-white"
+          className="mx-auto h-full min-h-[70dvh] w-full rounded-md bg-white"
           style={{ width: `${zoom}%` }}
         />
       </div>

@@ -82,7 +82,7 @@ export function StudentQuizListView() {
             Open available quizzes and review finished results.
           </p>
         </div>
-        <div className="inline-flex rounded-xl border bg-card p-1 shadow-sm">
+        <div className="inline-flex w-full rounded-xl border bg-card p-1 shadow-sm sm:w-auto">
           {[
             { label: "All", value: "all" },
             { label: "Submitted", value: "submitted" },
@@ -93,7 +93,7 @@ export function StudentQuizListView() {
               type="button"
               variant={filter === item.value ? "default" : "ghost"}
               size="sm"
-              className="rounded-lg"
+              className="flex-1 rounded-lg sm:flex-none"
               onClick={() => setFilter(item.value as QuizFilter)}
               showPendingOnPress={false}
             >

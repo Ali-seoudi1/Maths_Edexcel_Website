@@ -50,7 +50,7 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { profile } = useAuth();
 
   return (
-    <aside className="flex h-full flex-col border-r bg-card px-4 py-6">
+    <aside className="flex h-full min-h-0 flex-col overflow-y-auto overscroll-contain border-r bg-card px-4 py-5 sm:py-6">
       <Link href="/admin" className="flex items-center gap-3 px-2" onClick={onNavigate}>
         <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
           <GraduationCap className="h-5 w-5" aria-hidden="true" />
@@ -61,7 +61,7 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </Link>
 
-      <nav className="mt-8 space-y-1" aria-label="Admin navigation">
+      <nav className="mt-6 space-y-1 sm:mt-8" aria-label="Admin navigation">
         {adminNavigation.map((item) => {
           const Icon = item.icon;
           const isActive =
@@ -95,7 +95,7 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </nav>
 
-      <div className="mt-auto border-t pt-4">
+      <div className="mt-8 border-t pt-4">
         <p className="text-xs text-muted-foreground">Signed in as</p>
         <p className="mt-1 truncate text-sm font-semibold text-foreground">
           {profile?.fullName ?? "Admin"}
@@ -120,7 +120,7 @@ export function AdminShell({ children }: AdminShellProps) {
         </div>
 
         <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
-          <DialogContent className="left-0 top-0 h-dvh w-72 max-w-none translate-x-0 translate-y-0 rounded-none border-0 bg-card p-0 shadow-none sm:w-80">
+          <DialogContent className="left-0 top-0 h-dvh max-h-dvh w-[min(20rem,calc(100vw-2rem))] max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-none border-0 bg-card p-0 shadow-none sm:w-80 [&>button]:z-10">
             <DialogTitle className="sr-only">Admin navigation</DialogTitle>
             <DialogDescription className="sr-only">
               Primary navigation for admin user management.

@@ -96,6 +96,7 @@
 }
 
 html {
+  overflow-x: clip;
   scroll-behavior: smooth;
 }
 
@@ -116,6 +117,7 @@ html[data-route-loading="true"] * {
 
 body {
   min-height: 100vh;
+  overflow-x: clip;
   background: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family:

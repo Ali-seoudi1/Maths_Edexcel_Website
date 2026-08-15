@@ -199,7 +199,7 @@ export function StudentAssignmentsView() {
             View task PDFs, submit your solution, and check feedback after grading.
           </p>
         </div>
-        <div className="inline-flex rounded-xl border bg-card p-1 shadow-sm">
+        <div className="inline-flex w-full rounded-xl border bg-card p-1 shadow-sm sm:w-auto">
           {[
             { label: "All", value: "all" },
             { label: "Submitted", value: "submitted" },
@@ -210,7 +210,7 @@ export function StudentAssignmentsView() {
               type="button"
               variant={filter === item.value ? "default" : "ghost"}
               size="sm"
-              className="rounded-lg"
+              className="flex-1 rounded-lg sm:flex-none"
               onClick={() => setFilter(item.value as AssignmentFilter)}
               showPendingOnPress={false}
             >
@@ -348,11 +348,12 @@ export function StudentAssignmentsView() {
                     {submission?.pdfs.length ? (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {submission.pdfs.map((pdf) => (
-                          <div key={pdf.id} className="flex flex-wrap items-center gap-2">
+                          <div key={pdf.id} className="flex min-w-0 flex-wrap items-center gap-2">
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
+                              className="min-w-0 max-w-full"
                               onClick={async () => {
                                 const token = await getFirebaseAuth().currentUser?.getIdToken();
                                 const params = new URLSearchParams({
@@ -366,7 +367,7 @@ export function StudentAssignmentsView() {
                                 );
                               }}
                             >
-                              {pdf.fileName}
+                              <span className="truncate">{pdf.fileName}</span>
                             </Button>
                             {!isGraded ? (
                               <Button

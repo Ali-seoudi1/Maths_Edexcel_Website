@@ -48,12 +48,12 @@ export function ExamPdfViewer({ src, title }: ExamPdfViewerProps) {
       ref={containerRef}
       className={cn(
         "overflow-hidden rounded-lg border bg-card shadow-soft",
-        fullscreen && "flex h-screen w-screen flex-col rounded-none",
+        fullscreen && "flex h-dvh w-full flex-col rounded-none",
       )}
     >
-      <div className="shrink-0 flex flex-col gap-3 border-b bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold text-foreground">{title}</p>
+      <div className="flex shrink-0 flex-col gap-3 border-b bg-card p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+        <div className="min-w-0">
+          <p className="break-words text-sm font-semibold text-foreground">{title}</p>
           <p className="text-xs text-muted-foreground">Protected PDF preview</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -94,11 +94,11 @@ export function ExamPdfViewer({ src, title }: ExamPdfViewerProps) {
           </Button>
         </div>
       </div>
-      <div className={cn("h-[72vh] overflow-auto bg-secondary p-3", fullscreen && "min-h-0 flex-1")}>
+      <div className={cn("h-[72dvh] overflow-auto bg-secondary p-3", fullscreen && "min-h-0 flex-1")}>
         <iframe
           src={`${src}#toolbar=0&navpanes=0&scrollbar=1`}
           title={title}
-          className="mx-auto h-full min-h-[620px] w-full rounded-md bg-white"
+          className="mx-auto h-full min-h-[70dvh] w-full rounded-md bg-white"
           style={{ width: `${zoom}%` }}
         />
       </div>

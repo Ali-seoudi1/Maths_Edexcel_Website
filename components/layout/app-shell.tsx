@@ -24,7 +24,7 @@ export function AppShell({ children, className }: AppShellProps) {
       </div>
 
       <Dialog open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-        <DialogContent className="left-0 top-0 h-dvh w-72 max-w-none translate-x-0 translate-y-0 rounded-none border-0 bg-sidebar p-0 text-sidebar-foreground shadow-none sm:w-80">
+        <DialogContent className="left-0 top-0 h-dvh max-h-dvh w-[min(20rem,calc(100vw-2rem))] max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-none border-0 bg-sidebar p-0 text-sidebar-foreground shadow-none sm:w-80 [&>button]:z-10 [&>button]:text-sidebar-foreground">
           <DialogTitle className="sr-only">Dashboard navigation</DialogTitle>
           <DialogDescription className="sr-only">
             Primary navigation for the dashboard.

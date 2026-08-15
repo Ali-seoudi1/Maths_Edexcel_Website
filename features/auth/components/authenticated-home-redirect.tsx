@@ -22,7 +22,7 @@ export function AuthenticatedHomeRedirect() {
 
   if (isLoading || status === "authenticated") {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background text-muted-foreground">
+      <div className="fixed left-0 top-0 z-50 flex min-h-dvh w-full items-center justify-center bg-background text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin text-primary" aria-hidden="true" />
         Loading
       </div>
