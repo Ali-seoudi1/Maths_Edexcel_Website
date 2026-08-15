@@ -130,7 +130,7 @@ export function NotificationBell() {
       </Button>
 
       {open ? (
-        <div className="fixed left-4 right-4 top-24 z-50 flex max-h-[calc(100dvh-8rem-env(safe-area-inset-bottom))] w-auto flex-col overflow-hidden rounded-xl border bg-card shadow-lg sm:absolute sm:left-auto sm:right-0 sm:top-14 sm:max-h-none sm:w-[calc(100vw-2rem)] sm:max-w-sm">
+        <div className="fixed left-4 right-4 top-24 z-50 flex max-h-[calc(100dvh-8rem-env(safe-area-inset-bottom))] w-auto flex-col overflow-hidden rounded-xl border bg-card shadow-lg md:left-auto md:right-8 md:top-20 md:w-96 md:max-w-[calc(100vw-4rem)]">
           <div className="flex items-center justify-between gap-3 border-b p-4">
             <p className="font-semibold text-foreground">Notifications</p>
             <button
@@ -143,7 +143,7 @@ export function NotificationBell() {
             </button>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto sm:max-h-96">
+          <div className="min-h-0 flex-1 overflow-y-auto md:max-h-96">
             {loading ? (
               <p className="p-4 text-sm text-muted-foreground">Loading notifications...</p>
             ) : notifications.length === 0 ? (
