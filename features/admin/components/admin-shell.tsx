@@ -50,8 +50,8 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { profile } = useAuth();
 
   return (
-    <aside className="flex h-full min-h-0 flex-col overflow-y-auto overscroll-contain border-r bg-card px-4 py-5 sm:py-6">
-      <Link href="/admin" className="flex items-center gap-3 px-2" onClick={onNavigate}>
+    <aside className="flex h-full min-h-0 flex-col overflow-hidden border-r bg-card px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-5 sm:py-6">
+      <Link href="/admin" className="flex shrink-0 items-center gap-3 px-2" onClick={onNavigate}>
         <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
           <GraduationCap className="h-5 w-5" aria-hidden="true" />
         </div>
@@ -61,7 +61,7 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </Link>
 
-      <nav className="mt-6 space-y-1 sm:mt-8" aria-label="Admin navigation">
+      <nav className="mt-6 min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pr-1 sm:mt-8" aria-label="Admin navigation">
         {adminNavigation.map((item) => {
           const Icon = item.icon;
           const isActive =
@@ -95,7 +95,7 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </nav>
 
-      <div className="mt-8 border-t pt-4">
+      <div className="mt-5 shrink-0 border-t pt-4">
         <p className="text-xs text-muted-foreground">Signed in as</p>
         <p className="mt-1 truncate text-sm font-semibold text-foreground">
           {profile?.fullName ?? "Admin"}

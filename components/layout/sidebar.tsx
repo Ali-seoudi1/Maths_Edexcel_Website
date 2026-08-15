@@ -58,8 +58,8 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   }, [pathname]);
 
   return (
-    <aside className="flex h-full min-h-0 flex-col overflow-y-auto overscroll-contain bg-sidebar px-4 py-6 text-sidebar-foreground sm:py-8">
-      <div className="flex items-center gap-3 px-1">
+    <aside className="flex h-full min-h-0 flex-col overflow-hidden bg-sidebar px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-6 text-sidebar-foreground sm:py-8">
+      <div className="shrink-0 flex items-center gap-3 px-1">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success text-success-foreground shadow-soft">
           <Sigma className="h-5 w-5" aria-hidden="true" />
         </div>
@@ -69,7 +69,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         </div>
       </div>
 
-      <nav className="mt-8 space-y-2 sm:mt-10" aria-label="Dashboard navigation">
+      <nav className="mt-8 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1 sm:mt-10" aria-label="Dashboard navigation">
         {dashboardNavigation.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -116,7 +116,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         })}
       </nav>
 
-      <div className="mt-8 border-t border-white/10 pt-5">
+      <div className="mt-5 shrink-0 border-t border-white/10 pt-5">
         <p className="text-xs text-sidebar-muted">Logged in as</p>
         <div className="mt-2 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning-soft text-sm font-bold text-amber-700">
