@@ -7,6 +7,21 @@ import type { EditStudentFormValues, StudentFormValues } from "../schemas";
 import type { Student } from "../types";
 
 const staleStudentCollections = ["users", "students"] as const;
+const countersCollection = "systemCounters";
+const studentCodeCounterDocument = "studentCodes";
+
+function formatStudentCode(values: Pick<StudentFormValues, "yearGroup" | "mathTrack">, sequence: number) {
+  return `STU-${values.yearGroup}-${values.mathTrack}-${String(sequence).padStart(3, "0")}`;
+}
+
+function getStudentCodeSequence(studentCode: unknown) {
+  if (typeof studentCode !== "string") {
+    return null;
+  }
+
+  const match = /-(\d+)$/.exec(studentCode);
+  return match ? Number(match[1]) : null;
+}
 
 function getErrorCode(error: unknown) {
   return typeof error === "object" && error && "code" in error ? String(error.code) : "";
@@ -98,10 +113,38 @@ function toStudent(uid: string, data: FirebaseFirestore.DocumentData): Student {
     uid,
     fullName: typeof data.fullName === "string" ? data.fullName : "",
     email: typeof data.email === "string" ? data.email : "",
+    studentCode: typeof data.studentCode === "string" ? data.studentCode : uid,
+    yearGroup: typeof data.yearGroup === "string" ? data.yearGroup : "",
+    mathTrack: typeof data.mathTrack === "string" ? data.mathTrack : "",
     role: "student",
     active: data.active === true,
     createdAt: normalizeCreatedAt(data.createdAt),
   };
+}
+
+async function createNextStudentCode(values: Pick<StudentFormValues, "yearGroup" | "mathTrack">) {
+  const db = getFirebaseAdminDb();
+  const ref = db.collection(countersCollection).doc(studentCodeCounterDocument);
+  const existingStudents = await db.collection("users").where("role", "==", "student").get();
+  const initialSequence = existingStudents.size + 1;
+
+  return db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    const rawNextSequence = snapshot.data()?.nextSequence;
+    const nextSequence =
+      typeof rawNextSequence === "number" && rawNextSequence > 0 ? rawNextSequence : initialSequence;
+
+    transaction.set(
+      ref,
+      {
+        nextSequence: nextSequence + 1,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    return formatStudentCode(values, nextSequence);
+  });
 }
 
 export async function createStudentAccount(values: StudentFormValues) {
@@ -128,46 +171,50 @@ export async function createStudentAccount(values: StudentFormValues) {
     throw error;
   }
 
-  const profile = {
-    uid: user.uid,
-    fullName: values.fullName,
-    email,
-    role: "student" as const,
-    active: true,
-    createdAt: FieldValue.serverTimestamp(),
-  };
-
   try {
+    const studentCode = await createNextStudentCode(values);
+    const profile = {
+      uid: user.uid,
+      fullName: values.fullName,
+      email,
+      studentCode,
+      yearGroup: values.yearGroup,
+      mathTrack: values.mathTrack,
+      role: "student" as const,
+      active: true,
+      createdAt: FieldValue.serverTimestamp(),
+    };
+
     await db.collection("users").doc(user.uid).set(profile);
+
+    try {
+      const passwordSetupLink = await createPasswordSetupLink(email);
+      await sendStudentInvitationEmail({
+        to: email,
+        studentName: values.fullName,
+        passwordSetupLink,
+      });
+    } catch (error) {
+      await db
+        .collection("users")
+        .doc(user.uid)
+        .delete()
+        .catch(() => undefined);
+      await auth.deleteUser(user.uid).catch(() => undefined);
+      throw error;
+    }
+
+    return {
+      student: toStudent(user.uid, {
+        ...profile,
+        createdAt: new Date().toISOString(),
+      }),
+      invitationEmailSent: true,
+    };
   } catch (error) {
     await auth.deleteUser(user.uid).catch(() => undefined);
     throw error;
   }
-
-  try {
-    const passwordSetupLink = await createPasswordSetupLink(email);
-    await sendStudentInvitationEmail({
-      to: email,
-      studentName: values.fullName,
-      passwordSetupLink,
-    });
-  } catch (error) {
-    await db
-      .collection("users")
-      .doc(user.uid)
-      .delete()
-      .catch(() => undefined);
-    await auth.deleteUser(user.uid).catch(() => undefined);
-    throw error;
-  }
-
-  return {
-    student: toStudent(user.uid, {
-      ...profile,
-      createdAt: new Date().toISOString(),
-    }),
-    invitationEmailSent: true,
-  };
 }
 
 export async function listStudentAccounts() {
@@ -189,16 +236,25 @@ export async function updateStudentAccount(uid: string, values: EditStudentFormV
     throw new Error("Student account was not found.");
   }
 
+  const email = normalizeEmail(values.email);
+  const existingCodeSequence = getStudentCodeSequence(snapshot.data()?.studentCode);
+  const nextProfileValues = {
+    fullName: values.fullName,
+    email,
+    yearGroup: values.yearGroup,
+    mathTrack: values.mathTrack,
+    active: values.active,
+  };
+
   await auth.updateUser(uid, {
-    email: values.email,
+    email,
     displayName: values.fullName,
     disabled: !values.active,
   });
 
   await ref.update({
-    fullName: values.fullName,
-    email: values.email,
-    active: values.active,
+    ...nextProfileValues,
+    ...(existingCodeSequence ? { studentCode: formatStudentCode(values, existingCodeSequence) } : {}),
   });
 
   const updatedSnapshot = await ref.get();

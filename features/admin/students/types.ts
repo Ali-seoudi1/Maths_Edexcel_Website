@@ -4,6 +4,9 @@ export type Student = {
   uid: string;
   fullName: string;
   email: string;
+  studentCode: string;
+  yearGroup: string;
+  mathTrack: string;
   role: "student";
   active: boolean;
   createdAt: string | null;

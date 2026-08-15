@@ -39,6 +39,8 @@ export function StudentForm(props: StudentFormProps) {
         : {
             fullName: props.defaultValues?.fullName ?? "",
             email: props.defaultValues?.email ?? "",
+            yearGroup: props.defaultValues?.yearGroup ?? "Y10",
+            mathTrack: props.defaultValues?.mathTrack ?? "OL",
           },
   });
 
@@ -88,6 +90,43 @@ export function StudentForm(props: StudentFormProps) {
             {...register("email")}
           />
           {errors.email ? <p className="text-sm text-destructive">{errors.email.message}</p> : null}
+        </div>
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div className="space-y-2">
+          <label htmlFor="yearGroup" className="text-sm font-medium text-foreground">
+            Year
+          </label>
+          <select
+            id="yearGroup"
+            disabled={isSubmitting}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            {...register("yearGroup")}
+          >
+            <option value="Y9">Year 9</option>
+            <option value="Y10">Year 10</option>
+            <option value="Y11">Year 11</option>
+            <option value="Y12">Year 12</option>
+            <option value="Y13">Year 13</option>
+          </select>
+          {errors.yearGroup ? <p className="text-sm text-destructive">{errors.yearGroup.message}</p> : null}
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="mathTrack" className="text-sm font-medium text-foreground">
+            Maths Type
+          </label>
+          <select
+            id="mathTrack"
+            disabled={isSubmitting}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            {...register("mathTrack")}
+          >
+            <option value="OL">O Level</option>
+            <option value="AL">A Level</option>
+          </select>
+          {errors.mathTrack ? <p className="text-sm text-destructive">{errors.mathTrack.message}</p> : null}
         </div>
       </div>
 

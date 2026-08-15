@@ -74,6 +74,9 @@ export function CreateStudentView() {
                     <p className="text-sm font-semibold text-foreground">
                       {createdStudent.student.email}
                     </p>
+                    <p className="mt-1 font-mono text-xs text-muted-foreground">
+                      Student ID: {createdStudent.student.studentCode}
+                    </p>
                     <p className="mt-1 text-sm text-muted-foreground">
                       They can open the email, choose a password, then sign in with their email and
                       password.
