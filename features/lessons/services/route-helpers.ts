@@ -38,7 +38,6 @@ export function formDataToLessonPayload(formData: FormData) {
     chapterId: String(formData.get("chapterId") ?? ""),
     title: String(formData.get("title") ?? ""),
     description: String(formData.get("description") ?? ""),
-    order: Number(formData.get("order") ?? 0),
     published: formData.get("published") === "true",
   };
 }

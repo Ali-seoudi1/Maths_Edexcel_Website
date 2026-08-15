@@ -24,14 +24,14 @@ export function AdminModelAnswerFormView({ modelAnswer }: AdminModelAnswerFormVi
     if (modelAnswer) {
       await updateModelAnswer(modelAnswer.id, values);
       toast({
-        title: "Model answer updated",
+        title: "Key question updated",
         description: "Changes were saved.",
         variant: "success",
       });
     } else {
       await createModelAnswer(values);
       toast({
-        title: "Model answer created",
+        title: "Key question created",
         description: "The record is ready for revision search.",
         variant: "success",
       });
@@ -43,12 +43,12 @@ export function AdminModelAnswerFormView({ modelAnswer }: AdminModelAnswerFormVi
   return (
     <Card className="shadow-soft">
       <CardHeader>
-        <CardTitle>{modelAnswer ? "Edit model answer" : "Model answer details"}</CardTitle>
+        <CardTitle>{modelAnswer ? "Edit key question" : "Key question details"}</CardTitle>
       </CardHeader>
       <CardContent>
         <ModelAnswerForm
           defaultValue={modelAnswer}
-          submitLabel={modelAnswer ? "Save changes" : "Create model answer"}
+          submitLabel={modelAnswer ? "Save changes" : "Create key question"}
           onSubmit={handleSubmit}
         />
       </CardContent>

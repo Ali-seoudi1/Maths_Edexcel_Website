@@ -10,8 +10,8 @@ type EditModelAnswerPageProps = {
 };
 
 export const metadata: Metadata = {
-  title: "Edit Model Answer",
-  description: "Edit a model answer.",
+  title: "Edit Key Question",
+  description: "Edit a key question.",
 };
 
 export default async function EditModelAnswerPage({ params }: EditModelAnswerPageProps) {
@@ -20,11 +20,11 @@ export default async function EditModelAnswerPage({ params }: EditModelAnswerPag
   return (
     <>
       <AdminPageHeader
-        title="Edit Model Answer"
+        title="Edit Key Question"
         description="Update the exam details, mark scheme file, teacher solution, and publication status."
         breadcrumbs={[
           { label: "Admin", href: "/admin" },
-          { label: "Model Answers", href: "/admin/model-answers" },
+          { label: "Key Questions", href: "/admin/model-answers" },
           { label: "Edit" },
         ]}
       />

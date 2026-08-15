@@ -34,7 +34,7 @@ export function AdminModelAnswerEditView({ modelAnswerId }: AdminModelAnswerEdit
       } catch (loadError) {
         if (isMounted) {
           setError(
-            loadError instanceof Error ? loadError.message : "Model answer could not be loaded.",
+            loadError instanceof Error ? loadError.message : "Key question could not be loaded.",
           );
         }
       } finally {
@@ -55,7 +55,7 @@ export function AdminModelAnswerEditView({ modelAnswerId }: AdminModelAnswerEdit
     return (
       <div className="flex min-h-80 items-center justify-center rounded-xl border bg-card text-muted-foreground shadow-card">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
-        Loading model answer
+        Loading key question
       </div>
     );
   }
@@ -63,8 +63,8 @@ export function AdminModelAnswerEditView({ modelAnswerId }: AdminModelAnswerEdit
   if (error || !modelAnswer) {
     return (
       <ErrorState
-        title="Model answer not found"
-        description={error ?? "This model answer could not be loaded."}
+        title="Key question not found"
+        description={error ?? "This key question could not be loaded."}
       />
     );
   }

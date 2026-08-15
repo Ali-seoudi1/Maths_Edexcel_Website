@@ -65,7 +65,7 @@ export function AdminModelAnswersView() {
       setModelAnswers(response.modelAnswers);
     } catch (loadError) {
       setError(
-        loadError instanceof Error ? loadError.message : "Model answers could not be loaded.",
+        loadError instanceof Error ? loadError.message : "Key questions could not be loaded.",
       );
     } finally {
       setIsLoading(false);
@@ -109,15 +109,15 @@ export function AdminModelAnswersView() {
       setModelAnswers((items) => items.filter((item) => item.id !== deleteTarget.id));
       setDeleteTarget(null);
       toast({
-        title: "Model answer deleted",
-        description: "The model answer has been removed.",
+        title: "Key question deleted",
+        description: "The key question has been removed.",
         variant: "success",
       });
     } catch (deleteError) {
       toast({
         title: "Delete failed",
         description:
-          deleteError instanceof Error ? deleteError.message : "The model answer was not deleted.",
+          deleteError instanceof Error ? deleteError.message : "The key question was not deleted.",
         variant: "destructive",
       });
     } finally {
@@ -172,19 +172,19 @@ export function AdminModelAnswersView() {
           {isLoading ? (
             <div className="flex min-h-80 items-center justify-center text-muted-foreground">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
-              Loading model answers
+              Loading key questions
             </div>
           ) : error ? (
             <div className="p-6">
-              <EmptyState title="Model answers could not load" description={error} />
+              <EmptyState title="Key questions could not load" description={error} />
             </div>
           ) : visibleModelAnswers.length === 0 ? (
             <div className="p-6">
               <EmptyState
-                title="No model answers found"
-                description="Create the first model answer or adjust the current filters."
+                title="No key questions found"
+                description="Create the first key question or adjust the current filters."
                 icon={<FileQuestion className="h-10 w-10" aria-hidden="true" />}
-                actionLabel="Create model answer"
+                actionLabel="Create key question"
                 onAction={() => {
                   window.location.href = "/admin/model-answers/new";
                 }}
@@ -248,9 +248,9 @@ export function AdminModelAnswersView() {
       <Dialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete model answer</DialogTitle>
+            <DialogTitle>Delete key question</DialogTitle>
             <DialogDescription>
-              This removes the model answer record. The action cannot be undone.
+              This removes the key question record. The action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

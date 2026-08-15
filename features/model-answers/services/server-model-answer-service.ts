@@ -153,7 +153,7 @@ export async function createModelAnswer(values: ModelAnswerPayload, adminId: str
   const existing = await ref.get();
 
   if (existing.exists) {
-    throw new Error("A model answer already exists for this exam question.");
+    throw new Error("A key question already exists for this exam question.");
   }
 
   const record = {
@@ -186,7 +186,7 @@ export async function updateModelAnswer(id: string, values: ModelAnswerPayload, 
     const nextExisting = await nextRef.get();
 
     if (nextExisting.exists) {
-      throw new Error("A model answer already exists for this exam question.");
+      throw new Error("A key question already exists for this exam question.");
     }
 
     await nextRef.set({

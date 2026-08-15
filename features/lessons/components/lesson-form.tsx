@@ -36,14 +36,12 @@ export function LessonForm({
           chapterId: lesson.chapterId,
           title: lesson.title,
           description: lesson.description,
-          order: lesson.order,
           published: lesson.published,
         }
       : {
           chapterId: chapters[0]?.id ?? "",
           title: "",
           description: "",
-          order: 0,
           published: true,
         },
   });
@@ -82,31 +80,14 @@ export function LessonForm({
           <p className="text-sm text-destructive">{errors.chapterId.message}</p>
         ) : null}
       </div>
-      <div className="grid gap-5 sm:grid-cols-[1fr_160px]">
-        <div className="space-y-2">
-          <label htmlFor="title" className="text-sm font-medium text-foreground">
-            Lesson Title
-          </label>
-          <Input id="title" disabled={isSubmitting} {...register("title")} />
-          {errors.title ? (
-            <p className="text-sm text-destructive">{errors.title.message}</p>
-          ) : null}
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="order" className="text-sm font-medium text-foreground">
-            Display Order
-          </label>
-          <Input
-            id="order"
-            type="number"
-            min={0}
-            disabled={isSubmitting}
-            {...register("order", { valueAsNumber: true })}
-          />
-          {errors.order ? (
-            <p className="text-sm text-destructive">{errors.order.message}</p>
-          ) : null}
-        </div>
+      <div className="space-y-2">
+        <label htmlFor="title" className="text-sm font-medium text-foreground">
+          Lesson Title
+        </label>
+        <Input id="title" disabled={isSubmitting} {...register("title")} />
+        {errors.title ? (
+          <p className="text-sm text-destructive">{errors.title.message}</p>
+        ) : null}
       </div>
       <div className="space-y-2">
         <label htmlFor="description" className="text-sm font-medium text-foreground">

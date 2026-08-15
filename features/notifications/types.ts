@@ -4,6 +4,7 @@ export type NotificationType =
   | "quiz_grade"
   | "exam_grade"
   | "announcement"
+  | "live_meeting"
   | "monthly_report";
 
 export type StudentNotification = {

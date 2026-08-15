@@ -5,16 +5,16 @@ import { PageHeader } from "@/components/shared";
 import { Card, CardContent } from "@/components/ui/card";
 
 export const metadata: Metadata = {
-  title: "Model Answers",
-  description: "Search published Edexcel Mathematics model answers.",
+  title: "Key Questions",
+  description: "Search published Edexcel Mathematics key questions.",
 };
 
 export default function ModelAnswersPage() {
   return (
     <div className="space-y-7">
       <PageHeader
-        eyebrow="Model Answers"
-        title="Model Answers is locked"
+        eyebrow="Key Questions"
+        title="Key Questions is locked"
         description="This section is not available to students right now."
       />
 
@@ -26,7 +26,7 @@ export default function ModelAnswersPage() {
           <div className="space-y-2">
             <h2 className="text-xl font-semibold text-foreground">Locked for now</h2>
             <p className="max-w-md text-sm leading-6 text-muted-foreground">
-              Your teacher has not opened Model Answers yet. It will appear here when available.
+              Your teacher has not opened Key Questions yet. It will appear here when available.
             </p>
           </div>
         </CardContent>

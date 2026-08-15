@@ -7,6 +7,7 @@ import {
   saveCurrentLiveMeeting,
 } from "@/features/live-meetings/services/server-live-meeting-service";
 import { adminSdkUnavailableResponse, errorResponse } from "@/features/lessons/services/route-helpers";
+import { createNotificationForAllActiveStudents } from "@/features/notifications/services/server-notification-service";
 
 function parsePayload(payload: unknown) {
   if (!payload || typeof payload !== "object") {
@@ -55,7 +56,18 @@ export async function PUT(request: Request) {
   try {
     const admin = await requireAdmin(request);
     const values = parsePayload(await request.json());
+    const previousMeeting = await getCurrentLiveMeeting();
     const meeting = await saveCurrentLiveMeeting(values, admin.uid);
+
+    if (meeting.active && previousMeeting?.active !== true) {
+      await createNotificationForAllActiveStudents({
+        type: "live_meeting",
+        title: "New live meeting",
+        message: "A new live meeting has been posted. Check it out.",
+        link: "/live-meeting",
+        relatedId: meeting.createdAt ?? meeting.id,
+      });
+    }
 
     return NextResponse.json({ meeting });
   } catch (error) {

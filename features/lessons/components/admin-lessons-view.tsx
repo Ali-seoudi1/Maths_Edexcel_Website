@@ -152,7 +152,6 @@ export function AdminLessonsView() {
                 <TableRow>
                   <TableHead>Lesson</TableHead>
                   <TableHead>Topic</TableHead>
-                  <TableHead>Order</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -172,7 +171,6 @@ export function AdminLessonsView() {
                       </p>
                     </TableCell>
                     <TableCell>{lesson.chapterName ?? lesson.chapterId}</TableCell>
-                    <TableCell>{lesson.order}</TableCell>
                     <TableCell>
                       <Badge variant={lesson.published ? "secondary" : "outline"}>
                         {lesson.published ? "Published" : "Hidden"}

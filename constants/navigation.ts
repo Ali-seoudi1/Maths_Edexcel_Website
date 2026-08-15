@@ -31,12 +31,12 @@ export const dashboardNavigation: DashboardNavItem[] = [
     icon: BookOpen,
   },
   {
-    title: "Past Papers",
+    title: "Past Papers & MS",
     href: "/past-papers",
     icon: Archive,
   },
   {
-    title: "Model Answers",
+    title: "Key Questions",
     href: "/model-answers",
     icon: FileQuestion,
     locked: true,

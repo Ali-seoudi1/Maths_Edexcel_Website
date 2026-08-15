@@ -7,22 +7,22 @@ import { AdminPageHeader } from "@/features/admin";
 import { AdminModelAnswersView } from "@/features/model-answers/components/admin-model-answers-view";
 
 export const metadata: Metadata = {
-  title: "Model Answers",
-  description: "Manage model answers and official mark schemes.",
+  title: "Key Questions",
+  description: "Manage key questions and official mark schemes.",
 };
 
 export default function AdminModelAnswersPage() {
   return (
     <>
       <AdminPageHeader
-        title="Model Answers"
+        title="Key Questions"
         description="Create, search, filter, edit, publish, and delete exam question solutions."
-        breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Model Answers" }]}
+        breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Key Questions" }]}
         actions={
           <Button asChild>
             <Link href="/admin/model-answers/new">
               <Plus className="h-4 w-4" aria-hidden="true" />
-              New Model Answer
+              New Key Question
             </Link>
           </Button>
         }

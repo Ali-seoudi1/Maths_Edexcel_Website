@@ -85,8 +85,23 @@ function normalizeLessonPdfs(data: FirebaseFirestore.DocumentData): LessonPdf[] 
   return [];
 }
 
-function sortByOrderThenName<T extends { order: number; title?: string; name?: string }>(items: T[]) {
-  return items.sort((a, b) => a.order - b.order || (a.name ?? a.title ?? "").localeCompare(b.name ?? b.title ?? ""));
+function getCreatedAtTime(value: string | null) {
+  if (!value) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? Number.POSITIVE_INFINITY : time;
+}
+
+function sortByCreatedAtAsc<T extends { createdAt: string | null; title?: string; name?: string }>(
+  items: T[],
+) {
+  return items.sort(
+    (a, b) =>
+      getCreatedAtTime(a.createdAt) - getCreatedAtTime(b.createdAt) ||
+      (a.name ?? a.title ?? "").localeCompare(b.name ?? b.title ?? ""),
+  );
 }
 
 export async function listChapters(options: { publishedOnly?: boolean } = {}) {
@@ -104,7 +119,7 @@ export async function listChapters(options: { publishedOnly?: boolean } = {}) {
         .filter((chapterId): chapterId is string => typeof chapterId === "string" && chapterId.length > 0),
     );
 
-    return sortByOrderThenName(
+    return sortByCreatedAtAsc(
       chapterSnapshot.docs
         .map((documentSnapshot) => toChapter(documentSnapshot.id, documentSnapshot.data()))
         .filter((chapter) => chapter.published || chapterIdsWithPublishedLessons.has(chapter.id)),
@@ -113,7 +128,7 @@ export async function listChapters(options: { publishedOnly?: boolean } = {}) {
 
   const snapshot = await query.get();
 
-  return sortByOrderThenName(
+  return sortByCreatedAtAsc(
     snapshot.docs.map((documentSnapshot) => toChapter(documentSnapshot.id, documentSnapshot.data())),
   );
 }
@@ -129,13 +144,13 @@ export async function listPublishedLessonCatalog() {
       .map((documentSnapshot) => documentSnapshot.data().chapterId)
       .filter((chapterId): chapterId is string => typeof chapterId === "string" && chapterId.length > 0),
   );
-  const chapters = sortByOrderThenName(
+  const chapters = sortByCreatedAtAsc(
     chapterSnapshot.docs
       .map((documentSnapshot) => toChapter(documentSnapshot.id, documentSnapshot.data()))
       .filter((chapter) => chapter.published || chapterIdsWithPublishedLessons.has(chapter.id)),
   );
   const chapterNames = new Map(chapters.map((chapter) => [chapter.id, chapter.name]));
-  const lessons = sortByOrderThenName(
+  const lessons = sortByCreatedAtAsc(
     lessonSnapshot.docs.map((documentSnapshot) =>
       toLesson(
         documentSnapshot.id,
@@ -216,7 +231,7 @@ export async function listLessons(options: { publishedOnly?: boolean; chapterId?
 
   const [snapshot, chapterNames] = await Promise.all([query.get(), getChapterNameMap()]);
 
-  return sortByOrderThenName(
+  return sortByCreatedAtAsc(
     snapshot.docs.map((documentSnapshot) =>
       toLesson(
         documentSnapshot.id,

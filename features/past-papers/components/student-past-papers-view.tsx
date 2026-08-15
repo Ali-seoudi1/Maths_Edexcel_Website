@@ -40,7 +40,7 @@ export function StudentPastPapersView() {
             <Archive className="h-7 w-7" aria-hidden="true" />
           </div>
           <h1 className="mt-6 text-3xl font-semibold tracking-normal text-foreground">
-            Past Papers
+            Past Papers & MS
           </h1>
           <p className="mt-3 text-base font-medium text-foreground">
             Official Edexcel IGCSE Mathematics Past Papers & Mark Schemes
@@ -59,7 +59,7 @@ export function StudentPastPapersView() {
           <Button asChild className="mt-8" size="lg" disabled={!driveUrl}>
             <a href={driveUrl || "#"} target="_blank" rel="noreferrer">
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
-              Open Past Papers Archive
+              Open Past Papers & MS Archive
             </a>
           </Button>
         </CardContent>

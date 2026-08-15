@@ -21,7 +21,7 @@ export default async function AdminChapterPage({ params }: AdminChapterPageProps
     <>
       <AdminPageHeader
         title="Topic details"
-        description="Edit topic metadata, visibility, and display order."
+        description="Edit topic metadata and visibility."
         breadcrumbs={[
           { label: "Admin", href: "/admin" },
           { label: "Topics", href: "/admin/chapters" },

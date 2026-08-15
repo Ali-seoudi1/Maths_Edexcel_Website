@@ -25,40 +25,22 @@ export function ChapterForm({ defaultValues, submitLabel, onSubmit }: ChapterFor
     defaultValues: defaultValues ?? {
       name: "",
       description: "",
-      order: 0,
       published: true,
     },
   });
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
-      <div className="grid gap-5 sm:grid-cols-[1fr_160px]">
-        <div className="space-y-2">
-          <label htmlFor="name" className="text-sm font-medium text-foreground">
-            Topic Name
-          </label>
-          <Input id="name" disabled={isSubmitting} {...register("name")} />
-          {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="order" className="text-sm font-medium text-foreground">
-            Display Order
-          </label>
-          <Input
-            id="order"
-            type="number"
-            min={0}
-            disabled={isSubmitting}
-            {...register("order", { valueAsNumber: true })}
-          />
-          {errors.order ? (
-            <p className="text-sm text-destructive">{errors.order.message}</p>
-          ) : null}
-        </div>
+      <div className="space-y-2">
+        <label htmlFor="name" className="text-sm font-medium text-foreground">
+          Topic Name
+        </label>
+        <Input id="name" disabled={isSubmitting} {...register("name")} />
+        {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}
       </div>
       <div className="space-y-2">
         <label htmlFor="description" className="text-sm font-medium text-foreground">
-          Description
+          Description <span className="text-muted-foreground">(optional)</span>
         </label>
         <textarea
           id="description"

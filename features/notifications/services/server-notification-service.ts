@@ -36,6 +36,7 @@ function isNotificationType(value: unknown): value is NotificationType {
     value === "quiz_grade" ||
     value === "exam_grade" ||
     value === "announcement" ||
+    value === "live_meeting" ||
     value === "monthly_report"
   );
 }

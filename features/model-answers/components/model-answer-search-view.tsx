@@ -43,14 +43,14 @@ export function ModelAnswerSearchView() {
       setResult(response.modelAnswer);
     } catch (error) {
       setResult(null);
-      setSearchError(error instanceof Error ? error.message : "Model answer search failed.");
+      setSearchError(error instanceof Error ? error.message : "Key question search failed.");
     }
   }
 
   return (
     <div className="space-y-7">
       <PageHeader
-        eyebrow="Model Answers"
+        eyebrow="Key Questions"
         title="Find an official mark scheme and teacher solution."
         description="Search by exam year, session, paper, and question number."
       />
@@ -166,7 +166,7 @@ export function ModelAnswerSearchView() {
         </div>
       ) : hasSearched && !searchError ? (
         <EmptyState
-          title="No model answer found"
+          title="No key question found"
           description="No published solution matches that exact year, session, paper, and question number yet."
           icon={<FileQuestion className="h-10 w-10" aria-hidden="true" />}
         />

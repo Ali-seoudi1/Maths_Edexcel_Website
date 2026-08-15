@@ -32,13 +32,13 @@ const adminNavigation = [
   { title: "New Student", href: "/admin/students/new", icon: UserRoundPlus },
   { title: "Topics", href: "/admin/chapters", icon: LibraryBig },
   { title: "Lessons", href: "/admin/lessons", icon: GraduationCap },
-  { title: "Past Papers", href: "/admin/past-papers", icon: Archive },
+  { title: "Past Papers & MS", href: "/admin/past-papers", icon: Archive },
   { title: "Assignments", href: "/admin/assignments", icon: PenSquare },
   { title: "Quizzes", href: "/admin/quizzes", icon: ClipboardCheck },
   { title: "Exams", href: "/admin/exams", icon: ClipboardList },
   { title: "Live Meeting", href: "/admin/live-meeting", icon: Video },
   { title: "Announcements", href: "/admin/announcements", icon: Megaphone },
-  { title: "Model Answers", href: "/admin/model-answers", icon: FileQuestion },
+  { title: "Key Questions", href: "/admin/model-answers", icon: FileQuestion },
 ];
 
 type AdminShellProps = {

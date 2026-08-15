@@ -41,7 +41,7 @@ async function requestJson<TResponse>(url: string, init: RequestInit): Promise<T
       "error" in payload &&
       typeof payload.error === "string"
         ? payload.error
-        : "The model answer request could not be completed.";
+        : "The key question request could not be completed.";
 
     throw new Error(errorMessage);
   }

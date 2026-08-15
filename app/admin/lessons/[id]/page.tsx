@@ -21,7 +21,7 @@ export default async function AdminLessonPage({ params }: AdminLessonPageProps) 
     <>
       <AdminPageHeader
         title="Lesson details"
-        description="Edit lesson metadata, visibility, order, or replace the PDF."
+        description="Edit lesson metadata, visibility, or replace the PDF."
         breadcrumbs={[
           { label: "Admin", href: "/admin" },
           { label: "Lessons", href: "/admin/lessons" },

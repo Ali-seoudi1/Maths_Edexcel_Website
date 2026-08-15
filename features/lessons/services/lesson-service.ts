@@ -76,7 +76,6 @@ function appendLessonFormData(values: LessonFormValues, pdfFiles: File[] = []) {
   formData.set("chapterId", values.chapterId);
   formData.set("title", values.title);
   formData.set("description", values.description);
-  formData.set("order", String(values.order));
   formData.set("published", String(values.published));
 
   pdfFiles.forEach((pdfFile) => {

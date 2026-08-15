@@ -15,7 +15,7 @@ export default function AdminLessonsPage() {
     <>
       <AdminPageHeader
         title="Lessons"
-        description="Upload, publish, hide, reorder, and manage PDF lesson notes."
+        description="Upload, publish, hide, and manage PDF lesson notes."
         breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Lessons" }]}
         actions={
           <Button asChild>

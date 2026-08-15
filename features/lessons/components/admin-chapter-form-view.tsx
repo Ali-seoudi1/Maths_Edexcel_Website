@@ -49,7 +49,6 @@ export function AdminChapterFormView({ chapter }: AdminChapterFormViewProps) {
               ? {
                   name: chapter.name,
                   description: chapter.description,
-                  order: chapter.order,
                   published: chapter.published,
                 }
               : undefined

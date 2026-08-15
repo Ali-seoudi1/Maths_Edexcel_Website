@@ -121,7 +121,6 @@ export function AdminChaptersView() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Order</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -131,9 +130,12 @@ export function AdminChaptersView() {
                   <TableRow key={chapter.id}>
                     <TableCell>
                       <p className="font-medium text-foreground">{chapter.name}</p>
-                      <p className="mt-1 max-w-xl text-sm text-muted-foreground">{chapter.description}</p>
+                      {chapter.description ? (
+                        <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+                          {chapter.description}
+                        </p>
+                      ) : null}
                     </TableCell>
-                    <TableCell>{chapter.order}</TableCell>
                     <TableCell>
                       <Badge variant={chapter.published ? "secondary" : "outline"}>
                         {chapter.published ? "Published" : "Hidden"}

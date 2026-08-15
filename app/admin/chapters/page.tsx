@@ -15,7 +15,7 @@ export default function AdminChaptersPage() {
     <>
       <AdminPageHeader
         title="Topics"
-        description="Create, publish, hide, reorder, and organize lesson topics."
+        description="Create, publish, hide, and organize lesson topics."
         breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Topics" }]}
         actions={
           <Button asChild>

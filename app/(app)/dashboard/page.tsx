@@ -15,7 +15,7 @@ const studyAreas = [
     icon: BookOpen,
   },
   {
-    title: "Model Answers",
+    title: "Key Questions",
     description: "Search exam questions by year, session, paper, and question number.",
     href: "/model-answers",
     icon: Search,
@@ -46,7 +46,7 @@ const studyAreas = [
     icon: Video,
   },
   {
-    title: "Past Papers",
+    title: "Past Papers & MS",
     description: "Use past paper resources for revision practice.",
     href: "/past-papers",
     icon: Library,
@@ -62,7 +62,7 @@ export default function DashboardPage() {
       <PageHeader
         eyebrow="Student Dashboard"
         title={firstName ? `Welcome back, ${firstName}!` : "Welcome back"}
-        description="Choose what you want to study next. Your lessons, model answers, assignments, and quizzes are grouped into focused areas."
+        description="Choose what you want to study next. Your lessons, key questions, assignments, and quizzes are grouped into focused areas."
       />
 
       <section className="space-y-4">
