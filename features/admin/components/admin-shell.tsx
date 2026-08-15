@@ -61,7 +61,7 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </Link>
 
-      <nav className="mt-6 min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pr-1 sm:mt-8" aria-label="Admin navigation">
+      <nav className="mt-6 min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:none] sm:mt-8 [&::-webkit-scrollbar]:hidden" aria-label="Admin navigation">
         {adminNavigation.map((item) => {
           const Icon = item.icon;
           const isActive =

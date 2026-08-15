@@ -3,6 +3,7 @@
 import { Bell } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { CSSProperties } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<StudentNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [mobilePanelStyle, setMobilePanelStyle] = useState<CSSProperties | undefined>();
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -92,6 +94,47 @@ export function NotificationBell() {
     void markDisplayedNotificationsRead(displayedUnreadIds);
   }, [loading, notifications, open]);
 
+  useEffect(() => {
+    if (!open) {
+      setMobilePanelStyle(undefined);
+      return;
+    }
+
+    function updatePanelPosition() {
+      if (window.matchMedia("(min-width: 768px)").matches) {
+        setMobilePanelStyle(undefined);
+        return;
+      }
+
+      const viewport = window.visualViewport;
+      const viewportWidth = viewport?.width ?? window.innerWidth;
+      const viewportHeight = viewport?.height ?? window.innerHeight;
+      const offsetLeft = viewport?.offsetLeft ?? 0;
+      const offsetTop = viewport?.offsetTop ?? 0;
+
+      setMobilePanelStyle({
+        left: `${offsetLeft + 16}px`,
+        right: "auto",
+        top: `${offsetTop + 96}px`,
+        width: `${Math.max(280, Math.min(viewportWidth - 32, 384))}px`,
+        maxHeight: `${Math.max(280, viewportHeight - 128)}px`,
+      });
+    }
+
+    updatePanelPosition();
+
+    const viewport = window.visualViewport;
+    window.addEventListener("resize", updatePanelPosition);
+    viewport?.addEventListener("resize", updatePanelPosition);
+    viewport?.addEventListener("scroll", updatePanelPosition);
+
+    return () => {
+      window.removeEventListener("resize", updatePanelPosition);
+      viewport?.removeEventListener("resize", updatePanelPosition);
+      viewport?.removeEventListener("scroll", updatePanelPosition);
+    };
+  }, [open]);
+
   async function handleNotificationClick(notification: StudentNotification) {
     if (!notification.read) {
       await markNotificationRead(notification.id);
@@ -130,7 +173,10 @@ export function NotificationBell() {
       </Button>
 
       {open ? (
-        <div className="fixed left-4 right-4 top-24 z-50 flex max-h-[calc(100dvh-8rem-env(safe-area-inset-bottom))] w-auto flex-col overflow-hidden rounded-xl border bg-card shadow-lg md:left-auto md:right-8 md:top-20 md:w-96 md:max-w-[calc(100vw-4rem)]">
+        <div
+          className="fixed left-4 right-4 top-24 z-50 flex max-h-[calc(100dvh-8rem-env(safe-area-inset-bottom))] flex-col overflow-hidden rounded-xl border bg-card shadow-lg md:absolute md:left-auto md:right-0 md:top-14 md:w-96 md:max-w-sm"
+          style={mobilePanelStyle}
+        >
           <div className="flex items-center justify-between gap-3 border-b p-4">
             <p className="font-semibold text-foreground">Notifications</p>
             <button

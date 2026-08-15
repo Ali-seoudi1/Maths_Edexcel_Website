@@ -69,7 +69,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         </div>
       </div>
 
-      <nav className="mt-8 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1 sm:mt-10" aria-label="Dashboard navigation">
+      <nav className="mt-8 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:none] sm:mt-10 [&::-webkit-scrollbar]:hidden" aria-label="Dashboard navigation">
         {dashboardNavigation.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
