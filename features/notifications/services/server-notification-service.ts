@@ -35,6 +35,10 @@ function isNotificationType(value: unknown): value is NotificationType {
     value === "assignment_grade" ||
     value === "quiz_grade" ||
     value === "exam_grade" ||
+    value === "quiz_scheduled" ||
+    value === "exam_scheduled" ||
+    value === "quiz_feedback" ||
+    value === "exam_feedback" ||
     value === "announcement" ||
     value === "live_meeting" ||
     value === "monthly_report"
@@ -106,6 +110,25 @@ export async function createNotification(input: CreateNotificationInput) {
   return toNotification(saved.id, saved.data() ?? record);
 }
 
+export async function replaceNotification(input: CreateNotificationInput) {
+  const ref = getFirebaseAdminDb().collection(notificationsCollection).doc(notificationDocumentId(input));
+  const record = {
+    studentId: input.studentId,
+    type: input.type,
+    title: input.title,
+    message: input.message,
+    link: input.link,
+    relatedId: input.relatedId ?? null,
+    read: false,
+    createdAt: FieldValue.serverTimestamp(),
+  };
+
+  await ref.set(record);
+  const saved = await ref.get();
+
+  return toNotification(saved.id, saved.data() ?? record);
+}
+
 export async function createNotificationForStudents(
   studentIds: string[],
   input: Omit<CreateNotificationInput, "studentId">,
@@ -118,6 +141,25 @@ export async function createNotificationForStudents(
       }),
     ),
   );
+}
+
+export async function replaceNotificationForStudents(
+  studentIds: string[],
+  input: Omit<CreateNotificationInput, "studentId">,
+) {
+  await Promise.all(
+    studentIds.map((studentId) =>
+      replaceNotification({
+        ...input,
+        studentId,
+      }),
+    ),
+  );
+}
+
+export async function replaceNotificationForAllActiveStudents(input: Omit<CreateNotificationInput, "studentId">) {
+  const studentIds = await listActiveStudentIds();
+  await replaceNotificationForStudents(studentIds, input);
 }
 
 export async function createNotificationForAllActiveStudents(input: Omit<CreateNotificationInput, "studentId">) {

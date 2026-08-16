@@ -64,6 +64,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       durationMinutes: Number(formData.get("durationMinutes") ?? 0),
       maxScore: Number(formData.get("maxScore") ?? 100),
       published: formData.get("published") === "true",
+      scheduledAt: String(formData.get("scheduledAt") ?? "") || null,
     });
 
     const exam = await updateExam(id, values, pdfFiles, removedPdfIds);

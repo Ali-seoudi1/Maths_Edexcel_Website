@@ -18,6 +18,17 @@ type AdminQuizFormViewProps = {
   onSaved?: (quiz: Quiz) => void;
 };
 
+function toDateTimeLocalValue(value: string | null | undefined) {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "";
+
+  const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return offsetDate.toISOString().slice(0, 16);
+}
+
 export function AdminQuizFormView({ quiz, onSaved }: AdminQuizFormViewProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -27,6 +38,7 @@ export function AdminQuizFormView({ quiz, onSaved }: AdminQuizFormViewProps) {
   const [durationMinutes, setDurationMinutes] = useState(quiz?.durationMinutes ?? 10);
   const [maxScore, setMaxScore] = useState(quiz?.maxScore ?? 100);
   const [published, setPublished] = useState(quiz?.published ?? false);
+  const [scheduledAt, setScheduledAt] = useState(toDateTimeLocalValue(quiz?.scheduledAt));
   const [removedPdfIds, setRemovedPdfIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const isEditing = Boolean(quiz);
@@ -79,12 +91,14 @@ export function AdminQuizFormView({ quiz, onSaved }: AdminQuizFormViewProps) {
         durationMinutes,
         maxScore,
         published: publishedOverride,
+        scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null,
       };
 
       if (quiz) {
         const result = await updateAdminQuiz(quiz.id, values, pdfFiles, removedPdfIds);
         onSaved?.(result.quiz);
         setPublished(result.quiz.published);
+        setScheduledAt(toDateTimeLocalValue(result.quiz.scheduledAt));
         setRemovedPdfIds([]);
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
@@ -161,6 +175,17 @@ export function AdminQuizFormView({ quiz, onSaved }: AdminQuizFormViewProps) {
             onChange={(event) => setMaxScore(Number(event.target.value) || 1)}
           />
         </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Scheduled date and time</label>
+          <Input
+            type="datetime-local"
+            value={scheduledAt}
+            onChange={(event) => setScheduledAt(event.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Leave empty to make the quiz active immediately when published.
+          </p>
+        </div>
         <label className="flex items-start gap-3 rounded-lg border bg-secondary/30 p-4">
           <input
             type="checkbox"
@@ -171,7 +196,7 @@ export function AdminQuizFormView({ quiz, onSaved }: AdminQuizFormViewProps) {
           <span>
             <span className="block text-sm font-medium text-foreground">Publish quiz</span>
             <span className="block text-xs leading-5 text-muted-foreground">
-              For a draft quiz, turning this on starts the global timer when you save.
+              Turning this on publishes the schedule. The global timer starts at the scheduled time.
             </span>
           </span>
         </label>

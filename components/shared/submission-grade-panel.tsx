@@ -17,8 +17,11 @@ type SubmissionGradePanelProps = {
   scorePlaceholder: string;
   scoreSummaryLabel: string;
   scoreValue: string;
+  feedbackReturned?: boolean;
+  saveLabel?: string;
   onEdit: () => void;
   onFeedbackChange: (value: string) => void;
+  onReturnFeedback?: () => void;
   onSave: () => void;
   onScoreChange: (value: string) => void;
 };
@@ -35,8 +38,11 @@ export function SubmissionGradePanel({
   scorePlaceholder,
   scoreSummaryLabel,
   scoreValue,
+  feedbackReturned = false,
+  saveLabel = "Save grade",
   onEdit,
   onFeedbackChange,
+  onReturnFeedback,
   onSave,
   onScoreChange,
 }: SubmissionGradePanelProps) {
@@ -48,14 +54,24 @@ export function SubmissionGradePanel({
             {scoreSummaryLabel}: {scoreValue.trim() ? scoreValue : "Not set"}
             {scoreValue.trim() && maxScoreValue ? ` / ${maxScoreValue}` : ""}
           </p>
+          <p className="mt-1 text-xs font-medium text-muted-foreground">
+            Feedback: {feedbackReturned ? "Returned to student" : "Not returned yet"}
+          </p>
           {feedback ? (
             <p className="mt-1 text-sm text-muted-foreground">Feedback: {feedback}</p>
           ) : null}
         </div>
-        <Button type="button" variant="outline" onClick={onEdit}>
-          <Pencil className="h-4 w-4" aria-hidden="true" />
-          Edit grade
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {!feedbackReturned && onReturnFeedback ? (
+            <Button type="button" onClick={onReturnFeedback}>
+              Return feedback
+            </Button>
+          ) : null}
+          <Button type="button" variant="outline" onClick={onEdit}>
+            <Pencil className="h-4 w-4" aria-hidden="true" />
+            Edit grade
+          </Button>
+        </div>
       </div>
     );
   }
@@ -90,7 +106,12 @@ export function SubmissionGradePanel({
         />
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
+        {!feedbackReturned && onReturnFeedback ? (
+          <Button type="button" variant="secondary" onClick={onReturnFeedback} disabled={saving}>
+            Return feedback
+          </Button>
+        ) : null}
         <Button type="button" onClick={onSave} disabled={saving}>
           {saving ? (
             <>
@@ -98,7 +119,7 @@ export function SubmissionGradePanel({
               Saving...
             </>
           ) : (
-            "Save grade"
+            saveLabel
           )}
         </Button>
       </div>

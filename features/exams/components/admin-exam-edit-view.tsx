@@ -43,11 +43,11 @@ export function AdminExamEditView({ examId }: { examId: string }) {
     );
   }
 
-  if (exam.published || exam.status === "closed") {
+  if (exam.status === "active" || exam.status === "closed") {
     return (
       <EmptyState
         title="Exam editing is locked"
-        description="Published or closed exams cannot be edited."
+        description="Active or closed exams cannot be edited."
         icon={<FileQuestion className="h-8 w-8" aria-hidden="true" />}
       />
     );

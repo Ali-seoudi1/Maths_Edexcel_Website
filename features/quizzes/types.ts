@@ -1,4 +1,4 @@
-export type QuizStatus = "draft" | "active" | "closed";
+export type QuizStatus = "draft" | "scheduled" | "active" | "closed";
 
 export type QuizPdf = {
   id: string;
@@ -14,6 +14,7 @@ export type Quiz = {
   maxScore: number;
   pdfs: QuizPdf[];
   published: boolean;
+  scheduledAt: string | null;
   publishedAt: string | null;
   expiresAt: string | null;
   status: QuizStatus;
@@ -28,6 +29,7 @@ export type QuizFormValues = {
   durationMinutes: number;
   maxScore: number;
   published?: boolean;
+  scheduledAt?: string | null;
 };
 
 export type QuizAttempt = {
@@ -60,6 +62,10 @@ export type QuizSubmission = {
   score: number | null;
   maxScore: number;
   feedback: string;
+  feedbackReturned: boolean;
+  feedbackReturnedAt: string | null;
+  correctedPdfPath: string;
+  correctedPdfFileName: string;
   createdAt: string | null;
   updatedAt: string | null;
 };
@@ -67,4 +73,5 @@ export type QuizSubmission = {
 export type QuizGradeValues = {
   score?: number | null;
   feedback?: string;
+  returnFeedback?: boolean;
 };

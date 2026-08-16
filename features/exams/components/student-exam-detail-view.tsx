@@ -16,6 +16,8 @@ import { useToast } from "@/components/ui/toast";
 import {
   getMyExamSubmission,
   getExamAuthToken,
+  getProtectedExamFeedbackPdfSrc,
+  getProtectedExamPdfDownloadSrc,
   getProtectedExamPdfSrc,
   getExam,
   markExamNoSubmission,
@@ -128,9 +130,10 @@ export function StudentExamDetailView({ examId }: { examId: string }) {
   }, [now, exam?.expiresAt, serverOffset]);
 
   const isClosed = remainingSeconds === 0 || exam?.status === "closed";
+  const isScheduled = exam?.status === "scheduled";
   const hasOpenedExam = Boolean(attempt);
   const hasFinalSubmission = Boolean(submission);
-  const canOpenExam = Boolean(exam) && !isClosed && !hasOpenedExam && !hasFinalSubmission;
+  const canOpenExam = Boolean(exam) && !isClosed && !isScheduled && !hasOpenedExam && !hasFinalSubmission;
   const canViewExam = hasOpenedExam && !submission;
   const canSubmitExam = canViewExam && !submission;
   const showExamRuleNotice = canOpenExam || canViewExam;
@@ -169,8 +172,8 @@ export function StudentExamDetailView({ examId }: { examId: string }) {
 
     if (!canOpenExam) {
       toast({
-        title: "Exam is closed",
-        description: "This exam can no longer be opened.",
+        title: isScheduled ? "Exam is scheduled" : "Exam is closed",
+        description: isScheduled ? "This exam is not available yet." : "This exam can no longer be opened.",
         variant: "destructive",
       });
       return;
@@ -278,7 +281,7 @@ export function StudentExamDetailView({ examId }: { examId: string }) {
                   {exam.title}
                 </h1>
                 <Badge variant={isClosed ? "outline" : "secondary"}>
-                  {isClosed ? "Closed" : "Active"}
+                  {isClosed ? "Closed" : isScheduled ? "Scheduled" : "Active"}
                 </Badge>
               </div>
               {exam.description ? (
@@ -298,7 +301,7 @@ export function StudentExamDetailView({ examId }: { examId: string }) {
                 onClick={() => void handleStart()}
                 disabled={!canOpenExam}
               >
-                Open exam
+                {isScheduled ? "Scheduled" : "Open exam"}
               </Button>
             )}
           </div>
@@ -312,9 +315,11 @@ export function StudentExamDetailView({ examId }: { examId: string }) {
               </p>
             </div>
             <div className="rounded-xl border bg-secondary/30 p-4">
-              <p className="text-xs font-medium uppercase text-muted-foreground">Deadline</p>
+              <p className="text-xs font-medium uppercase text-muted-foreground">
+                {isScheduled ? "Starts" : "Deadline"}
+              </p>
               <p className="mt-2 text-sm font-semibold text-foreground">
-                {formatDate(exam.expiresAt)}
+                {formatDate(isScheduled ? exam.publishedAt : exam.expiresAt)}
               </p>
             </div>
             <div className="rounded-xl border bg-secondary/30 p-4">
@@ -361,6 +366,13 @@ export function StudentExamDetailView({ examId }: { examId: string }) {
             </div>
           ) : null}
 
+          {isScheduled ? (
+            <div className="rounded-lg border border-primary/20 bg-primary/10 p-4 text-sm text-primary">
+              <p className="font-semibold">Exam scheduled</p>
+              <p>This exam will become available at {formatDate(exam.publishedAt)}.</p>
+            </div>
+          ) : null}
+
           {submission ? (
             <div className="rounded-lg border bg-card p-4">
               <div className="flex flex-wrap items-center gap-2">
@@ -372,7 +384,7 @@ export function StudentExamDetailView({ examId }: { examId: string }) {
                 ) : (
                   <Badge variant="secondary">On time</Badge>
                 )}
-                {submission.graded ? <Badge variant="default">Graded</Badge> : null}
+                {submission.feedbackReturned ? <Badge variant="default">Feedback returned</Badge> : null}
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
                 {submission.noSubmission
@@ -381,13 +393,26 @@ export function StudentExamDetailView({ examId }: { examId: string }) {
                       submission.late ? `, ${formatLateBy(submission.lateBySeconds)}` : "."
                     }`}
               </p>
-              {submission.graded ? (
-                <ScoreDisplay
-                  className="mt-4"
-                  score={submission.score ?? 0}
-                  maxScore={exam.maxScore}
-                  feedback={submission.feedback}
-                />
+              {submission.feedbackReturned ? (
+                <>
+                  <ScoreDisplay
+                    className="mt-4"
+                    score={submission.score ?? 0}
+                    maxScore={exam.maxScore}
+                    feedback={submission.feedback}
+                  />
+                  {submission.correctedPdfFileName ? (
+                    <Button asChild className="mt-4" variant="outline">
+                      <a href={getProtectedExamFeedbackPdfSrc(exam.id, authTokenRef.current)}>
+                        Download corrected paper
+                      </a>
+                    </Button>
+                  ) : null}
+                </>
+              ) : submission.graded ? (
+                <p className="mt-4 text-sm font-medium text-muted-foreground">
+                  Your teacher has graded this submission. Feedback has not been returned yet.
+                </p>
               ) : null}
             </div>
           ) : null}
@@ -400,17 +425,30 @@ export function StudentExamDetailView({ examId }: { examId: string }) {
             {exam.pdfs.length > 1 ? (
               <div className="flex flex-wrap gap-2">
                 {exam.pdfs.map((pdf, index) => (
-                  <Button
-                    key={pdf.id}
-                    type="button"
-                    variant={selectedPdfId === pdf.id ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => void handleSelectPdf(pdf.id)}
-                  >
-                    {pdf.fileName || `Exam PDF ${index + 1}`}
-                  </Button>
+                  <div key={pdf.id} className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant={selectedPdfId === pdf.id ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => void handleSelectPdf(pdf.id)}
+                    >
+                      {pdf.fileName || `Exam PDF ${index + 1}`}
+                    </Button>
+                    <Button asChild variant="outline" size="sm">
+                      <a href={getProtectedExamPdfDownloadSrc(examId, pdf.id, authTokenRef.current)}>
+                        Download PDF
+                      </a>
+                    </Button>
+                  </div>
                 ))}
               </div>
+            ) : null}
+            {exam.pdfs.length === 1 && selectedPdfId ? (
+              <Button asChild variant="outline" size="sm">
+                <a href={getProtectedExamPdfDownloadSrc(examId, selectedPdfId, authTokenRef.current)}>
+                  Download PDF
+                </a>
+              </Button>
             ) : null}
             {pdfSrc ? (
               <ExamPdfViewer

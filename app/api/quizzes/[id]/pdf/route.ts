@@ -32,7 +32,9 @@ export async function GET(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Open the quiz before viewing its PDFs." }, { status: 403 });
     }
 
-    const pdfId = new URL(request.url).searchParams.get("pdfId");
+    const searchParams = new URL(request.url).searchParams;
+    const pdfId = searchParams.get("pdfId");
+    const disposition = searchParams.get("download") === "true" ? "attachment" : "inline";
     const pdf = await getQuizPdfBuffer(id, pdfId);
 
     if (!pdf) {
@@ -42,7 +44,7 @@ export async function GET(request: Request, context: RouteContext) {
     return new Response(new Uint8Array(pdf.buffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="${pdf.fileName.replace(/"/g, "")}"`,
+        "Content-Disposition": `${disposition}; filename="${pdf.fileName.replace(/"/g, "")}"`,
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
       },

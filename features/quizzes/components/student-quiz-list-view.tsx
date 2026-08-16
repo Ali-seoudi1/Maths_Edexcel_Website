@@ -114,7 +114,7 @@ export function StudentQuizListView() {
         .map((quiz) => {
         const submission = submissions.find((item) => item.quizId === quiz.id);
         const attempt = attempts.find((item) => item.quizId === quiz.id);
-        const hasGrade = submission?.graded === true;
+        const hasGrade = submission?.feedbackReturned === true;
         const isFinishedForStudent = Boolean(submission);
         const isNoSubmission = submission?.noSubmission === true || (quiz.status === "closed" && !submission);
         const canSubmitLate = Boolean(isNoSubmission && attempt);
@@ -134,7 +134,7 @@ export function StudentQuizListView() {
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-base font-semibold text-foreground">{quiz.title}</h2>
                     <Badge variant={isClosedForStudent ? "outline" : "secondary"}>
-                      {isFinishedForStudent ? "Finished" : quiz.status === "closed" ? "Closed" : "Active"}
+                      {isFinishedForStudent ? "Finished" : quiz.status === "scheduled" ? "Scheduled" : quiz.status === "closed" ? "Closed" : "Active"}
                     </Badge>
                     {!submission?.noSubmission && isNoSubmission ? (
                       <Badge variant="outline">No submission</Badge>
@@ -148,7 +148,7 @@ export function StudentQuizListView() {
                       <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
                       {quiz.durationMinutes} minutes
                     </span>
-                    <span>Due {formatDate(quiz.expiresAt)}</span>
+                    <span>{quiz.status === "scheduled" ? "Starts" : "Due"} {formatDate(quiz.status === "scheduled" ? quiz.publishedAt : quiz.expiresAt)}</span>
                   </div>
                 </div>
               </div>
@@ -160,6 +160,8 @@ export function StudentQuizListView() {
                   </div>
                 ) : hasGrade ? (
                   <ScoreDisplay score={submission.score ?? 0} maxScore={quiz.maxScore} compact />
+                ) : submission?.graded ? (
+                  <p className="text-sm font-semibold text-muted-foreground">Awaiting feedback</p>
                 ) : (
                   <p className="text-sm font-semibold text-muted-foreground">Not graded</p>
                 )}
@@ -167,9 +169,9 @@ export function StudentQuizListView() {
                   <Button type="button" variant="outline" className="w-full sm:w-auto" disabled>
                     Closed
                   </Button>
-                ) : quiz.status === "closed" && !canSubmitLate ? (
+                ) : (quiz.status === "closed" || quiz.status === "scheduled") && !canSubmitLate ? (
                   <Button type="button" variant="outline" className="w-full sm:w-auto" disabled>
-                    Closed
+                    {quiz.status === "scheduled" ? "Scheduled" : "Closed"}
                   </Button>
                 ) : (
                   <Button asChild className="w-full sm:w-auto">

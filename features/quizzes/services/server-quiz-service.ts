@@ -1,7 +1,10 @@
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 import { getFirebaseAdminDb, getFirebaseAdminStorageBucket } from "@/lib/firebase/admin";
-import { createNotification } from "@/features/notifications/services/server-notification-service";
+import {
+  createNotification,
+  replaceNotificationForAllActiveStudents,
+} from "@/features/notifications/services/server-notification-service";
 
 import type {
   Quiz,
@@ -34,10 +37,50 @@ function getTimestamp(value: unknown): Timestamp | null {
   return null;
 }
 
-function getStatus(published: boolean, expiresAt: string | null): QuizStatus {
+function getStatus(published: boolean, scheduledAt: string | null, expiresAt: string | null): QuizStatus {
   if (!published) return "draft";
+  if (scheduledAt && Date.now() < new Date(scheduledAt).getTime()) return "scheduled";
   if (expiresAt && Date.now() > new Date(expiresAt).getTime()) return "closed";
   return "active";
+}
+
+function parseScheduledAt(value: string | null | undefined) {
+  if (!value) return null;
+
+  const time = new Date(value).getTime();
+
+  if (Number.isNaN(time)) {
+    throw new Error("Enter a valid scheduled date and time.");
+  }
+
+  return Timestamp.fromMillis(time);
+}
+
+function getAvailabilityTimestamps(values: QuizFormValues, shouldPublish: boolean) {
+  if (!shouldPublish) {
+    return { scheduledAt: null, publishedAt: null, expiresAt: null };
+  }
+
+  const scheduledAt = parseScheduledAt(values.scheduledAt);
+  const startsAt = scheduledAt ?? Timestamp.now();
+
+  return {
+    scheduledAt,
+    publishedAt: startsAt,
+    expiresAt: Timestamp.fromMillis(startsAt.toMillis() + values.durationMinutes * 60 * 1000),
+  };
+}
+
+function formatSchedule(value: string | null) {
+  if (!value) return "now";
+
+  return new Intl.DateTimeFormat("en", {
+    weekday: "long",
+    month: "short",
+    day: "2-digit",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
 }
 
 function getSafeFileName(fileName: string) {
@@ -105,9 +148,10 @@ function toQuiz(id: string, data: FirebaseFirestore.DocumentData): Quiz {
     maxScore: typeof data.maxScore === "number" && data.maxScore > 0 ? data.maxScore : 100,
     pdfs: normalizedPdfs,
     published,
+    scheduledAt: normalizeTimestamp(data.scheduledAt),
     publishedAt: normalizeTimestamp(data.publishedAt),
     expiresAt,
-    status: getStatus(published, expiresAt),
+    status: getStatus(published, normalizeTimestamp(data.scheduledAt), expiresAt),
     createdBy: typeof data.createdBy === "string" ? data.createdBy : "",
     createdAt: normalizeTimestamp(data.createdAt),
     updatedAt: normalizeTimestamp(data.updatedAt),
@@ -142,6 +186,10 @@ function toQuizSubmission(id: string, data: FirebaseFirestore.DocumentData): Qui
     score: typeof data.score === "number" ? data.score : null,
     maxScore: typeof data.maxScore === "number" && data.maxScore > 0 ? data.maxScore : 100,
     feedback: typeof data.feedback === "string" ? data.feedback : "",
+    feedbackReturned: data.feedbackReturned === true,
+    feedbackReturnedAt: normalizeTimestamp(data.feedbackReturnedAt),
+    correctedPdfPath: typeof data.correctedPdfPath === "string" ? data.correctedPdfPath : "",
+    correctedPdfFileName: typeof data.correctedPdfFileName === "string" ? data.correctedPdfFileName : "",
     createdAt: normalizeTimestamp(data.createdAt),
     updatedAt: normalizeTimestamp(data.updatedAt),
   };
@@ -256,10 +304,7 @@ export async function createQuiz(values: QuizFormValues, pdfFiles: File[], admin
   const pdfs = await Promise.all(pdfFiles.map((file) => uploadPdf(file, quizPdfFolder)));
   const ref = getFirebaseAdminDb().collection(quizzesCollection).doc();
   const shouldPublish = values.published === true;
-  const publishedAt = shouldPublish ? Timestamp.now() : null;
-  const expiresAt = publishedAt
-    ? Timestamp.fromMillis(publishedAt.toMillis() + values.durationMinutes * 60 * 1000)
-    : null;
+  const { scheduledAt, publishedAt, expiresAt } = getAvailabilityTimestamps(values, shouldPublish);
   const record = {
     title: values.title,
     description: values.description,
@@ -267,6 +312,7 @@ export async function createQuiz(values: QuizFormValues, pdfFiles: File[], admin
     maxScore: values.maxScore,
     pdfs,
     published: shouldPublish,
+    scheduledAt,
     publishedAt,
     expiresAt,
     createdBy: adminId,
@@ -276,8 +322,13 @@ export async function createQuiz(values: QuizFormValues, pdfFiles: File[], admin
 
   await ref.set(record);
   const snapshot = await ref.get();
+  const quiz = toQuiz(snapshot.id, snapshot.data() ?? record);
 
-  return toQuiz(snapshot.id, snapshot.data() ?? record);
+  if (quiz.published) {
+    await notifyQuizScheduled(quiz);
+  }
+
+  return quiz;
 }
 
 export async function updateQuiz(
@@ -295,8 +346,8 @@ export async function updateQuiz(
 
   const existing = toQuiz(snapshot.id, snapshot.data() ?? {});
 
-  if (existing.published || existing.status === "closed") {
-    throw new Error("Published quizzes cannot be edited.");
+  if (existing.status === "active" || existing.status === "closed") {
+    throw new Error("Active or closed quizzes cannot be edited.");
   }
 
   const nextPdfs = await Promise.all(pdfFiles.map((file) => uploadPdf(file, quizPdfFolder)));
@@ -310,6 +361,9 @@ export async function updateQuiz(
   }
 
   const shouldPublish = values.published === true;
+  const wasPublished = existing.published;
+  const previousScheduledAt = existing.scheduledAt;
+  const availability = getAvailabilityTimestamps(values, shouldPublish);
   const update: FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData> = {
     title: values.title,
     description: values.description,
@@ -317,16 +371,14 @@ export async function updateQuiz(
     maxScore: values.maxScore,
     pdfs,
     published: shouldPublish,
+    scheduledAt: availability.scheduledAt,
+    publishedAt: availability.publishedAt,
+    expiresAt: availability.expiresAt,
     updatedAt: FieldValue.serverTimestamp(),
   };
 
-  if (shouldPublish && !existing.published) {
-    const publishedAt = Timestamp.now();
-    update.publishedAt = publishedAt;
-    update.expiresAt = Timestamp.fromMillis(publishedAt.toMillis() + values.durationMinutes * 60 * 1000);
-  }
-
   if (!shouldPublish && existing.published) {
+    update.scheduledAt = null;
     update.publishedAt = null;
     update.expiresAt = null;
   }
@@ -336,8 +388,13 @@ export async function updateQuiz(
   await Promise.all(existing.pdfs.filter((pdf) => removedPdfIdSet.has(pdf.id)).map((pdf) => deleteStorageFile(pdf.path)));
 
   const updated = await ref.get();
+  const quiz = toQuiz(updated.id, updated.data() ?? {});
 
-  return toQuiz(updated.id, updated.data() ?? {});
+  if (quiz.published && (!wasPublished || previousScheduledAt !== quiz.scheduledAt)) {
+    await notifyQuizScheduled(quiz);
+  }
+
+  return quiz;
 }
 
 export async function deleteQuiz(id: string) {
@@ -366,6 +423,7 @@ export async function deleteQuiz(id: string) {
       const submission = toQuizSubmission(doc.id, doc.data());
       await doc.ref.delete();
       await deleteStorageFile(submission.pdfPath);
+      await deleteStorageFile(submission.correctedPdfPath);
     }),
   );
   await Promise.all(attempts.docs.map((doc) => doc.ref.delete()));
@@ -421,7 +479,7 @@ export async function startQuiz(quizId: string, studentId: string, studentName: 
   }
 
   if (quiz.status !== "active") {
-    throw new Error("This quiz is closed.");
+    throw new Error(quiz.status === "scheduled" ? "This quiz is not available yet." : "This quiz is closed.");
   }
 
   const existingSubmission = await getStudentQuizSubmission(quizId, studentId);
@@ -486,11 +544,15 @@ export async function markQuizNoSubmission(quizId: string, studentId: string, st
     finalized: true,
     graded: true,
     gradedAt: FieldValue.serverTimestamp(),
-    gradedBy: "system",
-    score: 0,
-    maxScore: quiz.maxScore,
-    feedback: "No solution (cheating).",
-    createdAt: FieldValue.serverTimestamp(),
+      gradedBy: "system",
+      score: 0,
+      maxScore: quiz.maxScore,
+      feedback: "No solution (cheating).",
+      feedbackReturned: true,
+      feedbackReturnedAt: FieldValue.serverTimestamp(),
+      correctedPdfPath: "",
+      correctedPdfFileName: "",
+      createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });
 
@@ -517,6 +579,8 @@ export async function submitQuizPdf(
     throw new Error(
       quiz.status === "closed"
         ? "This quiz is closed and cannot be opened."
+        : quiz.status === "scheduled"
+          ? "This quiz is not available yet."
         : "Open the quiz before submitting your answer.",
     );
   }
@@ -561,6 +625,10 @@ export async function submitQuizPdf(
       score: null,
       maxScore: quiz.maxScore,
       feedback: "",
+      feedbackReturned: false,
+      feedbackReturnedAt: null,
+      correctedPdfPath: "",
+      correctedPdfFileName: "",
       createdAt: existing.exists ? existing.data()?.createdAt ?? FieldValue.serverTimestamp() : FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     },
@@ -618,6 +686,10 @@ export async function listQuizSubmissions(quizId: string) {
       score: null,
       maxScore: quiz.maxScore,
       feedback: "",
+      feedbackReturned: false,
+      feedbackReturnedAt: null,
+      correctedPdfPath: "",
+      correctedPdfFileName: "",
       createdAt: null,
       updatedAt: null,
     }));
@@ -630,6 +702,7 @@ export async function gradeQuizSubmission(
   submissionId: string,
   values: QuizGradeValues,
   adminId: string,
+  correctedPdfFile?: File | null,
 ) {
   const quiz = await getQuizById(quizId);
 
@@ -644,7 +717,7 @@ export async function gradeQuizSubmission(
     throw new Error("Submission was not found.");
   }
 
-  const wasGraded = snapshot.data()?.graded === true || snapshot.data()?.status === "graded";
+  const wasFeedbackReturned = snapshot.data()?.feedbackReturned === true;
   const score = typeof values.score === "number" ? values.score : null;
   const maxScore = quiz.maxScore;
 
@@ -652,6 +725,9 @@ export async function gradeQuizSubmission(
     throw new Error("Score cannot be greater than the total score.");
   }
 
+  const shouldReturnFeedback = values.returnFeedback === true;
+  const existingSubmission = toQuizSubmission(snapshot.id, snapshot.data() ?? {});
+  const correctedPdf = correctedPdfFile ? await uploadPdf(correctedPdfFile, quizSubmissionFolder) : null;
   await ref.update({
     score,
     maxScore,
@@ -660,8 +736,24 @@ export async function gradeQuizSubmission(
     graded: true,
     gradedAt: FieldValue.serverTimestamp(),
     gradedBy: adminId,
+    ...(shouldReturnFeedback && !wasFeedbackReturned
+      ? {
+          feedbackReturned: true,
+          feedbackReturnedAt: FieldValue.serverTimestamp(),
+        }
+      : {}),
+    ...(correctedPdf
+      ? {
+          correctedPdfPath: correctedPdf.path,
+          correctedPdfFileName: correctedPdf.fileName,
+        }
+      : {}),
     updatedAt: FieldValue.serverTimestamp(),
   });
+
+  if (correctedPdf && existingSubmission.correctedPdfPath) {
+    await deleteStorageFile(existingSubmission.correctedPdfPath);
+  }
 
   const updated = await ref.get();
 
@@ -669,18 +761,28 @@ export async function gradeQuizSubmission(
     toQuizSubmission(updated.id, updated.data() ?? {}),
   ]);
 
-  if (!wasGraded) {
+  if (shouldReturnFeedback && !wasFeedbackReturned) {
     await createNotification({
       studentId: submission.studentId,
-      type: "quiz_grade",
-      title: "Your quiz grade is available",
-      message: `Your grade for ${quiz.title} is now available. Check it out.`,
+      type: "quiz_feedback",
+      title: "Quiz feedback returned",
+      message: `Your feedback for ${quiz.title} has been returned. Check it out.`,
       link: `/quizzes/${quiz.id}`,
-      relatedId: submission.id,
+      relatedId: `${submission.id}_feedbackReturned`,
     });
   }
 
   return submission;
+}
+
+async function notifyQuizScheduled(quiz: Quiz) {
+  await replaceNotificationForAllActiveStudents({
+    type: "quiz_scheduled",
+    title: `Upcoming quiz: ${quiz.title}`,
+    message: `${quiz.title} is scheduled for ${formatSchedule(quiz.publishedAt)}. Be ready!`,
+    link: `/quizzes/${quiz.id}`,
+    relatedId: quiz.id,
+  });
 }
 
 export async function getQuizPdfBuffer(id: string, pdfId?: string | null) {
@@ -725,4 +827,16 @@ export async function getSubmissionPdfBuffer(quizId: string, submissionId: strin
   const [buffer] = await getFirebaseAdminStorageBucket().file(submission.pdfPath).download();
 
   return { buffer, fileName: submission.pdfFileName };
+}
+
+export async function getReturnedQuizFeedbackPdfBuffer(quizId: string, studentId: string) {
+  const submission = await getStudentQuizSubmission(quizId, studentId);
+
+  if (!submission?.feedbackReturned || !submission.correctedPdfPath) {
+    return null;
+  }
+
+  const [buffer] = await getFirebaseAdminStorageBucket().file(submission.correctedPdfPath).download();
+
+  return { buffer, fileName: submission.correctedPdfFileName || "Corrected quiz.pdf" };
 }

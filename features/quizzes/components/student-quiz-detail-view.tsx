@@ -16,6 +16,8 @@ import { useToast } from "@/components/ui/toast";
 import {
   getMyQuizSubmission,
   getQuizAuthToken,
+  getProtectedQuizFeedbackPdfSrc,
+  getProtectedQuizPdfDownloadSrc,
   getProtectedQuizPdfSrc,
   getQuiz,
   markQuizNoSubmission,
@@ -129,9 +131,10 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
   }, [now, quiz?.expiresAt, serverOffset]);
 
   const isClosed = remainingSeconds === 0 || quiz?.status === "closed";
+  const isScheduled = quiz?.status === "scheduled";
   const hasOpenedQuiz = Boolean(attempt);
   const hasFinalSubmission = Boolean(submission);
-  const canOpenQuiz = Boolean(quiz) && !isClosed && !hasOpenedQuiz && !hasFinalSubmission;
+  const canOpenQuiz = Boolean(quiz) && !isClosed && !isScheduled && !hasOpenedQuiz && !hasFinalSubmission;
   const canViewQuiz = hasOpenedQuiz && !submission;
   const canSubmitQuiz = canViewQuiz && !submission;
   const showQuizRuleNotice = canOpenQuiz || canViewQuiz;
@@ -170,8 +173,8 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
 
     if (!canOpenQuiz) {
       toast({
-        title: "Quiz is closed",
-        description: "This quiz can no longer be opened.",
+        title: isScheduled ? "Quiz is scheduled" : "Quiz is closed",
+        description: isScheduled ? "This quiz is not available yet." : "This quiz can no longer be opened.",
         variant: "destructive",
       });
       return;
@@ -279,7 +282,7 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
                   {quiz.title}
                 </h1>
                 <Badge variant={isClosed ? "outline" : "secondary"}>
-                  {isClosed ? "Closed" : "Active"}
+                  {isClosed ? "Closed" : isScheduled ? "Scheduled" : "Active"}
                 </Badge>
               </div>
               {quiz.description ? (
@@ -299,7 +302,7 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
                 onClick={() => void handleStart()}
                 disabled={!canOpenQuiz}
               >
-                Open quiz
+                {isScheduled ? "Scheduled" : "Open quiz"}
               </Button>
             )}
           </div>
@@ -313,9 +316,11 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
               </p>
             </div>
             <div className="rounded-xl border bg-secondary/30 p-4">
-              <p className="text-xs font-medium uppercase text-muted-foreground">Deadline</p>
+              <p className="text-xs font-medium uppercase text-muted-foreground">
+                {isScheduled ? "Starts" : "Deadline"}
+              </p>
               <p className="mt-2 text-sm font-semibold text-foreground">
-                {formatDate(quiz.expiresAt)}
+                {formatDate(isScheduled ? quiz.publishedAt : quiz.expiresAt)}
               </p>
             </div>
             <div className="rounded-xl border bg-secondary/30 p-4">
@@ -362,6 +367,13 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
             </div>
           ) : null}
 
+          {isScheduled ? (
+            <div className="rounded-lg border border-primary/20 bg-primary/10 p-4 text-sm text-primary">
+              <p className="font-semibold">Quiz scheduled</p>
+              <p>This quiz will become available at {formatDate(quiz.publishedAt)}.</p>
+            </div>
+          ) : null}
+
           {submission ? (
             <div className="rounded-lg border bg-card p-4">
               <div className="flex flex-wrap items-center gap-2">
@@ -373,7 +385,7 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
                 ) : (
                   <Badge variant="secondary">On time</Badge>
                 )}
-                {submission.graded ? <Badge variant="default">Graded</Badge> : null}
+                {submission.feedbackReturned ? <Badge variant="default">Feedback returned</Badge> : null}
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
                 {submission.noSubmission
@@ -382,13 +394,26 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
                       submission.late ? `, ${formatLateBy(submission.lateBySeconds)}` : "."
                     }`}
               </p>
-              {submission.graded ? (
-                <ScoreDisplay
-                  className="mt-4"
-                  score={submission.score ?? 0}
-                  maxScore={quiz.maxScore}
-                  feedback={submission.feedback}
-                />
+              {submission.feedbackReturned ? (
+                <>
+                  <ScoreDisplay
+                    className="mt-4"
+                    score={submission.score ?? 0}
+                    maxScore={quiz.maxScore}
+                    feedback={submission.feedback}
+                  />
+                  {submission.correctedPdfFileName ? (
+                    <Button asChild className="mt-4" variant="outline">
+                      <a href={getProtectedQuizFeedbackPdfSrc(quiz.id, authTokenRef.current)}>
+                        Download corrected paper
+                      </a>
+                    </Button>
+                  ) : null}
+                </>
+              ) : submission.graded ? (
+                <p className="mt-4 text-sm font-medium text-muted-foreground">
+                  Your teacher has graded this submission. Feedback has not been returned yet.
+                </p>
               ) : null}
             </div>
           ) : null}
@@ -401,17 +426,30 @@ export function StudentQuizDetailView({ quizId }: { quizId: string }) {
             {quiz.pdfs.length > 1 ? (
               <div className="flex flex-wrap gap-2">
                 {quiz.pdfs.map((pdf, index) => (
-                  <Button
-                    key={pdf.id}
-                    type="button"
-                    variant={selectedPdfId === pdf.id ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => void handleSelectPdf(pdf.id)}
-                  >
-                    {pdf.fileName || `Quiz PDF ${index + 1}`}
-                  </Button>
+                  <div key={pdf.id} className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant={selectedPdfId === pdf.id ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => void handleSelectPdf(pdf.id)}
+                    >
+                      {pdf.fileName || `Quiz PDF ${index + 1}`}
+                    </Button>
+                    <Button asChild variant="outline" size="sm">
+                      <a href={getProtectedQuizPdfDownloadSrc(quizId, pdf.id, authTokenRef.current)}>
+                        Download PDF
+                      </a>
+                    </Button>
+                  </div>
                 ))}
               </div>
+            ) : null}
+            {quiz.pdfs.length === 1 && selectedPdfId ? (
+              <Button asChild variant="outline" size="sm">
+                <a href={getProtectedQuizPdfDownloadSrc(quizId, selectedPdfId, authTokenRef.current)}>
+                  Download PDF
+                </a>
+              </Button>
             ) : null}
             {pdfSrc ? (
               <QuizPdfViewer

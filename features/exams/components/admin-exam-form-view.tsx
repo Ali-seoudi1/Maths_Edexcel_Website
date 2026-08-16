@@ -18,6 +18,17 @@ type AdminExamFormViewProps = {
   onSaved?: (exam: Exam) => void;
 };
 
+function toDateTimeLocalValue(value: string | null | undefined) {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "";
+
+  const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return offsetDate.toISOString().slice(0, 16);
+}
+
 export function AdminExamFormView({ exam, onSaved }: AdminExamFormViewProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -27,6 +38,7 @@ export function AdminExamFormView({ exam, onSaved }: AdminExamFormViewProps) {
   const [durationMinutes, setDurationMinutes] = useState(exam?.durationMinutes ?? 10);
   const [maxScore, setMaxScore] = useState(exam?.maxScore ?? 100);
   const [published, setPublished] = useState(exam?.published ?? false);
+  const [scheduledAt, setScheduledAt] = useState(toDateTimeLocalValue(exam?.scheduledAt));
   const [removedPdfIds, setRemovedPdfIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const isEditing = Boolean(exam);
@@ -79,12 +91,14 @@ export function AdminExamFormView({ exam, onSaved }: AdminExamFormViewProps) {
         durationMinutes,
         maxScore,
         published: publishedOverride,
+        scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null,
       };
 
       if (exam) {
         const result = await updateAdminExam(exam.id, values, pdfFiles, removedPdfIds);
         onSaved?.(result.exam);
         setPublished(result.exam.published);
+        setScheduledAt(toDateTimeLocalValue(result.exam.scheduledAt));
         setRemovedPdfIds([]);
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
@@ -161,6 +175,17 @@ export function AdminExamFormView({ exam, onSaved }: AdminExamFormViewProps) {
             onChange={(event) => setMaxScore(Number(event.target.value) || 1)}
           />
         </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Scheduled date and time</label>
+          <Input
+            type="datetime-local"
+            value={scheduledAt}
+            onChange={(event) => setScheduledAt(event.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Leave empty to make the exam active immediately when published.
+          </p>
+        </div>
         <label className="flex items-start gap-3 rounded-lg border bg-secondary/30 p-4">
           <input
             type="checkbox"
@@ -171,7 +196,7 @@ export function AdminExamFormView({ exam, onSaved }: AdminExamFormViewProps) {
           <span>
             <span className="block text-sm font-medium text-foreground">Publish exam</span>
             <span className="block text-xs leading-5 text-muted-foreground">
-              For a draft exam, turning this on starts the global timer when you save.
+              Turning this on publishes the schedule. The global timer starts at the scheduled time.
             </span>
           </span>
         </label>

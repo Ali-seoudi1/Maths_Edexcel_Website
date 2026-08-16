@@ -114,7 +114,7 @@ export function StudentExamListView() {
         .map((exam) => {
         const submission = submissions.find((item) => item.examId === exam.id);
         const attempt = attempts.find((item) => item.examId === exam.id);
-        const hasGrade = submission?.graded === true;
+        const hasGrade = submission?.feedbackReturned === true;
         const isFinishedForStudent = Boolean(submission);
         const isNoSubmission = submission?.noSubmission === true || (exam.status === "closed" && !submission);
         const canSubmitLate = Boolean(isNoSubmission && attempt);
@@ -134,7 +134,7 @@ export function StudentExamListView() {
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-base font-semibold text-foreground">{exam.title}</h2>
                     <Badge variant={isClosedForStudent ? "outline" : "secondary"}>
-                      {isFinishedForStudent ? "Finished" : exam.status === "closed" ? "Closed" : "Active"}
+                      {isFinishedForStudent ? "Finished" : exam.status === "scheduled" ? "Scheduled" : exam.status === "closed" ? "Closed" : "Active"}
                     </Badge>
                     {!submission?.noSubmission && isNoSubmission ? (
                       <Badge variant="outline">No submission</Badge>
@@ -148,7 +148,7 @@ export function StudentExamListView() {
                       <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
                       {exam.durationMinutes} minutes
                     </span>
-                    <span>Due {formatDate(exam.expiresAt)}</span>
+                    <span>{exam.status === "scheduled" ? "Starts" : "Due"} {formatDate(exam.status === "scheduled" ? exam.publishedAt : exam.expiresAt)}</span>
                   </div>
                 </div>
               </div>
@@ -160,6 +160,8 @@ export function StudentExamListView() {
                   </div>
                 ) : hasGrade ? (
                   <ScoreDisplay score={submission.score ?? 0} maxScore={exam.maxScore} compact />
+                ) : submission?.graded ? (
+                  <p className="text-sm font-semibold text-muted-foreground">Awaiting feedback</p>
                 ) : (
                   <p className="text-sm font-semibold text-muted-foreground">Not graded</p>
                 )}
@@ -167,9 +169,9 @@ export function StudentExamListView() {
                   <Button type="button" variant="outline" className="w-full sm:w-auto" disabled>
                     Closed
                   </Button>
-                ) : exam.status === "closed" && !canSubmitLate ? (
+                ) : (exam.status === "closed" || exam.status === "scheduled") && !canSubmitLate ? (
                   <Button type="button" variant="outline" className="w-full sm:w-auto" disabled>
-                    Closed
+                    {exam.status === "scheduled" ? "Scheduled" : "Closed"}
                   </Button>
                 ) : (
                   <Button asChild className="w-full sm:w-auto">

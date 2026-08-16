@@ -83,6 +83,7 @@ function appendExamFormData(values: ExamFormValues, pdfFiles: File[] = [], remov
   formData.set("durationMinutes", String(values.durationMinutes));
   formData.set("maxScore", String(values.maxScore));
   formData.set("published", String(values.published === true));
+  formData.set("scheduledAt", values.scheduledAt ?? "");
 
   pdfFiles.forEach((pdfFile) => formData.append("pdfs", pdfFile));
   removedPdfIds.forEach((pdfId) => formData.append("removedPdfIds", pdfId));
@@ -97,6 +98,12 @@ export async function getProtectedExamPdfSrc(examId: string, pdfId?: string) {
   if (pdfId) {
     params.set("pdfId", pdfId);
   }
+
+  return `/api/exams/${examId}/pdf?${params.toString()}`;
+}
+
+export function getProtectedExamPdfDownloadSrc(examId: string, pdfId: string, token: string) {
+  const params = new URLSearchParams({ token, pdfId, download: "true" });
 
   return `/api/exams/${examId}/pdf?${params.toString()}`;
 }
@@ -176,14 +183,33 @@ export async function updateExamSubmissionGrade(
   examId: string,
   submissionId: string,
   values: ExamGradeValues,
+  correctedPdf?: File | null,
 ) {
-  return requestJson<{ submission: ExamSubmission }>(
+  if (!correctedPdf) {
+    return requestJson<{ submission: ExamSubmission }>(
+      `/api/admin/exams/${examId}/submissions/${submissionId}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(values),
+      },
+    );
+  }
+
+  const formData = new FormData();
+  formData.set("score", values.score === null || values.score === undefined ? "" : String(values.score));
+  formData.set("feedback", values.feedback ?? "");
+  formData.set("returnFeedback", String(values.returnFeedback === true));
+  formData.set("correctedPdf", correctedPdf);
+
+  return requestFormData<{ submission: ExamSubmission }>(
     `/api/admin/exams/${examId}/submissions/${submissionId}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify(values),
-    },
+    formData,
+    "PATCH",
   );
+}
+
+export function getProtectedExamFeedbackPdfSrc(examId: string, token: string) {
+  return `/api/exams/${examId}/feedback-pdf?${new URLSearchParams({ token }).toString()}`;
 }
 
 export async function listExams() {

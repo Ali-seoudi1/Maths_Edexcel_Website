@@ -9,6 +9,7 @@ import { SubmissionGradePanel } from "@/components/shared/submission-grade-panel
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 
@@ -48,6 +49,7 @@ export function AdminQuizDetailView({ quizId }: { quizId: string }) {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, { score: string; feedback: string }>>({});
+  const [correctedPdfs, setCorrectedPdfs] = useState<Record<string, File | null>>({});
   const [editingSubmissionIds, setEditingSubmissionIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -97,6 +99,14 @@ export function AdminQuizDetailView({ quizId }: { quizId: string }) {
   }
 
   async function handleSave(submissionId: string) {
+    await saveSubmission(submissionId, false);
+  }
+
+  async function handleReturnFeedback(submissionId: string) {
+    await saveSubmission(submissionId, true);
+  }
+
+  async function saveSubmission(submissionId: string, returnFeedback: boolean) {
     const draft = drafts[submissionId];
 
     if (!draft) return;
@@ -119,7 +129,8 @@ export function AdminQuizDetailView({ quizId }: { quizId: string }) {
       const result = await updateQuizSubmissionGrade(quizId, submissionId, {
         score: parsedScore,
         feedback: draft.feedback,
-      });
+        returnFeedback,
+      }, correctedPdfs[submissionId] ?? null);
 
       setSubmissions((current) =>
         current.map((submission) => (submission.id === submissionId ? result.submission : submission)),
@@ -131,12 +142,16 @@ export function AdminQuizDetailView({ quizId }: { quizId: string }) {
           feedback: result.submission.feedback ?? "",
         },
       }));
+      setCorrectedPdfs((current) => ({
+        ...current,
+        [submissionId]: null,
+      }));
       setEditingSubmissionIds((current) => {
         const next = new Set(current);
         next.delete(submissionId);
         return next;
       });
-      toast({ title: "Grade saved", variant: "success" });
+      toast({ title: returnFeedback ? "Feedback returned" : "Grade saved", variant: "success" });
     } catch (error) {
       toast({
         title: "Grade update failed",
@@ -191,7 +206,7 @@ export function AdminQuizDetailView({ quizId }: { quizId: string }) {
             </div>
           </div>
           <div className="flex justify-end">
-            {quiz.published || quiz.status === "closed" ? (
+            {quiz.status === "active" || quiz.status === "closed" ? (
               <Button type="button" variant="outline" disabled>
                 <Pencil className="h-4 w-4" aria-hidden="true" />
                 Edit locked
@@ -245,6 +260,11 @@ export function AdminQuizDetailView({ quizId }: { quizId: string }) {
                             }`}
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">{submission.pdfFileName}</p>
+                      {submission.correctedPdfFileName ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Corrected paper: {submission.correctedPdfFileName}
+                        </p>
+                      ) : null}
                     </div>
                     {!submission.noSubmission ? (
                       <Button type="button" variant="outline" onClick={() => void handleOpenSubmissionPdf(submission.id)}>
@@ -254,39 +274,66 @@ export function AdminQuizDetailView({ quizId }: { quizId: string }) {
                   </div>
 
                   {!submission.noSubmission ? (
-                    <SubmissionGradePanel
-                      editing={isEditingGrade}
-                      feedback={draft.feedback}
-                      max={quiz.maxScore}
-                      maxScoreValue={String(quiz.maxScore)}
-                      saving={savingId === submission.id}
-                      scoreLabel="Score"
-                      scorePlaceholder="Score"
-                      scoreSummaryLabel="Score"
-                      scoreValue={draft.score}
-                      onEdit={() =>
-                        setEditingSubmissionIds((current) => new Set(current).add(submission.id))
-                      }
-                      onFeedbackChange={(value) =>
-                        setDrafts((current) => ({
-                          ...current,
-                          [submission.id]: {
-                            ...(current[submission.id] ?? { score: "", feedback: "" }),
-                            feedback: value,
-                          },
-                        }))
-                      }
-                      onSave={() => void handleSave(submission.id)}
-                      onScoreChange={(value) =>
-                        setDrafts((current) => ({
-                          ...current,
-                          [submission.id]: {
-                            ...(current[submission.id] ?? { score: "", feedback: "" }),
-                            score: value,
-                          },
-                        }))
-                      }
-                    />
+                    <div className="space-y-4">
+                      {isEditingGrade ? (
+                        <div className="grid gap-4 md:grid-cols-[140px_1fr] md:items-start">
+                          <label className="text-sm font-medium text-foreground">
+                            Corrected PDF <span className="text-muted-foreground">(optional)</span>
+                          </label>
+                          <div className="space-y-2">
+                            <Input
+                              type="file"
+                              accept="application/pdf"
+                              onChange={(event) =>
+                                setCorrectedPdfs((current) => ({
+                                  ...current,
+                                  [submission.id]: event.target.files?.[0] ?? null,
+                                }))
+                              }
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Optional. Add a corrected paper for this student, or save the score without one.
+                            </p>
+                          </div>
+                        </div>
+                      ) : null}
+                      <SubmissionGradePanel
+                        editing={isEditingGrade}
+                        feedback={draft.feedback}
+                        max={quiz.maxScore}
+                        maxScoreValue={String(quiz.maxScore)}
+                        saving={savingId === submission.id}
+                        scoreLabel="Score"
+                        scorePlaceholder="Score"
+                        scoreSummaryLabel="Score"
+                        scoreValue={draft.score}
+                        saveLabel="Save score and corrected PDF"
+                        onEdit={() =>
+                          setEditingSubmissionIds((current) => new Set(current).add(submission.id))
+                        }
+                        onFeedbackChange={(value) =>
+                          setDrafts((current) => ({
+                            ...current,
+                            [submission.id]: {
+                              ...(current[submission.id] ?? { score: "", feedback: "" }),
+                              feedback: value,
+                            },
+                          }))
+                        }
+                        onSave={() => void handleSave(submission.id)}
+                        onReturnFeedback={() => void handleReturnFeedback(submission.id)}
+                        feedbackReturned={submission.feedbackReturned}
+                        onScoreChange={(value) =>
+                          setDrafts((current) => ({
+                            ...current,
+                            [submission.id]: {
+                              ...(current[submission.id] ?? { score: "", feedback: "" }),
+                              score: value,
+                            },
+                          }))
+                        }
+                      />
+                    </div>
                   ) : null}
                 </CardContent>
               </Card>

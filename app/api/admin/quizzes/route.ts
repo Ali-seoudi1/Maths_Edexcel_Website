@@ -45,6 +45,7 @@ export async function POST(request: Request) {
       durationMinutes: Number(formData.get("durationMinutes") ?? 0),
       maxScore: Number(formData.get("maxScore") ?? 100),
       published: formData.get("published") === "true",
+      scheduledAt: String(formData.get("scheduledAt") ?? "") || null,
     });
 
     const quiz = await createQuiz(values, pdfFiles, admin.uid);

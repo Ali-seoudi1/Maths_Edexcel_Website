@@ -6,6 +6,7 @@ export const quizPayloadSchema = z.object({
   durationMinutes: z.number().int().min(1, "Quiz duration must be at least 1 minute."),
   maxScore: z.number().min(1, "Total score must be at least 1."),
   published: z.boolean().optional(),
+  scheduledAt: z.string().trim().nullable().optional(),
 });
 
 export type QuizFormValues = z.infer<typeof quizPayloadSchema>;
@@ -13,4 +14,5 @@ export type QuizFormValues = z.infer<typeof quizPayloadSchema>;
 export const quizGradePayloadSchema = z.object({
   score: z.number().min(0, "Score cannot be negative.").nullable().optional(),
   feedback: z.string().trim().optional(),
+  returnFeedback: z.boolean().optional(),
 });

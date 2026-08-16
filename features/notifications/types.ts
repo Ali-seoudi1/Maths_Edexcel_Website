@@ -3,6 +3,10 @@ export type NotificationType =
   | "assignment_grade"
   | "quiz_grade"
   | "exam_grade"
+  | "quiz_scheduled"
+  | "exam_scheduled"
+  | "quiz_feedback"
+  | "exam_feedback"
   | "announcement"
   | "live_meeting"
   | "monthly_report";

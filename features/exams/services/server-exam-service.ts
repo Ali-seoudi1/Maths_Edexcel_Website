@@ -1,7 +1,10 @@
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 import { getFirebaseAdminDb, getFirebaseAdminStorageBucket } from "@/lib/firebase/admin";
-import { createNotification } from "@/features/notifications/services/server-notification-service";
+import {
+  createNotification,
+  replaceNotificationForAllActiveStudents,
+} from "@/features/notifications/services/server-notification-service";
 
 import type {
   Exam,
@@ -34,10 +37,50 @@ function getTimestamp(value: unknown): Timestamp | null {
   return null;
 }
 
-function getStatus(published: boolean, expiresAt: string | null): ExamStatus {
+function getStatus(published: boolean, scheduledAt: string | null, expiresAt: string | null): ExamStatus {
   if (!published) return "draft";
+  if (scheduledAt && Date.now() < new Date(scheduledAt).getTime()) return "scheduled";
   if (expiresAt && Date.now() > new Date(expiresAt).getTime()) return "closed";
   return "active";
+}
+
+function parseScheduledAt(value: string | null | undefined) {
+  if (!value) return null;
+
+  const time = new Date(value).getTime();
+
+  if (Number.isNaN(time)) {
+    throw new Error("Enter a valid scheduled date and time.");
+  }
+
+  return Timestamp.fromMillis(time);
+}
+
+function getAvailabilityTimestamps(values: ExamFormValues, shouldPublish: boolean) {
+  if (!shouldPublish) {
+    return { scheduledAt: null, publishedAt: null, expiresAt: null };
+  }
+
+  const scheduledAt = parseScheduledAt(values.scheduledAt);
+  const startsAt = scheduledAt ?? Timestamp.now();
+
+  return {
+    scheduledAt,
+    publishedAt: startsAt,
+    expiresAt: Timestamp.fromMillis(startsAt.toMillis() + values.durationMinutes * 60 * 1000),
+  };
+}
+
+function formatSchedule(value: string | null) {
+  if (!value) return "now";
+
+  return new Intl.DateTimeFormat("en", {
+    weekday: "long",
+    month: "short",
+    day: "2-digit",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
 }
 
 function getSafeFileName(fileName: string) {
@@ -105,9 +148,10 @@ function toExam(id: string, data: FirebaseFirestore.DocumentData): Exam {
     maxScore: typeof data.maxScore === "number" && data.maxScore > 0 ? data.maxScore : 100,
     pdfs: normalizedPdfs,
     published,
+    scheduledAt: normalizeTimestamp(data.scheduledAt),
     publishedAt: normalizeTimestamp(data.publishedAt),
     expiresAt,
-    status: getStatus(published, expiresAt),
+    status: getStatus(published, normalizeTimestamp(data.scheduledAt), expiresAt),
     createdBy: typeof data.createdBy === "string" ? data.createdBy : "",
     createdAt: normalizeTimestamp(data.createdAt),
     updatedAt: normalizeTimestamp(data.updatedAt),
@@ -142,6 +186,10 @@ function toExamSubmission(id: string, data: FirebaseFirestore.DocumentData): Exa
     score: typeof data.score === "number" ? data.score : null,
     maxScore: typeof data.maxScore === "number" && data.maxScore > 0 ? data.maxScore : 100,
     feedback: typeof data.feedback === "string" ? data.feedback : "",
+    feedbackReturned: data.feedbackReturned === true,
+    feedbackReturnedAt: normalizeTimestamp(data.feedbackReturnedAt),
+    correctedPdfPath: typeof data.correctedPdfPath === "string" ? data.correctedPdfPath : "",
+    correctedPdfFileName: typeof data.correctedPdfFileName === "string" ? data.correctedPdfFileName : "",
     createdAt: normalizeTimestamp(data.createdAt),
     updatedAt: normalizeTimestamp(data.updatedAt),
   };
@@ -256,10 +304,7 @@ export async function createExam(values: ExamFormValues, pdfFiles: File[], admin
   const pdfs = await Promise.all(pdfFiles.map((file) => uploadPdf(file, examPdfFolder)));
   const ref = getFirebaseAdminDb().collection(examsCollection).doc();
   const shouldPublish = values.published === true;
-  const publishedAt = shouldPublish ? Timestamp.now() : null;
-  const expiresAt = publishedAt
-    ? Timestamp.fromMillis(publishedAt.toMillis() + values.durationMinutes * 60 * 1000)
-    : null;
+  const { scheduledAt, publishedAt, expiresAt } = getAvailabilityTimestamps(values, shouldPublish);
   const record = {
     title: values.title,
     description: values.description,
@@ -267,6 +312,7 @@ export async function createExam(values: ExamFormValues, pdfFiles: File[], admin
     maxScore: values.maxScore,
     pdfs,
     published: shouldPublish,
+    scheduledAt,
     publishedAt,
     expiresAt,
     createdBy: adminId,
@@ -276,8 +322,13 @@ export async function createExam(values: ExamFormValues, pdfFiles: File[], admin
 
   await ref.set(record);
   const snapshot = await ref.get();
+  const exam = toExam(snapshot.id, snapshot.data() ?? record);
 
-  return toExam(snapshot.id, snapshot.data() ?? record);
+  if (exam.published) {
+    await notifyExamScheduled(exam);
+  }
+
+  return exam;
 }
 
 export async function updateExam(
@@ -295,8 +346,8 @@ export async function updateExam(
 
   const existing = toExam(snapshot.id, snapshot.data() ?? {});
 
-  if (existing.published || existing.status === "closed") {
-    throw new Error("Published exams cannot be edited.");
+  if (existing.status === "active" || existing.status === "closed") {
+    throw new Error("Active or closed exams cannot be edited.");
   }
 
   const nextPdfs = await Promise.all(pdfFiles.map((file) => uploadPdf(file, examPdfFolder)));
@@ -310,6 +361,9 @@ export async function updateExam(
   }
 
   const shouldPublish = values.published === true;
+  const wasPublished = existing.published;
+  const previousScheduledAt = existing.scheduledAt;
+  const availability = getAvailabilityTimestamps(values, shouldPublish);
   const update: FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData> = {
     title: values.title,
     description: values.description,
@@ -317,16 +371,14 @@ export async function updateExam(
     maxScore: values.maxScore,
     pdfs,
     published: shouldPublish,
+    scheduledAt: availability.scheduledAt,
+    publishedAt: availability.publishedAt,
+    expiresAt: availability.expiresAt,
     updatedAt: FieldValue.serverTimestamp(),
   };
 
-  if (shouldPublish && !existing.published) {
-    const publishedAt = Timestamp.now();
-    update.publishedAt = publishedAt;
-    update.expiresAt = Timestamp.fromMillis(publishedAt.toMillis() + values.durationMinutes * 60 * 1000);
-  }
-
   if (!shouldPublish && existing.published) {
+    update.scheduledAt = null;
     update.publishedAt = null;
     update.expiresAt = null;
   }
@@ -336,8 +388,13 @@ export async function updateExam(
   await Promise.all(existing.pdfs.filter((pdf) => removedPdfIdSet.has(pdf.id)).map((pdf) => deleteStorageFile(pdf.path)));
 
   const updated = await ref.get();
+  const exam = toExam(updated.id, updated.data() ?? {});
 
-  return toExam(updated.id, updated.data() ?? {});
+  if (exam.published && (!wasPublished || previousScheduledAt !== exam.scheduledAt)) {
+    await notifyExamScheduled(exam);
+  }
+
+  return exam;
 }
 
 export async function deleteExam(id: string) {
@@ -366,6 +423,7 @@ export async function deleteExam(id: string) {
       const submission = toExamSubmission(doc.id, doc.data());
       await doc.ref.delete();
       await deleteStorageFile(submission.pdfPath);
+      await deleteStorageFile(submission.correctedPdfPath);
     }),
   );
   await Promise.all(attempts.docs.map((doc) => doc.ref.delete()));
@@ -421,7 +479,7 @@ export async function startExam(examId: string, studentId: string, studentName: 
   }
 
   if (exam.status !== "active") {
-    throw new Error("This exam is closed.");
+    throw new Error(exam.status === "scheduled" ? "This exam is not available yet." : "This exam is closed.");
   }
 
   const existingSubmission = await getStudentExamSubmission(examId, studentId);
@@ -490,6 +548,10 @@ export async function markExamNoSubmission(examId: string, studentId: string, st
     score: 0,
     maxScore: exam.maxScore,
     feedback: "No solution (cheating).",
+    feedbackReturned: true,
+    feedbackReturnedAt: FieldValue.serverTimestamp(),
+    correctedPdfPath: "",
+    correctedPdfFileName: "",
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });
@@ -517,6 +579,8 @@ export async function submitExamPdf(
     throw new Error(
       exam.status === "closed"
         ? "This exam is closed and cannot be opened."
+        : exam.status === "scheduled"
+          ? "This exam is not available yet."
         : "Open the exam before submitting your answer.",
     );
   }
@@ -561,6 +625,10 @@ export async function submitExamPdf(
       score: null,
       maxScore: exam.maxScore,
       feedback: "",
+      feedbackReturned: false,
+      feedbackReturnedAt: null,
+      correctedPdfPath: "",
+      correctedPdfFileName: "",
       createdAt: existing.exists ? existing.data()?.createdAt ?? FieldValue.serverTimestamp() : FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     },
@@ -618,6 +686,10 @@ export async function listExamSubmissions(examId: string) {
       score: null,
       maxScore: exam.maxScore,
       feedback: "",
+      feedbackReturned: false,
+      feedbackReturnedAt: null,
+      correctedPdfPath: "",
+      correctedPdfFileName: "",
       createdAt: null,
       updatedAt: null,
     }));
@@ -630,6 +702,7 @@ export async function gradeExamSubmission(
   submissionId: string,
   values: ExamGradeValues,
   adminId: string,
+  correctedPdfFile?: File | null,
 ) {
   const exam = await getExamById(examId);
 
@@ -644,7 +717,7 @@ export async function gradeExamSubmission(
     throw new Error("Submission was not found.");
   }
 
-  const wasGraded = snapshot.data()?.graded === true || snapshot.data()?.status === "graded";
+  const wasFeedbackReturned = snapshot.data()?.feedbackReturned === true;
   const score = typeof values.score === "number" ? values.score : null;
   const maxScore = exam.maxScore;
 
@@ -652,6 +725,9 @@ export async function gradeExamSubmission(
     throw new Error("Score cannot be greater than the total score.");
   }
 
+  const shouldReturnFeedback = values.returnFeedback === true;
+  const existingSubmission = toExamSubmission(snapshot.id, snapshot.data() ?? {});
+  const correctedPdf = correctedPdfFile ? await uploadPdf(correctedPdfFile, examSubmissionFolder) : null;
   await ref.update({
     score,
     maxScore,
@@ -660,8 +736,24 @@ export async function gradeExamSubmission(
     graded: true,
     gradedAt: FieldValue.serverTimestamp(),
     gradedBy: adminId,
+    ...(shouldReturnFeedback && !wasFeedbackReturned
+      ? {
+          feedbackReturned: true,
+          feedbackReturnedAt: FieldValue.serverTimestamp(),
+        }
+      : {}),
+    ...(correctedPdf
+      ? {
+          correctedPdfPath: correctedPdf.path,
+          correctedPdfFileName: correctedPdf.fileName,
+        }
+      : {}),
     updatedAt: FieldValue.serverTimestamp(),
   });
+
+  if (correctedPdf && existingSubmission.correctedPdfPath) {
+    await deleteStorageFile(existingSubmission.correctedPdfPath);
+  }
 
   const updated = await ref.get();
 
@@ -669,18 +761,28 @@ export async function gradeExamSubmission(
     toExamSubmission(updated.id, updated.data() ?? {}),
   ]);
 
-  if (!wasGraded) {
+  if (shouldReturnFeedback && !wasFeedbackReturned) {
     await createNotification({
       studentId: submission.studentId,
-      type: "exam_grade",
-      title: "Your exam grade is available",
-      message: `Your grade for ${exam.title} is now available. Check it out.`,
+      type: "exam_feedback",
+      title: "Exam feedback returned",
+      message: `Your feedback for ${exam.title} has been returned. Check it out.`,
       link: `/exams/${exam.id}`,
-      relatedId: submission.id,
+      relatedId: `${submission.id}_feedbackReturned`,
     });
   }
 
   return submission;
+}
+
+async function notifyExamScheduled(exam: Exam) {
+  await replaceNotificationForAllActiveStudents({
+    type: "exam_scheduled",
+    title: `Upcoming exam: ${exam.title}`,
+    message: `${exam.title} is scheduled for ${formatSchedule(exam.publishedAt)}. Be ready!`,
+    link: `/exams/${exam.id}`,
+    relatedId: exam.id,
+  });
 }
 
 export async function getExamPdfBuffer(id: string, pdfId?: string | null) {
@@ -725,4 +827,16 @@ export async function getSubmissionPdfBuffer(examId: string, submissionId: strin
   const [buffer] = await getFirebaseAdminStorageBucket().file(submission.pdfPath).download();
 
   return { buffer, fileName: submission.pdfFileName };
+}
+
+export async function getReturnedExamFeedbackPdfBuffer(examId: string, studentId: string) {
+  const submission = await getStudentExamSubmission(examId, studentId);
+
+  if (!submission?.feedbackReturned || !submission.correctedPdfPath) {
+    return null;
+  }
+
+  const [buffer] = await getFirebaseAdminStorageBucket().file(submission.correctedPdfPath).download();
+
+  return { buffer, fileName: submission.correctedPdfFileName || "Corrected exam.pdf" };
 }

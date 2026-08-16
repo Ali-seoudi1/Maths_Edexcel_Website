@@ -43,11 +43,11 @@ export function AdminQuizEditView({ quizId }: { quizId: string }) {
     );
   }
 
-  if (quiz.published || quiz.status === "closed") {
+  if (quiz.status === "active" || quiz.status === "closed") {
     return (
       <EmptyState
         title="Quiz editing is locked"
-        description="Published or closed quizzes cannot be edited."
+        description="Active or closed quizzes cannot be edited."
         icon={<FileQuestion className="h-8 w-8" aria-hidden="true" />}
       />
     );

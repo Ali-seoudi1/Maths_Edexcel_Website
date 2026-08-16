@@ -22,8 +22,20 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const admin = await requireAdmin(request);
     const { id, submissionId } = await context.params;
-    const payload = quizGradePayloadSchema.parse(await request.json());
-    const submission = await gradeQuizSubmission(id, submissionId, payload, admin.uid);
+    const contentType = request.headers.get("content-type") ?? "";
+    const formData = contentType.includes("multipart/form-data") ? await request.formData() : null;
+    const payload = quizGradePayloadSchema.parse(
+      formData
+        ? {
+            score: String(formData.get("score") ?? "") === "" ? null : Number(formData.get("score")),
+            feedback: String(formData.get("feedback") ?? ""),
+            returnFeedback: formData.get("returnFeedback") === "true",
+          }
+        : await request.json(),
+    );
+    const correctedPdfValue = formData?.get("correctedPdf");
+    const correctedPdf = correctedPdfValue instanceof File ? correctedPdfValue : null;
+    const submission = await gradeQuizSubmission(id, submissionId, payload, admin.uid, correctedPdf);
 
     return NextResponse.json({ submission });
   } catch (error) {

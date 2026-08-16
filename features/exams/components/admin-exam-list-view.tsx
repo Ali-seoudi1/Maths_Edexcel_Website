@@ -99,7 +99,7 @@ export function AdminExamListView() {
                 <TableHead>Exam</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Duration</TableHead>
-                <TableHead>Closes</TableHead>
+                <TableHead>Schedule</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -128,7 +128,11 @@ export function AdminExamListView() {
                       {exam.durationMinutes} min
                     </span>
                   </TableCell>
-                  <TableCell>{formatDate(exam.expiresAt)}</TableCell>
+                  <TableCell>
+                    {exam.status === "scheduled"
+                      ? `Starts ${formatDate(exam.publishedAt)}`
+                      : `Closes ${formatDate(exam.expiresAt)}`}
+                  </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-2">
                       <Button asChild variant="outline" size="sm">
@@ -137,7 +141,7 @@ export function AdminExamListView() {
                           View
                         </Link>
                       </Button>
-                      {exam.published || exam.status === "closed" ? (
+                      {exam.status === "active" || exam.status === "closed" ? (
                         <Button type="button" variant="outline" size="sm" disabled>
                           <Pencil className="h-4 w-4" aria-hidden="true" />
                           Edit

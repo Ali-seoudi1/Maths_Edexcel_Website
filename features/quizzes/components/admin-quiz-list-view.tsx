@@ -99,7 +99,7 @@ export function AdminQuizListView() {
                 <TableHead>Quiz</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Duration</TableHead>
-                <TableHead>Closes</TableHead>
+                <TableHead>Schedule</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -128,7 +128,11 @@ export function AdminQuizListView() {
                       {quiz.durationMinutes} min
                     </span>
                   </TableCell>
-                  <TableCell>{formatDate(quiz.expiresAt)}</TableCell>
+                  <TableCell>
+                    {quiz.status === "scheduled"
+                      ? `Starts ${formatDate(quiz.publishedAt)}`
+                      : `Closes ${formatDate(quiz.expiresAt)}`}
+                  </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-2">
                       <Button asChild variant="outline" size="sm">
@@ -137,7 +141,7 @@ export function AdminQuizListView() {
                           View
                         </Link>
                       </Button>
-                      {quiz.published || quiz.status === "closed" ? (
+                      {quiz.status === "active" || quiz.status === "closed" ? (
                         <Button type="button" variant="outline" size="sm" disabled>
                           <Pencil className="h-4 w-4" aria-hidden="true" />
                           Edit
