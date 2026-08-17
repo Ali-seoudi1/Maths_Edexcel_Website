@@ -11,7 +11,11 @@ export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
   const authorization = request.headers.get("authorization");
 
-  if (cronSecret && authorization !== `Bearer ${cronSecret}`) {
+  if (!cronSecret) {
+    return NextResponse.json({ error: "Cron authentication is not configured." }, { status: 501 });
+  }
+
+  if (authorization !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized cron request." }, { status: 401 });
   }
 

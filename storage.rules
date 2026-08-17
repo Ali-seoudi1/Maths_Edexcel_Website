@@ -1,0 +1,109 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profile() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid));
+    }
+
+    function hasActiveProfile() {
+      return signedIn()
+        && profile().data.active == true;
+    }
+
+    function isAdmin() {
+      return hasActiveProfile()
+        && profile().data.role == "admin";
+    }
+
+    function isPdf() {
+      return request.resource != null
+        && request.resource.contentType == "application/pdf";
+    }
+
+    function isPdfOrImage() {
+      return request.resource != null
+        && (
+          request.resource.contentType == "application/pdf"
+          || request.resource.contentType.matches("image/.*")
+        );
+    }
+
+    function isUnder(sizeInBytes) {
+      return request.resource != null
+        && request.resource.size < sizeInBytes;
+    }
+
+    match /model-answers/mark-schemes/{fileName} {
+      allow read: if hasActiveProfile();
+      allow create, update: if isAdmin()
+        && isPdfOrImage()
+        && isUnder(15 * 1024 * 1024);
+      allow delete: if isAdmin();
+    }
+
+    match /lesson-pdfs/{fileName} {
+      allow read: if false;
+      allow create, update: if isAdmin()
+        && isPdf()
+        && isUnder(20 * 1024 * 1024);
+      allow delete: if isAdmin();
+    }
+
+    match /assignment-pdfs/{fileName} {
+      allow read: if false;
+      allow create, update: if isAdmin()
+        && isPdf()
+        && isUnder(20 * 1024 * 1024);
+      allow delete: if isAdmin();
+    }
+
+    match /assignment-solutions/{fileName} {
+      allow read: if false;
+      allow create, update: if isAdmin()
+        && isPdf()
+        && isUnder(20 * 1024 * 1024);
+      allow delete: if isAdmin();
+    }
+
+    match /quiz-pdfs/{fileName} {
+      allow read: if false;
+      allow create, update: if isAdmin()
+        && isPdf()
+        && isUnder(20 * 1024 * 1024);
+      allow delete: if isAdmin();
+    }
+
+    match /quiz-submissions/{fileName} {
+      allow read: if false;
+      allow create, update: if isAdmin()
+        && isPdf()
+        && isUnder(20 * 1024 * 1024);
+      allow delete: if isAdmin();
+    }
+
+    match /exam-pdfs/{fileName} {
+      allow read: if false;
+      allow create, update: if isAdmin()
+        && isPdf()
+        && isUnder(20 * 1024 * 1024);
+      allow delete: if isAdmin();
+    }
+
+    match /exam-submissions/{fileName} {
+      allow read: if false;
+      allow create, update: if isAdmin()
+        && isPdf()
+        && isUnder(20 * 1024 * 1024);
+      allow delete: if isAdmin();
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

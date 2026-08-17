@@ -15,6 +15,7 @@ export const assignmentsCollection = "assignments";
 export const assignmentSubmissionsCollection = "assignmentSubmissions";
 export const assignmentPdfFolder = "assignment-pdfs";
 export const assignmentSubmissionFolder = "assignment-solutions";
+const maxPdfUploadSizeBytes = 20 * 1024 * 1024;
 
 function normalizeTimestamp(value: unknown): string | null {
   if (!value) {
@@ -166,6 +167,10 @@ async function uploadAssignmentPdf(file: File): Promise<AssignmentPdf> {
     throw new Error("Upload a PDF file.");
   }
 
+  if (file.size > maxPdfUploadSizeBytes) {
+    throw new Error("Upload a PDF smaller than 20 MB.");
+  }
+
   const id = crypto.randomUUID();
   const path = `${assignmentPdfFolder}/${crypto.randomUUID()}-${getSafeFileName(file.name)}`;
   const bucket = getFirebaseAdminStorageBucket();
@@ -185,6 +190,10 @@ async function uploadAssignmentPdf(file: File): Promise<AssignmentPdf> {
 async function uploadAssignmentSolution(file: File): Promise<AssignmentPdf> {
   if (file.type !== "application/pdf") {
     throw new Error("Upload a PDF file.");
+  }
+
+  if (file.size > maxPdfUploadSizeBytes) {
+    throw new Error("Upload a PDF smaller than 20 MB.");
   }
 
   const id = crypto.randomUUID();

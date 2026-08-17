@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { sanitizeTeacherSolutionHtml } from "@/lib/utils/sanitize-html";
 
 import { examSessionLabels } from "../constants";
 import { modelAnswerSearchSchema, type ModelAnswerSearchValues } from "../schemas";
@@ -159,7 +160,9 @@ export function ModelAnswerSearchView() {
             <CardContent>
               <div
                 className="min-h-96 rounded-xl border bg-background p-5 text-sm leading-7 text-foreground"
-                dangerouslySetInnerHTML={{ __html: result.teacherSolutionHtml }}
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeTeacherSolutionHtml(result.teacherSolutionHtml),
+                }}
               />
             </CardContent>
           </Card>

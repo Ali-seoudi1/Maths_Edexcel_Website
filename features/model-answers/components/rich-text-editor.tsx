@@ -5,6 +5,7 @@ import { useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { sanitizeTeacherSolutionHtml } from "@/lib/utils/sanitize-html";
 
 type RichTextEditorProps = {
   id: string;
@@ -71,8 +72,8 @@ export function RichTextEditor({ id, value, onChange, disabled }: RichTextEditor
           "prose prose-sm max-w-none",
           disabled && "cursor-not-allowed opacity-70",
         )}
-        dangerouslySetInnerHTML={{ __html: value }}
-        onInput={(event) => onChange(event.currentTarget.innerHTML)}
+        dangerouslySetInnerHTML={{ __html: sanitizeTeacherSolutionHtml(value) }}
+        onInput={(event) => onChange(sanitizeTeacherSolutionHtml(event.currentTarget.innerHTML))}
       />
     </div>
   );

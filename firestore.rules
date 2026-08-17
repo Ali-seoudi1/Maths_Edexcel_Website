@@ -1,0 +1,227 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profile(uid) {
+      return get(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function hasActiveProfile() {
+      return signedIn()
+        && profile(request.auth.uid).data.active == true;
+    }
+
+    function isAdmin() {
+      return hasActiveProfile()
+        && profile(request.auth.uid).data.role == "admin";
+    }
+
+    function isStudent() {
+      return hasActiveProfile()
+        && profile(request.auth.uid).data.role == "student";
+    }
+
+    function isOwner(studentId) {
+      return hasActiveProfile() && request.auth.uid == studentId;
+    }
+
+    function isPublished() {
+      return resource.data.published == true;
+    }
+
+    function immutableIdentityFields() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        "uid",
+        "role",
+        "studentId",
+        "studentCode",
+        "email",
+        "createdAt",
+        "createdBy",
+        "graded",
+        "gradedAt",
+        "gradedBy",
+        "grade",
+        "score",
+        "maxGrade",
+        "maxScore",
+        "feedback",
+        "feedbackReturned",
+        "feedbackReturnedAt",
+        "correctedPdfPath",
+        "correctedPdfFileName"
+      ]);
+    }
+
+    match /users/{userId} {
+      allow get: if isAdmin() || isOwner(userId);
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /students/{studentId} {
+      allow get: if isAdmin() || isOwner(studentId);
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /systemCounters/{documentId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /chapters/{chapterId} {
+      allow read: if isAdmin() || hasActiveProfile();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /lessons/{lessonId} {
+      allow get, list: if isAdmin() || (hasActiveProfile() && isPublished());
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /assignments/{assignmentId} {
+      allow read: if isAdmin() || hasActiveProfile();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /assignmentSubmissions/{submissionId} {
+      allow read: if isAdmin() || isOwner(resource.data.studentId);
+      allow create: if isStudent()
+        && request.resource.data.studentId == request.auth.uid
+        && request.resource.data.assignmentId is string
+        && request.resource.data.keys().hasOnly([
+          "assignmentId",
+          "studentId",
+          "studentName",
+          "pdfs",
+          "pdfUrl",
+          "pdfFileName",
+          "submittedAt",
+          "grade",
+          "feedback",
+          "createdAt",
+          "updatedAt"
+        ])
+        && request.resource.data.grade == null
+        && request.resource.data.feedback == "";
+      allow update: if isStudent()
+        && isOwner(resource.data.studentId)
+        && request.resource.data.studentId == resource.data.studentId
+        && immutableIdentityFields();
+      allow update, delete: if isAdmin();
+    }
+
+    match /quizzes/{quizId} {
+      allow get, list: if isAdmin() || (hasActiveProfile() && isPublished());
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /quizAttempts/{attemptId} {
+      allow read: if isAdmin() || isOwner(resource.data.studentId);
+      allow create: if isStudent()
+        && request.resource.data.studentId == request.auth.uid
+        && request.resource.data.quizId is string;
+      allow update: if isStudent()
+        && isOwner(resource.data.studentId)
+        && request.resource.data.studentId == resource.data.studentId
+        && immutableIdentityFields();
+      allow update, delete: if isAdmin();
+    }
+
+    match /quizSubmissions/{submissionId} {
+      allow read: if isAdmin() || isOwner(resource.data.studentId);
+      allow create: if isStudent()
+        && request.resource.data.studentId == request.auth.uid
+        && request.resource.data.quizId is string
+        && request.resource.data.score == null
+        && request.resource.data.graded == false
+        && request.resource.data.feedback == "";
+      allow update: if isStudent()
+        && isOwner(resource.data.studentId)
+        && request.resource.data.studentId == resource.data.studentId
+        && immutableIdentityFields();
+      allow update, delete: if isAdmin();
+    }
+
+    match /exams/{examId} {
+      allow get, list: if isAdmin() || (hasActiveProfile() && isPublished());
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /examAttempts/{attemptId} {
+      allow read: if isAdmin() || isOwner(resource.data.studentId);
+      allow create: if isStudent()
+        && request.resource.data.studentId == request.auth.uid
+        && request.resource.data.examId is string;
+      allow update: if isStudent()
+        && isOwner(resource.data.studentId)
+        && request.resource.data.studentId == resource.data.studentId
+        && immutableIdentityFields();
+      allow update, delete: if isAdmin();
+    }
+
+    match /examSubmissions/{submissionId} {
+      allow read: if isAdmin() || isOwner(resource.data.studentId);
+      allow create: if isStudent()
+        && request.resource.data.studentId == request.auth.uid
+        && request.resource.data.examId is string
+        && request.resource.data.score == null
+        && request.resource.data.graded == false
+        && request.resource.data.feedback == "";
+      allow update: if isStudent()
+        && isOwner(resource.data.studentId)
+        && request.resource.data.studentId == resource.data.studentId
+        && immutableIdentityFields();
+      allow update, delete: if isAdmin();
+    }
+
+    match /modelAnswers/{modelAnswerId} {
+      allow get, list: if isAdmin() || (hasActiveProfile() && isPublished());
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /announcements/{announcementId} {
+      allow get, list: if isAdmin() || (hasActiveProfile() && isPublished());
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /announcementReads/{readId} {
+      allow read: if isAdmin() || isOwner(resource.data.studentId);
+      allow create: if isStudent()
+        && request.resource.data.studentId == request.auth.uid
+        && request.resource.data.announcementId is string;
+      allow update: if isStudent()
+        && isOwner(resource.data.studentId)
+        && request.resource.data.studentId == resource.data.studentId
+        && request.resource.data.announcementId == resource.data.announcementId;
+      allow update, delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAdmin() || isOwner(resource.data.studentId);
+      allow update: if isStudent()
+        && isOwner(resource.data.studentId)
+        && request.resource.data.studentId == resource.data.studentId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["read"]);
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /liveMeetings/{meetingId} {
+      allow get, list: if isAdmin() || (hasActiveProfile() && resource.data.active == true);
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow get, list: if isAdmin() || hasActiveProfile();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -20,6 +20,7 @@ export const quizSubmissionsCollection = "quizSubmissions";
 export const quizAttemptsCollection = "quizAttempts";
 export const quizPdfFolder = "quiz-pdfs";
 export const quizSubmissionFolder = "quiz-submissions";
+const maxPdfUploadSizeBytes = 20 * 1024 * 1024;
 
 function normalizeTimestamp(value: unknown): string | null {
   if (!value) return null;
@@ -90,6 +91,10 @@ function getSafeFileName(fileName: string) {
 async function uploadPdf(file: File, folder: string) {
   if (file.type !== "application/pdf") {
     throw new Error("Upload a PDF file.");
+  }
+
+  if (file.size > maxPdfUploadSizeBytes) {
+    throw new Error("Upload a PDF smaller than 20 MB.");
   }
 
   const path = `${folder}/${crypto.randomUUID()}-${getSafeFileName(file.name)}`;

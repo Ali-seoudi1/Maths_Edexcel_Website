@@ -5,6 +5,7 @@ import {
   getFirebaseAdminDb,
   getFirebaseAdminStorageBucket,
 } from "@/lib/firebase/admin";
+import { sanitizeTeacherSolutionHtml } from "@/lib/utils/sanitize-html";
 
 import { modelAnswerCollection } from "../constants";
 import type { ModelAnswer, ModelAnswerFilters, ModelAnswerPayload } from "../types";
@@ -39,7 +40,9 @@ function toModelAnswer(id: string, data: FirebaseFirestore.DocumentData): ModelA
       typeof data.officialMarkSchemeFileName === "string" ? data.officialMarkSchemeFileName : "",
     officialMarkSchemeType: data.officialMarkSchemeType === "image" ? "image" : "pdf",
     teacherSolutionHtml:
-      typeof data.teacherSolutionHtml === "string" ? data.teacherSolutionHtml : "",
+      typeof data.teacherSolutionHtml === "string"
+        ? sanitizeTeacherSolutionHtml(data.teacherSolutionHtml)
+        : "",
     published: data.published === true,
     createdAt: normalizeTimestamp(data.createdAt),
     updatedAt: normalizeTimestamp(data.updatedAt),
@@ -51,6 +54,7 @@ function normalizePayload(values: ModelAnswerPayload): ModelAnswerPayload {
     ...values,
     paper: normalizePaper(values.paper),
     questionNumber: normalizeQuestionNumber(values.questionNumber),
+    teacherSolutionHtml: sanitizeTeacherSolutionHtml(values.teacherSolutionHtml),
     published: true,
   };
 }

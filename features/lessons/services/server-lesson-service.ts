@@ -8,6 +8,7 @@ import type { Chapter, Lesson, LessonPdf } from "../types";
 export const chaptersCollection = "chapters";
 export const lessonsCollection = "lessons";
 export const lessonPdfFolder = "lesson-pdfs";
+const maxPdfUploadSizeBytes = 20 * 1024 * 1024;
 
 function normalizeTimestamp(value: unknown): string | null {
   if (!value) {
@@ -267,6 +268,10 @@ function getSafeFileName(fileName: string) {
 async function uploadLessonPdf(file: File): Promise<LessonPdf> {
   if (file.type !== "application/pdf") {
     throw new Error("Upload a PDF file.");
+  }
+
+  if (file.size > maxPdfUploadSizeBytes) {
+    throw new Error("Upload a PDF smaller than 20 MB.");
   }
 
   const id = crypto.randomUUID();

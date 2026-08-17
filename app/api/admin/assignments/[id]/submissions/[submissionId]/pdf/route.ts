@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 
+import { requireAdmin } from "@/features/admin/students/services/admin-auth";
 import { getSubmissionPdfBufferForAdmin } from "@/features/assignments/services/server-assignment-service";
 import {
   adminSdkUnavailableResponse,
   errorResponse,
-  requireActiveUser,
 } from "@/features/lessons/services/route-helpers";
 
 type RouteContext = {
@@ -22,12 +22,7 @@ export async function GET(request: Request, context: RouteContext) {
   }
 
   try {
-    const user = await requireActiveUser(request);
-
-    if (user.role !== "admin") {
-      throw new Error("Admin access is required.");
-    }
-
+    await requireAdmin(request);
     const { id, submissionId } = await context.params;
     const pdfId = new URL(request.url).searchParams.get("pdfId") ?? undefined;
     const pdf = await getSubmissionPdfBufferForAdmin(id, submissionId, pdfId);

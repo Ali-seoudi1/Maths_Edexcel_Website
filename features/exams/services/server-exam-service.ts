@@ -20,6 +20,7 @@ export const examSubmissionsCollection = "examSubmissions";
 export const examAttemptsCollection = "examAttempts";
 export const examPdfFolder = "exam-pdfs";
 export const examSubmissionFolder = "exam-submissions";
+const maxPdfUploadSizeBytes = 20 * 1024 * 1024;
 
 function normalizeTimestamp(value: unknown): string | null {
   if (!value) return null;
@@ -90,6 +91,10 @@ function getSafeFileName(fileName: string) {
 async function uploadPdf(file: File, folder: string) {
   if (file.type !== "application/pdf") {
     throw new Error("Upload a PDF file.");
+  }
+
+  if (file.size > maxPdfUploadSizeBytes) {
+    throw new Error("Upload a PDF smaller than 20 MB.");
   }
 
   const path = `${folder}/${crypto.randomUUID()}-${getSafeFileName(file.name)}`;
