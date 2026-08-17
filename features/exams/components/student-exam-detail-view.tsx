@@ -54,12 +54,13 @@ function formatDate(value: string | null) {
 }
 
 function formatLateBy(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
   const remainingSeconds = seconds % 60;
 
-  if (minutes === 0) return `${remainingSeconds} sec late`;
-  if (remainingSeconds === 0) return `${minutes} min late`;
-  return `${minutes} min ${remainingSeconds} sec late`;
+  if (hours > 0) return `${hours} hour${hours === 1 ? "" : "s"} ${minutes} minute${minutes === 1 ? "" : "s"} late`;
+  if (minutes > 0) return `${minutes} minute${minutes === 1 ? "" : "s"} late`;
+  return `${remainingSeconds} second${remainingSeconds === 1 ? "" : "s"} late`;
 }
 
 export function StudentExamDetailView({ examId }: { examId: string }) {
@@ -377,9 +378,15 @@ export function StudentExamDetailView({ examId }: { examId: string }) {
             <div className="rounded-lg border bg-card p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm font-semibold text-foreground">
-                  {submission.noSubmission ? "No solution (cheating)" : "Submission successful"}
+                  {submission.status === "cheating"
+                    ? "Cheating"
+                    : submission.late
+                      ? `Submitted late - ${formatLateBy(submission.lateBySeconds)}`
+                      : "Submission successful"}
                 </p>
-                {submission.noSubmission ? null : submission.late ? (
+                {submission.status === "cheating" ? (
+                  <Badge variant="destructive">Cheating</Badge>
+                ) : submission.noSubmission ? null : submission.late ? (
                   <span className="text-sm font-semibold text-destructive">Late</span>
                 ) : (
                   <Badge variant="secondary">On time</Badge>
@@ -387,10 +394,12 @@ export function StudentExamDetailView({ examId }: { examId: string }) {
                 {submission.feedbackReturned ? <Badge variant="default">Feedback returned</Badge> : null}
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
-                {submission.noSubmission
+                {submission.status === "cheating"
                   ? "You violated the exam rule before submitting a solution."
+                  : submission.noSubmission
+                    ? "No solution was submitted."
                   : `Submitted at ${formatDate(submission.submittedAt)}${
-                      submission.late ? `, ${formatLateBy(submission.lateBySeconds)}` : "."
+                      submission.late ? ` - ${formatLateBy(submission.lateBySeconds)}` : "."
                     }`}
               </p>
               {submission.feedbackReturned ? (

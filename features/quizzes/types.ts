@@ -41,7 +41,7 @@ export type QuizAttempt = {
   updatedAt: string | null;
 };
 
-export type QuizSubmissionStatus = "submitted" | "late" | "graded";
+export type QuizSubmissionStatus = "submitted" | "late" | "graded" | "cheating";
 
 export type QuizSubmission = {
   id: string;
@@ -54,6 +54,7 @@ export type QuizSubmission = {
   submittedAt: string | null;
   late: boolean;
   lateBySeconds: number;
+  cheatedAt: string | null;
   status: QuizSubmissionStatus;
   finalized: boolean;
   graded: boolean;

@@ -164,7 +164,19 @@ function toQuiz(id: string, data: FirebaseFirestore.DocumentData): Quiz {
 }
 
 function toQuizSubmission(id: string, data: FirebaseFirestore.DocumentData): QuizSubmission {
-  const status = data.status === "graded" ? "graded" : data.late === true ? "late" : "submitted";
+  const isCheatingRecord =
+    data.status === "cheating" ||
+    (data.noSubmission === true &&
+      typeof data.feedback === "string" &&
+      data.feedback.toLowerCase().includes("cheating"));
+  const status =
+    isCheatingRecord
+      ? "cheating"
+      : data.status === "graded"
+        ? "graded"
+        : data.late === true
+          ? "late"
+          : "submitted";
   const pdfPath =
     typeof data.pdfPath === "string"
       ? data.pdfPath
@@ -183,9 +195,10 @@ function toQuizSubmission(id: string, data: FirebaseFirestore.DocumentData): Qui
     submittedAt: normalizeTimestamp(data.submittedAt),
     late: data.late === true,
     lateBySeconds: typeof data.lateBySeconds === "number" ? data.lateBySeconds : 0,
+    cheatedAt: normalizeTimestamp(data.cheatedAt),
     status,
     finalized: data.finalized !== false,
-    graded: data.graded === true || status === "graded",
+    graded: status === "cheating" ? false : data.graded === true || status === "graded",
     gradedAt: normalizeTimestamp(data.gradedAt),
     gradedBy: typeof data.gradedBy === "string" ? data.gradedBy : "",
     score: typeof data.score === "number" ? data.score : null,
@@ -545,19 +558,20 @@ export async function markQuizNoSubmission(quizId: string, studentId: string, st
     submittedAt: null,
     late: false,
     lateBySeconds: 0,
-    status: "graded",
+    cheatedAt: FieldValue.serverTimestamp(),
+    status: "cheating",
     finalized: true,
-    graded: true,
-    gradedAt: FieldValue.serverTimestamp(),
-      gradedBy: "system",
-      score: 0,
-      maxScore: quiz.maxScore,
-      feedback: "No solution (cheating).",
-      feedbackReturned: true,
-      feedbackReturnedAt: FieldValue.serverTimestamp(),
-      correctedPdfPath: "",
-      correctedPdfFileName: "",
-      createdAt: FieldValue.serverTimestamp(),
+    graded: false,
+    gradedAt: null,
+    gradedBy: "",
+    score: 0,
+    maxScore: quiz.maxScore,
+    feedback: "Cheating.",
+    feedbackReturned: false,
+    feedbackReturnedAt: null,
+    correctedPdfPath: "",
+    correctedPdfFileName: "",
+    createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });
 
@@ -622,6 +636,7 @@ export async function submitQuizPdf(
       submittedAt,
       late,
       lateBySeconds,
+      cheatedAt: null,
       status: late ? "late" : "submitted",
       finalized: true,
       graded: false,
@@ -683,6 +698,7 @@ export async function listQuizSubmissions(quizId: string) {
       submittedAt: null,
       late: false,
       lateBySeconds: 0,
+      cheatedAt: null,
       status: "submitted",
       finalized: false,
       graded: false,

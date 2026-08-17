@@ -164,7 +164,19 @@ function toExam(id: string, data: FirebaseFirestore.DocumentData): Exam {
 }
 
 function toExamSubmission(id: string, data: FirebaseFirestore.DocumentData): ExamSubmission {
-  const status = data.status === "graded" ? "graded" : data.late === true ? "late" : "submitted";
+  const isCheatingRecord =
+    data.status === "cheating" ||
+    (data.noSubmission === true &&
+      typeof data.feedback === "string" &&
+      data.feedback.toLowerCase().includes("cheating"));
+  const status =
+    isCheatingRecord
+      ? "cheating"
+      : data.status === "graded"
+        ? "graded"
+        : data.late === true
+          ? "late"
+          : "submitted";
   const pdfPath =
     typeof data.pdfPath === "string"
       ? data.pdfPath
@@ -183,9 +195,10 @@ function toExamSubmission(id: string, data: FirebaseFirestore.DocumentData): Exa
     submittedAt: normalizeTimestamp(data.submittedAt),
     late: data.late === true,
     lateBySeconds: typeof data.lateBySeconds === "number" ? data.lateBySeconds : 0,
+    cheatedAt: normalizeTimestamp(data.cheatedAt),
     status,
     finalized: data.finalized !== false,
-    graded: data.graded === true || status === "graded",
+    graded: status === "cheating" ? false : data.graded === true || status === "graded",
     gradedAt: normalizeTimestamp(data.gradedAt),
     gradedBy: typeof data.gradedBy === "string" ? data.gradedBy : "",
     score: typeof data.score === "number" ? data.score : null,
@@ -545,16 +558,17 @@ export async function markExamNoSubmission(examId: string, studentId: string, st
     submittedAt: null,
     late: false,
     lateBySeconds: 0,
-    status: "graded",
+    cheatedAt: FieldValue.serverTimestamp(),
+    status: "cheating",
     finalized: true,
-    graded: true,
-    gradedAt: FieldValue.serverTimestamp(),
-    gradedBy: "system",
+    graded: false,
+    gradedAt: null,
+    gradedBy: "",
     score: 0,
     maxScore: exam.maxScore,
-    feedback: "No solution (cheating).",
-    feedbackReturned: true,
-    feedbackReturnedAt: FieldValue.serverTimestamp(),
+    feedback: "Cheating.",
+    feedbackReturned: false,
+    feedbackReturnedAt: null,
     correctedPdfPath: "",
     correctedPdfFileName: "",
     createdAt: FieldValue.serverTimestamp(),
@@ -622,6 +636,7 @@ export async function submitExamPdf(
       submittedAt,
       late,
       lateBySeconds,
+      cheatedAt: null,
       status: late ? "late" : "submitted",
       finalized: true,
       graded: false,
@@ -683,6 +698,7 @@ export async function listExamSubmissions(examId: string) {
       submittedAt: null,
       late: false,
       lateBySeconds: 0,
+      cheatedAt: null,
       status: "submitted",
       finalized: false,
       graded: false,
