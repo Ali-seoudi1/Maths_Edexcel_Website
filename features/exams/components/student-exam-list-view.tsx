@@ -105,7 +105,7 @@ export function StudentExamListView() {
       {exams
         .filter((exam) => {
           const submission = submissions.find((item) => item.examId === exam.id);
-          const isSubmitted = Boolean(submission && !submission.noSubmission);
+          const isSubmitted = Boolean(submission && !submission.noSubmission && submission.status !== "cheating");
 
           if (filter === "submitted") return isSubmitted;
           if (filter === "unsubmitted") return !isSubmitted;
@@ -116,7 +116,8 @@ export function StudentExamListView() {
         const attempt = attempts.find((item) => item.examId === exam.id);
         const hasGrade = submission?.feedbackReturned === true;
         const isFinishedForStudent = Boolean(submission);
-        const isNoSubmission = submission?.noSubmission === true || (exam.status === "closed" && !submission);
+        const isCheating = submission?.status === "cheating";
+        const isNoSubmission = !isCheating && (submission?.noSubmission === true || (exam.status === "closed" && !submission));
         const canSubmitLate = Boolean(isNoSubmission && attempt);
         const isClosedForStudent = exam.status === "closed" || isFinishedForStudent;
 
@@ -136,7 +137,9 @@ export function StudentExamListView() {
                     <Badge variant={isClosedForStudent ? "outline" : "secondary"}>
                       {isFinishedForStudent ? "Finished" : exam.status === "scheduled" ? "Scheduled" : exam.status === "closed" ? "Closed" : "Active"}
                     </Badge>
-                    {!submission?.noSubmission && isNoSubmission ? (
+                    {isCheating ? (
+                      <Badge variant="destructive">Cheating</Badge>
+                    ) : !submission?.noSubmission && isNoSubmission ? (
                       <Badge variant="outline">No submission</Badge>
                     ) : null}
                   </div>
@@ -153,7 +156,12 @@ export function StudentExamListView() {
                 </div>
               </div>
               <div className="flex flex-col gap-3 sm:items-end">
-                {submission?.noSubmission ? (
+                {isCheating ? (
+                  <div className="text-right text-destructive">
+                    <p className="text-sm font-bold">0/{exam.maxScore}</p>
+                    <p className="text-xs font-semibold">Cheating</p>
+                  </div>
+                ) : submission?.noSubmission ? (
                   <div className="text-right text-destructive">
                     <p className="text-sm font-bold">0/{exam.maxScore}</p>
                     <p className="text-xs font-semibold">No solution (cheating)</p>
@@ -188,7 +196,7 @@ export function StudentExamListView() {
       })}
       {exams.filter((exam) => {
         const submission = submissions.find((item) => item.examId === exam.id);
-        const isSubmitted = Boolean(submission && !submission.noSubmission);
+        const isSubmitted = Boolean(submission && !submission.noSubmission && submission.status !== "cheating");
 
         if (filter === "submitted") return isSubmitted;
         if (filter === "unsubmitted") return !isSubmitted;

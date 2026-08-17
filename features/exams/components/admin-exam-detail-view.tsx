@@ -34,12 +34,13 @@ function formatDate(value: string | null) {
 }
 
 function formatLateBy(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
   const remainingSeconds = seconds % 60;
 
-  if (minutes === 0) return `${remainingSeconds} sec late`;
-  if (remainingSeconds === 0) return `${minutes} min late`;
-  return `${minutes} min ${remainingSeconds} sec late`;
+  if (hours > 0) return `${hours} hour${hours === 1 ? "" : "s"} ${minutes} minute${minutes === 1 ? "" : "s"} late`;
+  if (minutes > 0) return `${minutes} minute${minutes === 1 ? "" : "s"} late`;
+  return `${remainingSeconds} second${remainingSeconds === 1 ? "" : "s"} late`;
 }
 
 export function AdminExamDetailView({ examId }: { examId: string }) {
@@ -243,18 +244,22 @@ export function AdminExamDetailView({ examId }: { examId: string }) {
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-base font-semibold text-foreground">{submission.studentName}</p>
-                        {submission.noSubmission ? (
+                        {submission.status === "cheating" ? (
+                          <Badge variant="destructive">Cheating</Badge>
+                        ) : submission.noSubmission ? (
                           <Badge variant="outline">No submission</Badge>
                         ) : submission.late ? (
                           <span className="text-sm font-semibold text-destructive">Late</span>
                         ) : (
                           <Badge variant="secondary">On time</Badge>
                         )}
-                        {submission.graded ? <Badge variant="default">Graded</Badge> : null}
+                        {submission.graded && submission.status !== "cheating" ? <Badge variant="default">Graded</Badge> : null}
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {submission.noSubmission
-                          ? "No PDF has been submitted."
+                        {submission.status === "cheating"
+                          ? `Cheating${submission.cheatedAt ? ` at ${formatDate(submission.cheatedAt)}` : ""}.`
+                          : submission.noSubmission
+                            ? "No PDF has been submitted."
                           : `Submitted ${formatDate(submission.submittedAt)}${
                               submission.late ? ` · ${formatLateBy(submission.lateBySeconds)}` : ""
                             }`}
