@@ -20,3 +20,17 @@ export type SendStudentInvitationEmailInput = {
   studentName: string;
   passwordSetupLink: string;
 };
+
+export type PasswordResetEmailData = {
+  platformTitle: string;
+  teacherName: string;
+  recipientName: string;
+  passwordResetLink: string;
+  appUrl: string;
+};
+
+export type SendPasswordResetEmailInput = {
+  to: EmailAddress;
+  recipientName: string;
+  passwordResetLink: string;
+};

@@ -1,7 +1,6 @@
 import {
   browserLocalPersistence,
   onAuthStateChanged,
-  sendPasswordResetEmail,
   setPersistence,
   signInWithEmailAndPassword,
   signOut,
@@ -87,7 +86,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
       throw error;
     }
 
-    throw new AuthError(getAuthErrorMessage(error));
+    throw new AuthError("Password reset failed. Please try again.");
   }
 }
 
@@ -98,8 +97,23 @@ export async function signOutCurrentUser() {
 
 export async function sendPasswordReset(email: string) {
   try {
-    await sendPasswordResetEmail(getFirebaseAuth(), email);
+    const response = await fetch("/api/auth/password-reset", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const data = (await response.json().catch(() => null)) as { error?: string } | null;
+      throw new AuthError(data?.error ?? "Password reset failed.");
+    }
   } catch (error) {
+    if (error instanceof AuthError) {
+      throw error;
+    }
+
     throw new AuthError(getAuthErrorMessage(error));
   }
 }
