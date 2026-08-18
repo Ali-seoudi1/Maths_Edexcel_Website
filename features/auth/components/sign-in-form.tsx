@@ -85,7 +85,7 @@ export function SignInForm() {
 
     try {
       await resetPassword(email);
-      setResetMessage("Password reset email sent if the account exists.");
+      setResetMessage("Password reset email sent.");
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : "Password reset failed.");
     } finally {
