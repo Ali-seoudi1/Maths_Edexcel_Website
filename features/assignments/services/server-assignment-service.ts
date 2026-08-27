@@ -2,6 +2,12 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 import { getFirebaseAdminDb, getFirebaseAdminStorageBucket } from "@/lib/firebase/admin";
 import { createNotification } from "@/features/notifications/services/server-notification-service";
+import {
+  getAssignmentRelevanceDate,
+  getStudentRegistrationDate,
+  isWorkRelevantToStudent,
+  normalizeRegistrationDate,
+} from "@/features/students/services/student-registration-service";
 
 import type {
   Assignment,
@@ -232,9 +238,38 @@ async function listStudentProfiles() {
       return {
         id: studentDoc.id,
         fullName: typeof data.fullName === "string" && data.fullName.trim() ? data.fullName : "Student",
+        registrationDate: normalizeRegistrationDate(data.createdAt),
       };
     })
     .sort((a, b) => a.fullName.localeCompare(b.fullName));
+}
+
+/**
+ * Keeps only the assignments a specific student is responsible for: assignments
+ * created on or after the student's registration day. Legacy students without a
+ * stored registration date keep every assignment.
+ */
+export function filterAssignmentsForStudent<T extends { createdAt: string | null; deadline: string | null }>(
+  assignments: T[],
+  registrationDate: string | null,
+): T[] {
+  if (!registrationDate) {
+    return assignments;
+  }
+
+  return assignments.filter((assignment) =>
+    isWorkRelevantToStudent(getAssignmentRelevanceDate(assignment), registrationDate),
+  );
+}
+
+/** Assignments visible to a student, filtered by their registration date. */
+export async function listAssignmentsForStudent(studentId: string) {
+  const [assignments, registrationDate] = await Promise.all([
+    listAssignments(),
+    getStudentRegistrationDate(studentId),
+  ]);
+
+  return filterAssignmentsForStudent(assignments, registrationDate);
 }
 
 export async function listAssignments() {
@@ -368,8 +403,10 @@ export async function listAssignmentSubmissions(assignmentId: string) {
   }
 
   const submittedStudentIds = new Set(submissions.map((submission) => submission.studentId));
+  const assignmentRelevanceDate = getAssignmentRelevanceDate(assignment);
   const missingRows = (await listStudentProfiles())
     .filter((student) => !submittedStudentIds.has(student.id))
+    .filter((student) => isWorkRelevantToStudent(assignmentRelevanceDate, student.registrationDate))
     .map((student): AssignmentSubmission => ({
       id: getSubmissionDocumentId(assignmentId, student.id),
       assignmentId,

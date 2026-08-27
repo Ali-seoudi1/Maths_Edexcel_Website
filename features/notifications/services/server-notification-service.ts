@@ -1,6 +1,7 @@
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 import { getFirebaseAdminDb } from "@/lib/firebase/admin";
+import { normalizeRegistrationDate } from "@/features/students/services/student-registration-service";
 
 import type { CreateNotificationInput, NotificationType, StudentNotification } from "../types";
 
@@ -172,6 +173,19 @@ export async function ensureMonthlyReportNotification(studentId: string) {
 
   if (!isTrackedReportMonth(year, month)) {
     return null;
+  }
+
+  // Don't announce a report for a month that ended before the student joined –
+  // that report has no eligible activity and would only be an empty state.
+  const studentSnapshot = await getFirebaseAdminDb().collection("users").doc(studentId).get();
+  const registrationDate = normalizeRegistrationDate(studentSnapshot.data()?.createdAt);
+
+  if (registrationDate) {
+    const reportMonthEnd = Date.UTC(year, month, 1);
+
+    if (new Date(registrationDate).getTime() >= reportMonthEnd) {
+      return null;
+    }
   }
 
   return createNotification({

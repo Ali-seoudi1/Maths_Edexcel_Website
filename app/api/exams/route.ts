@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import {
-  listExams,
+  listExamsForStudent,
   listStudentExamAttempts,
   listStudentExamSubmissions,
 } from "@/features/exams/services/server-exam-service";
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
 
   try {
     const user = await requireActiveUser(request);
-    const exams = await listExams({ publishedOnly: true });
+    const exams = await listExamsForStudent(user.uid);
     const [submissions, attempts] = await Promise.all([
       listStudentExamSubmissions(user.uid),
       listStudentExamAttempts(user.uid),

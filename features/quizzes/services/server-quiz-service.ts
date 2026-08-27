@@ -5,6 +5,12 @@ import {
   createNotification,
   replaceNotificationForAllActiveStudents,
 } from "@/features/notifications/services/server-notification-service";
+import {
+  getStudentRegistrationDate,
+  getTimedResourceRelevanceDate,
+  isWorkRelevantToStudent,
+  normalizeRegistrationDate,
+} from "@/features/students/services/student-registration-service";
 
 import type {
   Quiz,
@@ -264,9 +270,37 @@ async function listStudentProfiles() {
       return {
         id: studentDoc.id,
         fullName: typeof data.fullName === "string" && data.fullName.trim() ? data.fullName : "Student",
+        registrationDate: normalizeRegistrationDate(data.createdAt),
       };
     })
     .sort((a, b) => a.fullName.localeCompare(b.fullName));
+}
+
+/**
+ * Keeps only the quizzes a specific student is responsible for: quizzes that
+ * were published / scheduled on or after the student's registration day. Legacy
+ * students without a stored registration date keep every quiz.
+ */
+export function filterQuizzesForStudent<
+  T extends { publishedAt: string | null; scheduledAt: string | null; createdAt: string | null },
+>(quizzes: T[], registrationDate: string | null): T[] {
+  if (!registrationDate) {
+    return quizzes;
+  }
+
+  return quizzes.filter((quiz) =>
+    isWorkRelevantToStudent(getTimedResourceRelevanceDate(quiz), registrationDate),
+  );
+}
+
+/** Quizzes visible to a student, filtered by their registration date. */
+export async function listQuizzesForStudent(studentId: string) {
+  const [quizzes, registrationDate] = await Promise.all([
+    listQuizzes({ publishedOnly: true }),
+    getStudentRegistrationDate(studentId),
+  ]);
+
+  return filterQuizzesForStudent(quizzes, registrationDate);
 }
 
 function getSubmissionDocumentId(quizId: string, studentId: string) {
@@ -680,8 +714,10 @@ export async function listQuizSubmissions(quizId: string) {
   }
 
   const submittedStudentIds = new Set(submissions.map((submission) => submission.studentId));
+  const quizRelevanceDate = getTimedResourceRelevanceDate(quiz);
   const missingRows = (await listStudentProfiles())
     .filter((student) => !submittedStudentIds.has(student.id))
+    .filter((student) => isWorkRelevantToStudent(quizRelevanceDate, student.registrationDate))
     .map((student): QuizSubmission => ({
       id: getSubmissionDocumentId(quizId, student.id),
       quizId,
