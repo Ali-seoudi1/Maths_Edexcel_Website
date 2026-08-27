@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import {
-  listAssignments,
+  listAssignmentsForStudent,
   listStudentAssignmentSubmissions,
 } from "@/features/assignments/services/server-assignment-service";
 import {
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
   try {
     const user = await requireActiveUser(request);
-    const assignments = await listAssignments();
+    const assignments = await listAssignmentsForStudent(user.uid);
     const submissionRecords = await listStudentAssignmentSubmissions(user.uid, assignments);
     const submissions = submissionRecords.map(({ submission }) => submission);
 

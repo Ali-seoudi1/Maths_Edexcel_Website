@@ -5,6 +5,12 @@ import {
   createNotification,
   replaceNotificationForAllActiveStudents,
 } from "@/features/notifications/services/server-notification-service";
+import {
+  getStudentRegistrationDate,
+  getTimedResourceRelevanceDate,
+  isWorkRelevantToStudent,
+  normalizeRegistrationDate,
+} from "@/features/students/services/student-registration-service";
 
 import type {
   Exam,
@@ -269,9 +275,37 @@ async function listStudentProfiles() {
       return {
         id: studentDoc.id,
         fullName: typeof data.fullName === "string" && data.fullName.trim() ? data.fullName : "Student",
+        registrationDate: normalizeRegistrationDate(data.createdAt),
       };
     })
     .sort((a, b) => a.fullName.localeCompare(b.fullName));
+}
+
+/**
+ * Keeps only the exams a specific student is responsible for: exams that were
+ * published / scheduled on or after the student's registration day. Legacy
+ * students without a stored registration date keep every exam.
+ */
+export function filterExamsForStudent<
+  T extends { publishedAt: string | null; scheduledAt: string | null; createdAt: string | null },
+>(exams: T[], registrationDate: string | null): T[] {
+  if (!registrationDate) {
+    return exams;
+  }
+
+  return exams.filter((exam) =>
+    isWorkRelevantToStudent(getTimedResourceRelevanceDate(exam), registrationDate),
+  );
+}
+
+/** Exams visible to a student, filtered by their registration date. */
+export async function listExamsForStudent(studentId: string) {
+  const [exams, registrationDate] = await Promise.all([
+    listExams({ publishedOnly: true }),
+    getStudentRegistrationDate(studentId),
+  ]);
+
+  return filterExamsForStudent(exams, registrationDate);
 }
 
 function getSubmissionDocumentId(examId: string, studentId: string) {
@@ -685,8 +719,10 @@ export async function listExamSubmissions(examId: string) {
   }
 
   const submittedStudentIds = new Set(submissions.map((submission) => submission.studentId));
+  const examRelevanceDate = getTimedResourceRelevanceDate(exam);
   const missingRows = (await listStudentProfiles())
     .filter((student) => !submittedStudentIds.has(student.id))
+    .filter((student) => isWorkRelevantToStudent(examRelevanceDate, student.registrationDate))
     .map((student): ExamSubmission => ({
       id: getSubmissionDocumentId(examId, student.id),
       examId,

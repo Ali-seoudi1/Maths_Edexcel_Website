@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import {
-  listQuizzes,
+  listQuizzesForStudent,
   listStudentQuizAttempts,
   listStudentQuizSubmissions,
 } from "@/features/quizzes/services/server-quiz-service";
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
 
   try {
     const user = await requireActiveUser(request);
-    const quizzes = await listQuizzes({ publishedOnly: true });
+    const quizzes = await listQuizzesForStudent(user.uid);
     const [submissions, attempts] = await Promise.all([
       listStudentQuizSubmissions(user.uid),
       listStudentQuizAttempts(user.uid),

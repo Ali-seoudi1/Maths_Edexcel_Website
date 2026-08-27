@@ -1,19 +1,23 @@
 import { Timestamp } from "firebase-admin/firestore";
 
 import {
+  filterAssignmentsForStudent,
   listAssignments,
   listStudentAssignmentSubmissions,
 } from "@/features/assignments/services/server-assignment-service";
 import {
+  filterExamsForStudent,
   listExams,
   listStudentExamAttempts,
   listStudentExamSubmissions,
 } from "@/features/exams/services/server-exam-service";
 import {
+  filterQuizzesForStudent,
   listQuizzes,
   listStudentQuizAttempts,
   listStudentQuizSubmissions,
 } from "@/features/quizzes/services/server-quiz-service";
+import { getStudentRegistrationDate } from "@/features/students/services/student-registration-service";
 
 import type { MonthlyReport, MonthlyReportItem } from "../types";
 
@@ -58,7 +62,16 @@ export function getCurrentReportMonth() {
 
 export async function generateMonthlyReport(studentId: string, month: string): Promise<MonthlyReport> {
   const { start, end } = getMonthRange(month);
-  const [assignments, quizSubmissions, quizAttempts, quizzes, examSubmissions, examAttempts, exams] = await Promise.all([
+  const [
+    allAssignments,
+    quizSubmissions,
+    quizAttempts,
+    allQuizzes,
+    examSubmissions,
+    examAttempts,
+    allExams,
+    registrationDate,
+  ] = await Promise.all([
     listAssignments(),
     listStudentQuizSubmissions(studentId),
     listStudentQuizAttempts(studentId),
@@ -66,7 +79,16 @@ export async function generateMonthlyReport(studentId: string, month: string): P
     listStudentExamSubmissions(studentId),
     listStudentExamAttempts(studentId),
     listExams(),
+    getStudentRegistrationDate(studentId),
   ]);
+
+  // Only work that was published on or after the student joined counts towards
+  // their report. Pre-registration assignments / quizzes / exams must never be
+  // reported as missing for a newly registered student.
+  const assignments = filterAssignmentsForStudent(allAssignments, registrationDate);
+  const quizzes = filterQuizzesForStudent(allQuizzes, registrationDate);
+  const exams = filterExamsForStudent(allExams, registrationDate);
+
   const assignmentRecords = await listStudentAssignmentSubmissions(studentId, assignments);
   const quizMap = new Map(quizzes.map((quiz) => [quiz.id, quiz]));
   const examMap = new Map(exams.map((exam) => [exam.id, exam]));
@@ -159,6 +181,7 @@ export async function generateMonthlyReport(studentId: string, month: string): P
       feedback: "",
     }));
   const attemptItems: MonthlyReportItem[] = quizAttempts
+    .filter((attempt) => quizMap.has(attempt.quizId))
     .filter((attempt) => !submittedQuizIds.has(attempt.quizId))
     .filter((attempt) => !noSubmissionQuizIds.has(attempt.quizId))
     .filter((attempt) => isInMonth(attempt.openedAt, start, end))
@@ -225,6 +248,7 @@ export async function generateMonthlyReport(studentId: string, month: string): P
       feedback: "",
     }));
   const examAttemptItems: MonthlyReportItem[] = examAttempts
+    .filter((attempt) => examMap.has(attempt.examId))
     .filter((attempt) => !submittedExamIds.has(attempt.examId))
     .filter((attempt) => !noSubmissionExamIds.has(attempt.examId))
     .filter((attempt) => isInMonth(attempt.openedAt, start, end))
