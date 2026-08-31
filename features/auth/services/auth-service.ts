@@ -35,8 +35,20 @@ export function initializeAuthPersistence() {
   return authPersistencePromise;
 }
 
-function getAuthErrorMessage(error: unknown): string {
-  const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
+function getFirebaseErrorCode(error: unknown): string {
+  return typeof error === "object" && error && "code" in error ? String(error.code) : "";
+}
+
+function getSignInErrorMessage(error: unknown): string {
+  const code = getFirebaseErrorCode(error);
+
+  if (code === "permission-denied") {
+    return "Your account profile could not be loaded. Please contact the teacher.";
+  }
+
+  if (code === "auth/network-request-failed") {
+    return "Network error. Check your connection and try again.";
+  }
 
   if (
     code === "auth/invalid-credential" ||
@@ -55,6 +67,24 @@ function getAuthErrorMessage(error: unknown): string {
   }
 
   return "We could not sign you in. Please try again.";
+}
+
+function getPasswordResetErrorMessage(error: unknown): string {
+  const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
+
+  if (code === "auth/network-request-failed") {
+    return "Network error. Check your connection and try again.";
+  }
+
+  if (code === "auth/too-many-requests") {
+    return "Too many password reset requests. Please wait a moment before trying again.";
+  }
+
+  if (error instanceof Error && error.message.includes("Missing Firebase client environment")) {
+    return error.message;
+  }
+
+  return "Password reset failed. Please try again.";
 }
 
 export async function signInWithEmail(email: string, password: string): Promise<SignInResult> {
@@ -86,7 +116,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
       throw error;
     }
 
-    throw new AuthError("Password reset failed. Please try again.");
+    throw new AuthError(getSignInErrorMessage(error));
   }
 }
 
@@ -114,7 +144,7 @@ export async function sendPasswordReset(email: string) {
       throw error;
     }
 
-    throw new AuthError(getAuthErrorMessage(error));
+    throw new AuthError(getPasswordResetErrorMessage(error));
   }
 }
 
