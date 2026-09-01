@@ -3,6 +3,7 @@
 import {
   ClipboardCheck,
   ClipboardList,
+  FileBarChart,
   FileQuestion,
   GraduationCap,
   Archive,
@@ -30,6 +31,7 @@ const adminNavigation = [
   { title: "Overview", href: "/admin", icon: LayoutDashboard },
   { title: "Students", href: "/admin/students", icon: UsersRound },
   { title: "New Student", href: "/admin/students/new", icon: UserRoundPlus },
+  { title: "Reports", href: "/admin/reports", icon: FileBarChart },
   { title: "Topics", href: "/admin/chapters", icon: LibraryBig },
   { title: "Lessons", href: "/admin/lessons", icon: GraduationCap },
   { title: "Past Papers & MS", href: "/admin/past-papers", icon: Archive },
@@ -67,6 +69,7 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
           const isActive =
             pathname === item.href ||
             (item.href === "/admin/students" && pathname.startsWith("/admin/students/")) ||
+            (item.href === "/admin/reports" && pathname.startsWith("/admin/reports/")) ||
             (item.href === "/admin/chapters" && pathname.startsWith("/admin/chapters/")) ||
             (item.href === "/admin/lessons" && pathname.startsWith("/admin/lessons/")) ||
             (item.href === "/admin/past-papers" && pathname.startsWith("/admin/past-papers/")) ||

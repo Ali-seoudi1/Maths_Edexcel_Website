@@ -1,7 +1,6 @@
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 import { getFirebaseAdminDb } from "@/lib/firebase/admin";
-import { normalizeRegistrationDate } from "@/features/students/services/student-registration-service";
 
 import type { CreateNotificationInput, NotificationType, StudentNotification } from "../types";
 
@@ -48,14 +47,6 @@ function isNotificationType(value: unknown): value is NotificationType {
 
 function notificationDocumentId(input: Pick<CreateNotificationInput, "studentId" | "type" | "relatedId">) {
   return [input.studentId, input.type, input.relatedId ?? "general"].join("__");
-}
-
-function previousMonth(now = new Date()) {
-  const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
-  const relatedId = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
-  const monthName = new Intl.DateTimeFormat("en", { month: "long" }).format(date);
-
-  return { relatedId, monthName, year: date.getUTCFullYear(), month: date.getUTCMonth() + 1 };
 }
 
 function isTrackedReportMonth(year: number, month: number) {
@@ -168,45 +159,6 @@ export async function createNotificationForAllActiveStudents(input: Omit<CreateN
   await createNotificationForStudents(studentIds, input);
 }
 
-export async function ensureMonthlyReportNotification(studentId: string) {
-  const { relatedId, monthName, year, month } = previousMonth();
-
-  if (!isTrackedReportMonth(year, month)) {
-    return null;
-  }
-
-  // Don't announce a report for a month that ended before the student joined –
-  // that report has no eligible activity and would only be an empty state.
-  const studentSnapshot = await getFirebaseAdminDb().collection("users").doc(studentId).get();
-  const registrationDate = normalizeRegistrationDate(studentSnapshot.data()?.createdAt);
-
-  if (registrationDate) {
-    const reportMonthEnd = Date.UTC(year, month, 1);
-
-    if (new Date(registrationDate).getTime() >= reportMonthEnd) {
-      return null;
-    }
-  }
-
-  return createNotification({
-    studentId,
-    type: "monthly_report",
-    title: `Your ${monthName} report is ready`,
-    message: `Your report for ${monthName} is now done. Don't forget to check it out.`,
-    link: "/reports",
-    relatedId,
-  });
-}
-
-export async function ensureMonthlyReportNotificationsForAllActiveStudents() {
-  const studentIds = await listActiveStudentIds();
-  const notifications = await Promise.all(
-    studentIds.map((studentId) => ensureMonthlyReportNotification(studentId)),
-  );
-
-  return { createdOrExistingCount: notifications.filter(Boolean).length };
-}
-
 export async function deleteNotificationsByTypeAndRelatedId(type: NotificationType, relatedId: string) {
   const snapshot = await getFirebaseAdminDb()
     .collection(notificationsCollection)
@@ -233,8 +185,8 @@ export async function listStudentNotifications(
   studentId: string,
   options: { unreadOnly?: boolean; limit?: number } = {},
 ) {
-  await ensureMonthlyReportNotification(studentId);
-
+  // Official monthly report notifications are created only when a teacher
+  // explicitly publishes a report – never on read.
   const snapshot = await getFirebaseAdminDb()
     .collection(notificationsCollection)
     .where("studentId", "==", studentId)

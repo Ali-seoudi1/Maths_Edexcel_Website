@@ -21,7 +21,7 @@ export default async function StudentDetailPage({ params }: StudentDetailPagePro
     <>
       <AdminPageHeader
         title="Student report"
-        description="View the same monthly performance report shown in the student dashboard."
+        description="View this student's private live monthly performance."
         breadcrumbs={[
           { label: "Admin", href: "/admin" },
           { label: "Students", href: "/admin/students" },

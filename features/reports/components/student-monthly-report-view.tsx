@@ -25,7 +25,7 @@ import {
   updateQuizSubmissionGrade,
 } from "@/features/quizzes/services/quiz-service";
 
-import { getAdminStudentMonthlyReport, getMonthlyReport } from "../services/report-service";
+import { getAdminStudentMonthlyReport } from "../services/report-service";
 import type { MonthlyReport, MonthlyReportItem } from "../types";
 
 function currentMonth() {
@@ -54,7 +54,9 @@ function statusLabel(status: MonthlyReport["items"][number]["status"]) {
 }
 
 type StudentMonthlyReportViewProps = {
-  studentId?: string;
+  studentId: string;
+  month?: string;
+  onMonthChange?: (month: string) => void;
 };
 
 type GradeDraft = {
@@ -62,23 +64,33 @@ type GradeDraft = {
   feedback: string;
 };
 
-export function StudentMonthlyReportView({ studentId }: StudentMonthlyReportViewProps) {
+export function StudentMonthlyReportView({
+  studentId,
+  month: controlledMonth,
+  onMonthChange,
+}: StudentMonthlyReportViewProps) {
   const { toast } = useToast();
-  const [month, setMonth] = useState(currentMonth());
+  const [localMonth, setLocalMonth] = useState(currentMonth());
   const [report, setReport] = useState<MonthlyReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedItemIds, setExpandedItemIds] = useState<Set<string>>(new Set());
   const [editingItemIds, setEditingItemIds] = useState<Set<string>>(new Set());
   const [savingItemId, setSavingItemId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, GradeDraft>>({});
+  const month = controlledMonth ?? localMonth;
+
+  function handleMonthChange(value: string) {
+    if (onMonthChange) {
+      onMonthChange(value);
+    } else {
+      setLocalMonth(value);
+    }
+  }
 
   useEffect(() => {
     setLoading(true);
-    const request = studentId
-      ? getAdminStudentMonthlyReport(studentId, month)
-      : getMonthlyReport(month);
 
-    void request
+    void getAdminStudentMonthlyReport(studentId, month)
       .then((result) => {
         setReport(result.report);
         setDrafts(
@@ -292,11 +304,18 @@ export function StudentMonthlyReportView({ studentId }: StudentMonthlyReportView
         <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Monthly report</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Generated automatically from your activity and submissions.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Private live performance calculated from the student&apos;s current activity.
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <CalendarDays className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-            <Input type="month" value={month} onChange={(event) => setMonth(event.target.value)} className="w-44" />
+            <Input
+              type="month"
+              value={month}
+              onChange={(event) => handleMonthChange(event.target.value)}
+              className="w-44"
+            />
           </div>
         </CardContent>
       </Card>
