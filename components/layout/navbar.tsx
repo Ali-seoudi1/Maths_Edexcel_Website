@@ -1,4 +1,4 @@
-import { Sigma } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 import { Container } from "@/components/shared/container";
@@ -11,13 +11,21 @@ const navItems = [
   { label: "Contact", href: "/#contact" },
 ];
 
+const logoSrc = "/images/logo.jpeg";
+
 export function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-[#dfe4ee] bg-white/95 backdrop-blur">
       <Container className="flex min-h-[86px] max-w-[1180px] items-center justify-between gap-4 py-4">
         <Link href="/" className="flex shrink-0 items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2f9a84] text-white shadow-soft">
-            <Sigma className="h-5 w-5" aria-hidden="true" />
+          <span className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-[#dfe4ee] bg-white shadow-soft">
+            <Image
+              src={logoSrc}
+              alt="Omar El Adawy logo"
+              fill
+              sizes="44px"
+              className="object-contain p-1.5"
+            />
           </span>
           <span className="min-w-0">
             <span className="block text-base font-bold leading-5 tracking-normal text-[#07112f]">

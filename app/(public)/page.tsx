@@ -117,14 +117,6 @@ const approachItems = [
   },
 ];
 
-const heroChecklist = ["Edexcel Mathematics", "Exam Preparation", "Past Paper Practice"];
-
-const teachingStats = [
-  { value: "1:1", label: "Teacher-led guidance" },
-  { value: "100%", label: "Edexcel IGCSE focus" },
-  { value: "7", label: "Platform study tools" },
-];
-
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
@@ -162,8 +154,8 @@ export default function PublicHomePage() {
       />
       <main className="bg-white text-[#07112f]">
         <section className="border-b border-[#dfe4ee] bg-[#f6f8fb]">
-          <Container className="max-w-[1180px] px-6 py-16 sm:px-8 md:py-20 lg:py-24">
-            <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+          <Container className="max-w-[1180px] px-6 py-14 sm:px-8 md:py-18 lg:py-20">
+            <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
               <div className="max-w-[700px]">
                 <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#218a78]">
                   Omar El Adawy | Edexcel IGCSE Mathematics
@@ -196,50 +188,18 @@ export default function PublicHomePage() {
                     <Link href={`mailto:${contactEmail}`}>Contact Omar</Link>
                   </Button>
                 </div>
-                <div className="mt-11 grid max-w-xl grid-cols-3 gap-7">
-                  {teachingStats.map((item) => (
-                    <div key={item.label}>
-                      <p className="text-3xl font-bold leading-none text-[#07112f]">{item.value}</p>
-                      <p className="mt-2 text-sm leading-5 text-[#58617d]">{item.label}</p>
-                    </div>
-                  ))}
-                </div>
               </div>
 
-              <div className="relative">
-                <div className="overflow-hidden rounded-[28px] border border-[#dfe4ee] bg-white p-4 shadow-[0_28px_70px_rgba(15,23,42,0.10)]">
-                  <div className="relative min-h-[460px] overflow-hidden rounded-[22px] bg-[#14243f]">
-                    <Image
-                      src={teacherPhotoSrc}
-                      alt="Omar El Adawy, Edexcel IGCSE Mathematics teacher"
-                      fill
-                      priority
-                      sizes="(min-width: 1024px) 520px, 100vw"
-                      className="object-cover object-[center_34%]"
-                    />
-                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,17,47,0.06)_0%,rgba(7,17,47,0.12)_46%,rgba(7,17,47,0.42)_100%)]" />
-                    <div className="absolute left-7 top-7 rounded-full bg-white/12 px-4 py-2 text-sm font-semibold text-white/90 backdrop-blur">
-                      Edexcel IGCSE Mathematics
-                    </div>
-                    <div className="absolute inset-x-8 bottom-8 rounded-2xl bg-white/95 p-6 shadow-[0_18px_45px_rgba(7,17,47,0.18)]">
-                      <p className="text-sm font-bold uppercase tracking-[0.12em] text-[#218a78]">
-                        Teacher-led preparation
-                      </p>
-                      <h2 className="mt-3 text-2xl font-bold tracking-normal text-[#07112f]">
-                        Clear learning, steady practice, confident exams.
-                      </h2>
-                      <div className="mt-5 grid gap-3">
-                        {heroChecklist.map((item) => (
-                          <div key={item} className="flex items-center gap-3 text-sm font-semibold">
-                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#e1f3ee] text-[#218a78]">
-                              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                            </span>
-                            {item}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+              <div className="relative mx-auto w-full max-w-[460px] overflow-hidden rounded-[28px] border border-[#dfe4ee] bg-white p-3 shadow-[0_28px_70px_rgba(15,23,42,0.10)] lg:mx-0 lg:justify-self-end">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-[22px] bg-[#e9edf3]">
+                  <Image
+                    src={teacherPhotoSrc}
+                    alt="Omar El Adawy, Edexcel IGCSE Mathematics teacher"
+                    fill
+                    priority
+                    sizes="(min-width: 1024px) 460px, 100vw"
+                    className="object-cover object-[center_34%]"
+                  />
                 </div>
               </div>
             </div>
