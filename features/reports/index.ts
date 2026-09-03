@@ -1,4 +1,11 @@
 export type {
+  AdminMonthlyReportSnapshotStatus,
+  CombinedOfficialReport,
+  CombinedReportMonthlyBreakdown,
+  CombinedReportSnapshot,
+  CombinedReportStatus,
+  CombinedReportSummary,
+  CombinedReportTrend,
   MonthlyReport,
   MonthlyReportItem,
   MonthlyReportSnapshot,

@@ -14,7 +14,7 @@ import type {
   ReportTrendStatus,
 } from "../types";
 
-const stableTrendThreshold = 3;
+export const stableTrendThreshold = 3;
 const lowPerformanceThreshold = 65;
 const lowCompletionThreshold = 70;
 const maxAcceptableMissing = 3;

@@ -78,7 +78,7 @@ function toSnapshot(id: string, data: FirebaseFirestore.DocumentData): MonthlyRe
     year: typeof data.year === "number" ? data.year : 0,
     month: typeof data.month === "number" ? data.month : 0,
     period: typeof data.period === "string" ? data.period : "",
-    status: "published",
+    status: data.status === "draft" ? "draft" : "published",
     report: (data.report ?? null) as MonthlyReport,
     generatedAt: normalizeTimestamp(data.generatedAt),
     generatedBy: typeof data.generatedBy === "string" ? data.generatedBy : "",
@@ -125,10 +125,21 @@ export async function getReportSnapshotStatus(
   studentId: string,
   period: string,
 ): Promise<MonthlyReportStatusResult> {
-  const snapshot = await getPublishedReportSnapshot(studentId, period);
+  parseReportPeriod(period);
 
-  if (!snapshot) {
+  const ref = getFirebaseAdminDb()
+    .collection(monthlyReportsCollection)
+    .doc(reportSnapshotDocumentId(studentId, period));
+  const doc = await ref.get();
+
+  if (!doc.exists) {
     return { status: "not_generated", period };
+  }
+
+  const snapshot = toSnapshot(doc.id, doc.data() ?? {});
+
+  if (snapshot.status === "draft") {
+    return { status: "draft", period, snapshot };
   }
 
   return { status: "published", period, snapshot };
@@ -148,6 +159,56 @@ export async function listPublishedReportSnapshots(
     .filter((snapshot) => snapshot.status === "published")
     .sort((a, b) => (a.period < b.period ? 1 : a.period > b.period ? -1 : 0))
     .map(toSummary);
+}
+
+export async function generateMonthlyReportDraft(input: {
+  studentId: string;
+  period: string;
+  adminId: string;
+}): Promise<{ snapshot: MonthlyReportSnapshot; alreadyExists: boolean }> {
+  const { studentId, period, adminId } = input;
+  const { year, month } = parseReportPeriod(period);
+  const db = getFirebaseAdminDb();
+  const ref = db
+    .collection(monthlyReportsCollection)
+    .doc(reportSnapshotDocumentId(studentId, period));
+  const existing = await ref.get();
+
+  if (existing.exists) {
+    return { snapshot: toSnapshot(existing.id, existing.data() ?? {}), alreadyExists: true };
+  }
+
+  const report = await generateMonthlyReport(studentId, period);
+  const nowIso = Timestamp.now().toDate().toISOString();
+  const record = {
+    studentId,
+    year,
+    month,
+    period,
+    status: "draft" as const,
+    report: toStorableReport(report),
+    generatedAt: nowIso,
+    generatedBy: adminId,
+    publishedAt: null,
+    publishedBy: null,
+    createdAt: FieldValue.serverTimestamp(),
+  };
+
+  try {
+    await ref.create(record);
+  } catch {
+    const raced = await ref.get();
+
+    if (raced.exists) {
+      return { snapshot: toSnapshot(raced.id, raced.data() ?? {}), alreadyExists: true };
+    }
+
+    throw new Error("The report draft could not be generated. Try again in a moment.");
+  }
+
+  const saved = await ref.get();
+
+  return { snapshot: toSnapshot(saved.id, saved.data() ?? record), alreadyExists: false };
 }
 
 /**
@@ -175,7 +236,31 @@ export async function publishMonthlyReportSnapshot(input: {
   const existing = await ref.get();
 
   if (existing.exists) {
-    return { snapshot: toSnapshot(existing.id, existing.data() ?? {}), alreadyPublished: true };
+    const existingSnapshot = toSnapshot(existing.id, existing.data() ?? {});
+
+    if (existingSnapshot.status === "published") {
+      return { snapshot: existingSnapshot, alreadyPublished: true };
+    }
+
+    await ref.update({
+      status: "published",
+      publishedAt: FieldValue.serverTimestamp(),
+      publishedBy: adminId,
+    });
+
+    await createMonthlyReportNotification({
+      studentId,
+      period,
+      year,
+      month,
+    });
+
+    const savedDraft = await ref.get();
+
+    return {
+      snapshot: toSnapshot(savedDraft.id, savedDraft.data() ?? {}),
+      alreadyPublished: false,
+    };
   }
 
   const report = await generateMonthlyReport(studentId, period);
@@ -209,22 +294,54 @@ export async function publishMonthlyReportSnapshot(input: {
     throw new Error("The report could not be published. Try again in a moment.");
   }
 
-  const monthLabel = new Intl.DateTimeFormat("en", { month: "long" }).format(
-    new Date(Date.UTC(year, month - 1, 1)),
-  );
-
   // Deterministic notification id (studentId + type + relatedId) means repeated
   // publish calls, page refreshes, and opening the bell never duplicate this.
-  await createNotification({
-    studentId,
-    type: "monthly_report",
-    title: `Your ${monthLabel} report is ready`,
-    message: `Your ${monthLabel} progress report is now available. Check your reports to review your progress.`,
-    link: "/reports",
-    relatedId: period,
-  });
+  await createMonthlyReportNotification({ studentId, period, year, month });
 
   const saved = await ref.get();
 
   return { snapshot: toSnapshot(saved.id, saved.data() ?? record), alreadyPublished: false };
+}
+
+async function createMonthlyReportNotification(input: {
+  studentId: string;
+  period: string;
+  year: number;
+  month: number;
+}) {
+  const monthLabel = new Intl.DateTimeFormat("en", { month: "long" }).format(
+    new Date(Date.UTC(input.year, input.month - 1, 1)),
+  );
+
+  await createNotification({
+    studentId: input.studentId,
+    type: "monthly_report",
+    title: `Your ${monthLabel} report is ready`,
+    message: `Your ${monthLabel} progress report is now available. Check your reports to review your progress.`,
+    link: "/reports",
+    relatedId: input.period,
+  });
+}
+
+export async function deleteMonthlyReportDraft(studentId: string, period: string) {
+  parseReportPeriod(period);
+
+  const ref = getFirebaseAdminDb()
+    .collection(monthlyReportsCollection)
+    .doc(reportSnapshotDocumentId(studentId, period));
+  const snapshot = await ref.get();
+
+  if (!snapshot.exists) {
+    return { deleted: false };
+  }
+
+  const report = toSnapshot(snapshot.id, snapshot.data() ?? {});
+
+  if (report.status === "published") {
+    throw new Error("Published reports cannot be deleted as drafts.");
+  }
+
+  await ref.delete();
+
+  return { deleted: true };
 }

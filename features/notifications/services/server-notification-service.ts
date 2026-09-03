@@ -62,6 +62,10 @@ function isValidNotification(notification: StudentNotification) {
     return false;
   }
 
+  if (notification.relatedId.startsWith("combined:")) {
+    return true;
+  }
+
   const [yearValue, monthValue] = notification.relatedId.split("-");
   const year = Number(yearValue);
   const month = Number(monthValue);

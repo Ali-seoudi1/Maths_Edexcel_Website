@@ -38,6 +38,7 @@ export type MonthlyReport = {
  * - `published`: the teacher has finalized and published a frozen snapshot.
  */
 export type MonthlyReportSnapshotStatus = "not_generated" | "published";
+export type AdminMonthlyReportSnapshotStatus = "draft" | "published";
 
 /**
  * An official, teacher-finalized monthly report. The `report` field is a frozen
@@ -51,7 +52,7 @@ export type MonthlyReportSnapshot = {
   month: number;
   /** `YYYY-MM` for the reported month. */
   period: string;
-  status: "published";
+  status: AdminMonthlyReportSnapshotStatus;
   report: MonthlyReport;
   generatedAt: string | null;
   generatedBy: string;
@@ -74,6 +75,7 @@ export type MonthlyReportSnapshotSummary = {
 /** Result of checking whether an official report exists for a student + period. */
 export type MonthlyReportStatusResult =
   | { status: "not_generated"; period: string }
+  | { status: "draft"; period: string; snapshot: MonthlyReportSnapshot }
   | { status: "published"; period: string; snapshot: MonthlyReportSnapshot };
 
 export type ReportTrendStatus = "improving" | "stable" | "declining" | "not_enough_data";
@@ -118,4 +120,85 @@ export type ReportAnalyticsResult = {
   mostImproved: ReportAnalyticsStudent | null;
   studentsNeedingAttention: ReportAnalyticsStudent[];
   students: ReportAnalyticsStudent[];
+};
+
+export type CombinedReportStatus = "draft" | "published";
+
+export type CombinedReportMonthlyBreakdown = {
+  period: string;
+  status: "published" | "missing";
+  performancePercent: number | null;
+  completionPercent: number | null;
+  onTimePercent: number | null;
+  assignmentsSubmitted: number | null;
+  quizzesSubmitted: number | null;
+  examsSubmitted: number | null;
+  missingCount: number | null;
+  lateCount: number | null;
+  report: MonthlyReport | null;
+};
+
+export type CombinedReportTrend = {
+  status: ReportTrendStatus;
+  delta: number | null;
+  startPeriod: string | null;
+  startPerformance: number | null;
+  endPeriod: string | null;
+  endPerformance: number | null;
+};
+
+export type CombinedOfficialReport = {
+  student: {
+    uid: string;
+    fullName: string;
+    email: string;
+    studentCode: string;
+  };
+  fromMonth: string;
+  toMonth: string;
+  periods: string[];
+  publishedPeriods: string[];
+  missingPeriods: string[];
+  overallPerformance: number | null;
+  completionPercent: number | null;
+  onTimePercent: number | null;
+  totals: {
+    assignmentsSubmitted: number;
+    quizzesSubmitted: number;
+    examsSubmitted: number;
+    missingCount: number;
+    lateCount: number;
+  };
+  trend: CombinedReportTrend;
+  monthlyBreakdown: CombinedReportMonthlyBreakdown[];
+};
+
+export type CombinedReportSnapshot = {
+  id: string;
+  studentId: string;
+  fromMonth: string;
+  toMonth: string;
+  periods: string[];
+  publishedPeriods: string[];
+  missingPeriods: string[];
+  status: CombinedReportStatus;
+  report: CombinedOfficialReport;
+  generatedAt: string | null;
+  generatedBy: string;
+  publishedAt: string | null;
+  publishedBy: string | null;
+  createdAt: string | null;
+};
+
+export type CombinedReportSummary = {
+  id: string;
+  studentId: string;
+  fromMonth: string;
+  toMonth: string;
+  periods: string[];
+  publishedPeriods: string[];
+  missingPeriods: string[];
+  status: CombinedReportStatus;
+  generatedAt: string | null;
+  publishedAt: string | null;
 };

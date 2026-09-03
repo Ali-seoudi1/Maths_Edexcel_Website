@@ -5,6 +5,8 @@ import { adminSdkUnavailableResponse, errorResponse } from "@/features/lessons/s
 import { getFirebaseAdminDb } from "@/lib/firebase/admin";
 import {
   formatReportPeriodLabel,
+  deleteMonthlyReportDraft,
+  generateMonthlyReportDraft,
   getReportSnapshotStatus,
   parseReportPeriod,
   publishMonthlyReportSnapshot,
@@ -74,24 +76,74 @@ export async function POST(request: Request) {
 
     await assertStudent(studentId);
 
+    const { snapshot, alreadyExists } = await generateMonthlyReportDraft({
+      studentId,
+      period: month,
+      adminId: admin.uid,
+    });
+
+    return NextResponse.json({ snapshot, alreadyExists }, { status: alreadyExists ? 200 : 201 });
+  } catch (error) {
+    return errorResponse(error, "Report draft request failed.");
+  }
+}
+
+export async function PATCH(request: Request) {
+  const unavailableResponse = adminSdkUnavailableResponse();
+
+  if (unavailableResponse) return unavailableResponse;
+
+  try {
+    const admin = await requireAdmin(request);
+    const payload = (await request.json().catch(() => null)) as unknown;
+    const action =
+      payload && typeof payload === "object" && "action" in payload
+        ? (payload as { action?: unknown }).action
+        : null;
+
+    if (action !== "publish") {
+      throw new Error("Choose a valid report action.");
+    }
+
+    const { studentId, month } = readBody(payload);
+
+    await assertStudent(studentId);
+
     const { snapshot, alreadyPublished } = await publishMonthlyReportSnapshot({
       studentId,
       period: month,
       adminId: admin.uid,
     });
 
-    if (alreadyPublished) {
-      return NextResponse.json(
-        {
-          error: `The ${formatReportPeriodLabel(month)} report has already been published.`,
-          snapshot,
-        },
-        { status: 409 },
-      );
-    }
-
-    return NextResponse.json({ snapshot }, { status: 201 });
+    return NextResponse.json({ snapshot, alreadyPublished });
   } catch (error) {
     return errorResponse(error, "Report publish request failed.");
+  }
+}
+
+export async function DELETE(request: Request) {
+  const unavailableResponse = adminSdkUnavailableResponse();
+
+  if (unavailableResponse) return unavailableResponse;
+
+  try {
+    await requireAdmin(request);
+
+    const { searchParams } = new URL(request.url);
+    const studentId = searchParams.get("studentId")?.trim() ?? "";
+    const month = searchParams.get("month")?.trim() ?? "";
+
+    if (!studentId) {
+      throw new Error("Select a student.");
+    }
+
+    parseReportPeriod(month);
+    await assertStudent(studentId);
+
+    const result = await deleteMonthlyReportDraft(studentId, month);
+
+    return NextResponse.json(result);
+  } catch (error) {
+    return errorResponse(error, "Report draft delete request failed.");
   }
 }

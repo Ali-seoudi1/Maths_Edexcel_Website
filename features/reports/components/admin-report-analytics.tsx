@@ -7,6 +7,13 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -115,15 +122,7 @@ function TrendBadge({ student }: { student: ReportAnalyticsStudent }) {
   return <Badge variant="outline">{formatDelta(student.trendDelta)}</Badge>;
 }
 
-function MetricCard({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-}) {
+function MetricCard({ label, value, detail }: { label: string; value: string; detail: string }) {
   return (
     <Card>
       <CardContent className="p-4">
@@ -203,6 +202,7 @@ export function AdminReportAnalytics({ month }: AdminReportAnalyticsProps) {
       return a.rank - b.rank;
     });
   }, [analytics, query, sortDirection, sortKey]);
+  const openStudent = analytics?.students.find((student) => student.studentId === openStudentId) ?? null;
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {
@@ -219,13 +219,7 @@ export function AdminReportAnalytics({ month }: AdminReportAnalyticsProps) {
     const Icon = sortDirection === "asc" ? ChevronUp : ChevronDown;
 
     return (
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="-ml-3 gap-1"
-        onClick={() => handleSort(value)}
-      >
+      <Button type="button" variant="ghost" size="sm" className="-ml-3 gap-1" onClick={() => handleSort(value)}>
         {label}
         {isActive ? <Icon className="h-3.5 w-3.5" aria-hidden="true" /> : null}
       </Button>
@@ -247,9 +241,9 @@ export function AdminReportAnalytics({ month }: AdminReportAnalyticsProps) {
         <CardContent className="space-y-5 p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Class Performance</h2>
+              <h2 className="text-lg font-semibold text-foreground">Reporting Period</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Historical analytics from published official report snapshots only.
+                Historical analytics from published official monthly report snapshots only.
               </p>
             </div>
             <div className="grid w-full gap-3 sm:w-auto sm:grid-cols-2">
@@ -306,9 +300,7 @@ export function AdminReportAnalytics({ month }: AdminReportAnalyticsProps) {
 
                     return (
                       <Badge key={period} variant={hasPublishedReports ? "secondary" : "outline"}>
-                        {hasPublishedReports ? (
-                          <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                        ) : null}
+                        {hasPublishedReports ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> : null}
                         {periodLabel(period)}
                         {hasPublishedReports ? "" : " - No published reports"}
                       </Badge>
@@ -325,85 +317,91 @@ export function AdminReportAnalytics({ month }: AdminReportAnalyticsProps) {
               description="Publish official reports before reviewing class analytics."
               icon={<BarChart3 className="h-8 w-8" aria-hidden="true" />}
             />
-          ) : (
-            <>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <MetricCard
-                  label="Students with reports"
-                  value={String(analytics.studentsWithReports)}
-                  detail={
-                    analytics.publishedPeriods.length > 0
-                      ? analytics.publishedPeriods.map(periodLabel).join(", ")
-                      : "No published data"
-                  }
-                />
-                <MetricCard
-                  label="Average performance"
-                  value={formatPercent(analytics.classAveragePerformance)}
-                  detail="Average of student aggregates"
-                />
-                <MetricCard
-                  label="Average completion"
-                  value={formatPercent(analytics.averageCompletion)}
-                  detail="From report item completion"
-                />
-                <MetricCard
-                  label="Average on-time"
-                  value={formatPercent(analytics.averageOnTime)}
-                  detail="Completed work submitted on time"
-                />
-              </div>
-
-              <div className="grid gap-3 lg:grid-cols-3">
-                <Card>
-                  <CardContent className="p-4">
-                    <p className="text-xs font-semibold uppercase text-muted-foreground">
-                      Highest performer
-                    </p>
-                    <p className="mt-2 text-lg font-semibold text-foreground">
-                      {analytics.highestPerformer?.studentName ?? "Not available"}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {formatPercent(analytics.highestPerformer?.averagePerformance ?? null)}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <p className="text-xs font-semibold uppercase text-muted-foreground">
-                      Most improved
-                    </p>
-                    <p className="mt-2 text-lg font-semibold text-foreground">
-                      {analytics.mostImproved?.studentName ?? "Not enough data"}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {formatDeltaLong(analytics.mostImproved?.trendDelta ?? null)}
-                    </p>
-                    <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                      {analytics.mostImproved
-                        ? trendEndpointLabel(analytics.mostImproved)
-                        : "At least two published months are needed."}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <p className="text-xs font-semibold uppercase text-muted-foreground">
-                      Students needing attention
-                    </p>
-                    <p className="mt-2 text-lg font-semibold text-foreground">
-                      {analytics.studentsNeedingAttention.length}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Transparent threshold-based indicators
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            </>
-          )}
+          ) : null}
         </CardContent>
       </Card>
+
+      {analytics && analytics.studentsWithReports > 0 ? (
+        <>
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Class Overview</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Summary metrics include only students with published report data.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard
+              label="Students with reports"
+              value={String(analytics.studentsWithReports)}
+              detail={
+                analytics.publishedPeriods.length > 0
+                  ? analytics.publishedPeriods.map(periodLabel).join(", ")
+                  : "No published data"
+              }
+            />
+            <MetricCard
+              label="Average performance"
+              value={formatPercent(analytics.classAveragePerformance)}
+              detail="Average of student aggregates"
+            />
+            <MetricCard
+              label="Average completion"
+              value={formatPercent(analytics.averageCompletion)}
+              detail="From report item completion"
+            />
+            <MetricCard
+              label="Average on-time"
+              value={formatPercent(analytics.averageOnTime)}
+              detail="Completed work submitted on time"
+            />
+          </div>
+
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Performance Highlights</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Highest performer, strongest improvement, and attention indicators for the selected period.
+            </p>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-3">
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Highest performer</p>
+                <p className="mt-2 text-lg font-semibold text-foreground">
+                  {analytics.highestPerformer?.studentName ?? "Not available"}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {formatPercent(analytics.highestPerformer?.averagePerformance ?? null)}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Most improved</p>
+                <p className="mt-2 text-lg font-semibold text-foreground">
+                  {analytics.mostImproved?.studentName ?? "Not enough data"}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {formatDeltaLong(analytics.mostImproved?.trendDelta ?? null)}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                  {analytics.mostImproved
+                    ? trendEndpointLabel(analytics.mostImproved)
+                    : "At least two published months are needed."}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Students needing attention</p>
+                <p className="mt-2 text-lg font-semibold text-foreground">
+                  {analytics.studentsNeedingAttention.length}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">Transparent threshold-based indicators</p>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      ) : null}
 
       {analytics && analytics.studentsWithReports > 0 ? (
         <Card>
@@ -463,9 +461,7 @@ export function AdminReportAnalytics({ month }: AdminReportAnalyticsProps) {
                       <TableCell>
                         <div>
                           <p className="font-semibold text-foreground">{student.studentName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {student.studentCode || student.studentId}
-                          </p>
+                          <p className="text-xs text-muted-foreground">{student.studentCode || student.studentId}</p>
                         </div>
                       </TableCell>
                       <TableCell>{formatPercent(student.averagePerformance)}</TableCell>
@@ -483,17 +479,8 @@ export function AdminReportAnalytics({ month }: AdminReportAnalyticsProps) {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            setOpenStudentId((current) =>
-                              current === student.studentId ? null : student.studentId,
-                            )
-                          }
-                        >
-                          {openStudentId === student.studentId ? "Hide" : "View"}
+                        <Button type="button" variant="outline" size="sm" onClick={() => setOpenStudentId(student.studentId)}>
+                          View
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -551,22 +538,24 @@ export function AdminReportAnalytics({ month }: AdminReportAnalyticsProps) {
         </Card>
       ) : null}
 
-      {openStudentId && analytics ? (
-        <Card>
-          <CardContent className="space-y-4 p-5">
-            {analytics.students
-              .find((student) => student.studentId === openStudentId)
-              ?.snapshots.map((snapshot) => (
-                <div key={snapshot.period} className="space-y-3">
-                  <h3 className="text-base font-semibold text-foreground">
-                    {periodLabel(snapshot.period)} published report
-                  </h3>
-                  <MonthlyReportSnapshotView report={snapshot.report} />
-                </div>
-              ))}
-          </CardContent>
-        </Card>
-      ) : null}
+      <Dialog open={Boolean(openStudent)} onOpenChange={(open) => !open && setOpenStudentId(null)}>
+        <DialogContent className="max-w-5xl">
+          <DialogHeader>
+            <DialogTitle>{openStudent?.studentName ?? "Student"} performance details</DialogTitle>
+            <DialogDescription>Published monthly snapshots included in the selected analytics period.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {openStudent?.snapshots.map((snapshot) => (
+              <div key={snapshot.period} className="space-y-3">
+                <h3 className="text-base font-semibold text-foreground">
+                  {periodLabel(snapshot.period)} published report
+                </h3>
+                <MonthlyReportSnapshotView report={snapshot.report} />
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { AdminReportGenerator } from "@/features/reports/components/admin-report
 
 export const metadata: Metadata = {
   title: "Reports",
-  description: "Generate and publish official monthly student reports.",
+  description: "Review student performance and manage official reports.",
 };
 
 export default function AdminReportsPage() {
@@ -13,7 +13,7 @@ export default function AdminReportsPage() {
     <>
       <AdminPageHeader
         title="Reports"
-        description="Choose a student and month, then finalize and publish the official monthly report. Reports are never generated automatically — you decide when a month becomes official."
+        description="Review student performance and manage official reports."
         breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Reports" }]}
       />
       <AdminReportGenerator />
