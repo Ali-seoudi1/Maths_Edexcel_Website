@@ -177,7 +177,7 @@ export function AdminQuizListView() {
           <DialogHeader>
             <DialogTitle>Delete quiz?</DialogTitle>
             <DialogDescription>
-              This removes the quiz, its PDF, and any submitted answer PDFs.
+              This removes the quiz, its PDF and any submitted answer PDFs.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

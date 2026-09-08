@@ -359,7 +359,7 @@ export function AdminReportAnalytics({ month }: AdminReportAnalyticsProps) {
           <div>
             <h2 className="text-lg font-semibold text-foreground">Performance Highlights</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Highest performer, strongest improvement, and attention indicators for the selected period.
+              Highest performer, strongest improvement and attention indicators for the selected period.
             </p>
           </div>
           <div className="grid gap-3 lg:grid-cols-3">
@@ -506,7 +506,7 @@ export function AdminReportAnalytics({ month }: AdminReportAnalyticsProps) {
             <div>
               <h2 className="text-lg font-semibold text-foreground">Students needing attention</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Based on low performance, low completion, missing work, late work, and declining trend.
+                Based on low performance, low completion, missing work, late work and declining trend.
               </p>
             </div>
             <div className="grid gap-3 lg:grid-cols-2">

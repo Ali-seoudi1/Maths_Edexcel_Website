@@ -177,7 +177,7 @@ export function AdminExamListView() {
           <DialogHeader>
             <DialogTitle>Delete exam?</DialogTitle>
             <DialogDescription>
-              This removes the exam, its PDF, and any submitted answer PDFs.
+              This removes the exam, its PDF and any submitted answer PDFs.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

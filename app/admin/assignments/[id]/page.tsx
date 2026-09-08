@@ -23,7 +23,7 @@ export default async function AdminAssignmentPage({ params }: AdminAssignmentPag
     <>
       <AdminPageHeader
         title="Assignment details"
-        description="Review each student submission, mark late work, and record the grade and feedback."
+        description="Review each student submission, mark late work and record the grade and feedback."
         breadcrumbs={[
           { label: "Admin", href: "/admin" },
           { label: "Assignments", href: "/admin/assignments" },

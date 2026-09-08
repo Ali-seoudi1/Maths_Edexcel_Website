@@ -16,7 +16,7 @@ export default function StudentQuizzesPage() {
         <PageHeader
           eyebrow="Assessment"
           title="Quizzes"
-          description="Open active timed quizzes, submit your PDF solution, and see your score after grading."
+          description="Open active timed quizzes, submit your PDF solution and see your score after grading."
         />
         <StudentQuizListView />
       </div>

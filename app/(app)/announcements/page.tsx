@@ -16,7 +16,7 @@ export default function AnnouncementsPage() {
         <PageHeader
           eyebrow="Teacher Updates"
           title="Announcements"
-          description="Read updates about assignments, quizzes, deadlines, and revision guidance."
+          description="Read updates about assignments, quizzes, deadlines and revision guidance."
         />
         <StudentAnnouncementsView />
       </div>

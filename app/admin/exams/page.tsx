@@ -15,7 +15,7 @@ export default function AdminExamsPage() {
     <>
       <AdminPageHeader
         title="Exams"
-        description="Create PDF exams, publish timed deadlines, and review submissions."
+        description="Create PDF exams, publish timed deadlines and review submissions."
         breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Exams" }]}
         actions={
           <Button asChild>

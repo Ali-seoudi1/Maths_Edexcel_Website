@@ -72,7 +72,7 @@ export function StudentAnnouncementsView() {
     return (
       <EmptyState
         title="No announcements yet"
-        description="Teacher updates about quizzes, assignments, and deadlines will appear here."
+        description="Teacher updates about quizzes, assignments and deadlines will appear here."
         icon={<Megaphone className="h-8 w-8" aria-hidden="true" />}
       />
     );

@@ -15,7 +15,7 @@ export default function AdminQuizzesPage() {
     <>
       <AdminPageHeader
         title="Quizzes"
-        description="Create PDF quizzes, publish timed deadlines, and review submissions."
+        description="Create PDF quizzes, publish timed deadlines and review submissions."
         breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Quizzes" }]}
         actions={
           <Button asChild>

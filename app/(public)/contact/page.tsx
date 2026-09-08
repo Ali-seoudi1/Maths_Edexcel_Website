@@ -12,7 +12,7 @@ const contactOptions = [
   {
     title: "Email enquiries",
     description:
-      "Use your preferred email client to ask about availability, course stage, and goals.",
+      "Use your preferred email client to ask about availability, course stage and goals.",
     icon: Mail,
   },
   {
@@ -23,7 +23,7 @@ const contactOptions = [
   {
     title: "Lesson planning",
     description:
-      "Course recommendations are shaped around exam board, timeline, and confidence gaps.",
+      "Course recommendations are shaped around exam board, timeline and confidence gaps.",
     icon: CalendarDays,
   },
 ];

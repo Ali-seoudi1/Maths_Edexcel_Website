@@ -196,7 +196,7 @@ export function StudentAssignmentsView() {
         <div>
           <h2 className="text-base font-semibold text-foreground">Your assignments</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            View task PDFs, submit your solution, and check feedback after grading.
+            View task PDFs, submit your solution and check feedback after grading.
           </p>
         </div>
         <div className="inline-flex w-full rounded-xl border bg-card p-1 shadow-sm sm:w-auto">

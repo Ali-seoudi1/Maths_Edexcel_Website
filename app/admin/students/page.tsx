@@ -13,7 +13,7 @@ export default function StudentsPage() {
     <>
       <AdminPageHeader
         title="Students"
-        description="Search, review, and manage student account access."
+        description="Search, review and manage student account access."
         breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Students" }]}
       />
       <StudentsTable />

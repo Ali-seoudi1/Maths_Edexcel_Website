@@ -17,8 +17,8 @@ export function Hero() {
             Clear, exam-focused mathematics teaching for Edexcel success.
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
-            Premium IGCSE, O Level, and A Level support with structured lessons, precise model
-            answers, and calm guidance from a professional mathematics teacher.
+            Premium IGCSE, O Level and A Level support with structured lessons, precise model
+            answers and calm guidance from a professional mathematics teacher.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg">
@@ -61,7 +61,7 @@ export function Hero() {
                   <div className="rounded-md border border-primary/20 bg-primary/5 p-4">
                     <p className="text-sm font-semibold text-foreground">dy/dx = 3x² - 4x + 1</p>
                     <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                      Step-by-step reasoning, notation, and exam technique in one focused view.
+                      Step-by-step reasoning, notation and exam technique in one focused view.
                     </p>
                   </div>
                 </div>

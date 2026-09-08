@@ -16,7 +16,7 @@ export default function AdminModelAnswersPage() {
     <>
       <AdminPageHeader
         title="Key Questions"
-        description="Create, search, filter, edit, publish, and delete exam question solutions."
+        description="Create, search, filter, edit, publish and delete exam question solutions."
         breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Key Questions" }]}
         actions={
           <Button asChild>

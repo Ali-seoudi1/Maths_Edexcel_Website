@@ -16,7 +16,7 @@ export default function StudentExamsPage() {
         <PageHeader
           eyebrow="Assessment"
           title="Exams"
-          description="Open active timed exams, submit your PDF solution, and see your score after grading."
+          description="Open active timed exams, submit your PDF solution and see your score after grading."
         />
         <StudentExamListView />
       </div>

@@ -13,7 +13,7 @@ export default function AdminAnnouncementsPage() {
     <>
       <AdminPageHeader
         title="Announcements"
-        description="Post updates for students about quizzes, assignments, deadlines, and revision notices."
+        description="Post updates for students about quizzes, assignments, deadlines and revision notices."
         breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Announcements" }]}
       />
       <AdminAnnouncementsView />

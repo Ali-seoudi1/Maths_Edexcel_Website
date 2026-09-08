@@ -5,28 +5,28 @@ import { CourseCard, CtaBanner, FeatureCard, Section } from "@/components/market
 
 export const metadata: Metadata = {
   title: "Courses",
-  description: "Public Edexcel Mathematics course overview for IGCSE, O Level, and A Level.",
+  description: "Public Edexcel Mathematics course overview for IGCSE, O Level and A Level.",
 };
 
 const courses = [
   {
     title: "IGCSE Mathematics",
     stage: "Years 10-11",
-    description: "A complete support pathway for topic mastery, revision, and exam technique.",
+    description: "A complete support pathway for topic mastery, revision and exam technique.",
     topics: ["Number", "Algebra", "Graphs", "Geometry"],
     icon: GraduationCap,
   },
   {
     title: "O Level Mathematics",
     stage: "Secondary",
-    description: "Targeted lessons and practice for problem solving, accuracy, and presentation.",
+    description: "Targeted lessons and practice for problem solving, accuracy and presentation.",
     topics: ["Functions", "Vectors", "Trigonometry", "Statistics"],
     icon: BookOpen,
   },
   {
     title: "A Level Mathematics",
     stage: "Sixth form",
-    description: "Advanced support across pure mathematics, mechanics, and statistics.",
+    description: "Advanced support across pure mathematics, mechanics and statistics.",
     topics: ["Calculus", "Proof", "Mechanics", "Probability"],
     icon: Layers3,
   },
@@ -41,7 +41,7 @@ const support = [
   },
   {
     title: "Exam practice",
-    description: "Practice is framed around question style, time pressure, and mark allocation.",
+    description: "Practice is framed around question style, time pressure and mark allocation.",
     icon: BookOpen,
   },
   {

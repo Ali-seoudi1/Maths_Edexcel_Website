@@ -53,7 +53,7 @@ export function ModelAnswerSearchView() {
       <PageHeader
         eyebrow="Key Questions"
         title="Find an official mark scheme and teacher solution."
-        description="Search by exam year, session, paper, and question number."
+        description="Search by exam year, session, paper and question number."
       />
 
       <Card>
@@ -170,7 +170,7 @@ export function ModelAnswerSearchView() {
       ) : hasSearched && !searchError ? (
         <EmptyState
           title="No key question found"
-          description="No published solution matches that exact year, session, paper, and question number yet."
+          description="No published solution matches that exact year, session, paper and question number yet."
           icon={<FileQuestion className="h-10 w-10" aria-hidden="true" />}
         />
       ) : (

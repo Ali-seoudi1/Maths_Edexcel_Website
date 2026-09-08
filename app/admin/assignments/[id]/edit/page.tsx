@@ -11,7 +11,7 @@ type EditAssignmentPageProps = {
 
 export const metadata: Metadata = {
   title: "Edit Assignment",
-  description: "Edit assignment details, deadline, and PDFs.",
+  description: "Edit assignment details, deadline and PDFs.",
 };
 
 export default async function EditAssignmentPage({ params }: EditAssignmentPageProps) {

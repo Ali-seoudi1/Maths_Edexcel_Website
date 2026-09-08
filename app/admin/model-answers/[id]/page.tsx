@@ -21,7 +21,7 @@ export default async function EditModelAnswerPage({ params }: EditModelAnswerPag
     <>
       <AdminPageHeader
         title="Edit Key Question"
-        description="Update the exam details, mark scheme file, teacher solution, and publication status."
+        description="Update the exam details, mark scheme file, teacher solution and publication status."
         breadcrumbs={[
           { label: "Admin", href: "/admin" },
           { label: "Key Questions", href: "/admin/model-answers" },

@@ -16,7 +16,7 @@ export default function StudentAssignmentsPage() {
         <PageHeader
           eyebrow="Coursework"
           title="Assignments"
-          description="Review the task, upload your PDF solution, and check feedback after grading."
+          description="Review the task, upload your PDF solution and check feedback after grading."
         />
         <StudentAssignmentsView />
       </div>

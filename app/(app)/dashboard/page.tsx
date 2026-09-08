@@ -16,14 +16,14 @@ const studyAreas = [
   },
   {
     title: "Key Questions",
-    description: "Search exam questions by year, session, paper, and question number.",
+    description: "Search exam questions by year, session, paper and question number.",
     href: "/model-answers",
     icon: Search,
     locked: true,
   },
   {
     title: "Assignments",
-    description: "View coursework, upload PDF solutions, and check grades.",
+    description: "View coursework, upload PDF solutions and check grades.",
     href: "/assignments",
     icon: ClipboardList,
   },
@@ -62,7 +62,7 @@ export default function DashboardPage() {
       <PageHeader
         eyebrow="Student Dashboard"
         title={firstName ? `Welcome back, ${firstName}!` : "Welcome back"}
-        description="Choose what you want to study next. Your lessons, key questions, assignments, and quizzes are grouped into focused areas."
+        description="Choose what you want to study next. Your lessons, key questions, assignments and quizzes are grouped into focused areas."
       />
 
       <section className="space-y-4">

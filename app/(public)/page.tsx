@@ -10,6 +10,7 @@ import {
   LogIn,
   Mail,
   PenLine,
+  Phone,
   Presentation,
   Sparkles,
   Target,
@@ -23,10 +24,12 @@ import { AuthenticatedHomeRedirect } from "@/features/auth";
 
 const siteUrl = "https://www.omareladawymathigcse.com";
 const contactEmail = "omarahmedadawy@gmail.com";
+const contactPhone = "+20 127 844 4327";
+const contactPhoneHref = "tel:+201278444327";
 const teacherPhotoSrc = "/images/omar-eladawy.jpeg";
 const homepageTitle = "Omar El Adawy | Edexcel IGCSE Mathematics";
 const homepageDescription =
-  "Private Edexcel IGCSE Mathematics teaching with Omar El Adawy, combining structured lessons, exam-focused practice, assessments, feedback, and progress reports.";
+  "Private Edexcel IGCSE Mathematics teaching with Omar El Adawy, combining structured lessons, exam-focused practice, assessments, feedback and progress reports.";
 
 export const metadata: Metadata = {
   title: homepageTitle,
@@ -139,7 +142,7 @@ const jsonLd = {
       email: contactEmail,
       jobTitle: "Edexcel IGCSE Mathematics Teacher",
       description:
-        "Omar El Adawy specializes in Edexcel IGCSE Mathematics teaching, structured practice, and exam-focused preparation.",
+        "Omar El Adawy specializes in Edexcel IGCSE Mathematics teaching, structured practice and exam-focused preparation.",
     },
   ],
 };
@@ -165,7 +168,7 @@ export default function PublicHomePage() {
                 </h1>
                 <p className="mt-6 max-w-[620px] text-lg leading-8 text-[#58617d]">
                   Students receive structured lessons, exam-focused preparation, clear
-                  explanations, regular assessments, feedback, and progress reports through a
+                  explanations, regular assessments, feedback and progress reports through a
                   dedicated learning platform.
                 </p>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -214,12 +217,12 @@ export default function PublicHomePage() {
                   Teaching platform
                 </p>
                 <h2 className="mt-4 text-3xl font-bold tracking-normal text-[#07112f] sm:text-4xl">
-                  A focused space for Edexcel IGCSE Mathematics study
+                  A Dedicated Study Space for Edexcel IGCSE Mathematics
                 </h2>
               </div>
               <p className="text-base leading-7 text-[#58617d] md:max-w-2xl">
                 The platform supports Omar&apos;s teaching with organized lessons, practice,
-                assessments, live meetings, and report visibility for a clear learning routine.
+                assessments, live meetings and report visibility for a clear learning routine.
               </p>
             </div>
             <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -268,7 +271,7 @@ export default function PublicHomePage() {
                 </h2>
                 <p className="mt-6 max-w-3xl text-lg leading-8 text-[#58617d]">
                   Omar El Adawy specializes exclusively in Edexcel IGCSE Mathematics and helps
-                  students build confidence through clear explanations, structured lessons, and
+                  students build confidence through clear explanations, structured lessons and
                   extensive past paper practice.
                 </p>
                 <div className="mt-7 flex flex-wrap gap-3">
@@ -339,7 +342,7 @@ export default function PublicHomePage() {
                     Existing students can access their learning space securely.
                   </h2>
                   <p className="mt-4 max-w-2xl text-base leading-7 text-white/70">
-                    Lessons, assignments, quizzes, exams, resources, meetings, and reports are kept
+                    Lessons, assignments, quizzes, exams, resources, meetings and reports are kept
                     together in one organized platform.
                   </p>
                 </div>
@@ -369,7 +372,7 @@ export default function PublicHomePage() {
                   Speak with Omar about Edexcel IGCSE Mathematics
                 </h2>
               </div>
-              <div>
+              <div className="grid gap-4 sm:grid-cols-2">
                 <a
                   href={`mailto:${contactEmail}`}
                   className="block rounded-2xl border border-[#dfe4ee] bg-[#f8fafc] p-6 transition-colors hover:bg-white"
@@ -379,6 +382,16 @@ export default function PublicHomePage() {
                   </span>
                   <p className="mt-5 text-sm font-semibold text-[#58617d]">Email Address</p>
                   <p className="mt-2 break-words font-bold text-[#07112f]">{contactEmail}</p>
+                </a>
+                <a
+                  href={contactPhoneHref}
+                  className="block rounded-2xl border border-[#dfe4ee] bg-[#f8fafc] p-6 transition-colors hover:bg-white"
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#e1f3ee] text-[#218a78]">
+                    <Phone className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <p className="mt-5 text-sm font-semibold text-[#58617d]">Phone Number</p>
+                  <p className="mt-2 font-bold text-[#07112f]">{contactPhone}</p>
                 </a>
               </div>
             </div>

@@ -35,7 +35,7 @@ export default function AdminPage() {
                 <UsersRound className="h-5 w-5" aria-hidden="true" />
               </div>
               <p className="max-w-xl text-sm leading-6 text-muted-foreground">
-                Create student accounts, edit profile details, manage active status, and send
+                Create student accounts, edit profile details, manage active status and send
                 password reset emails. Other admin modules are intentionally not implemented here.
               </p>
             </div>
