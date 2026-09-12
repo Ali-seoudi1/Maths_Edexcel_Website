@@ -30,10 +30,10 @@ const nextConfig: NextConfig = {
   // through PDFKit's private package import map in each PDF function.
   serverExternalPackages: ["pdfkit"],
   outputFileTracingIncludes: {
-    "/app/api/admin/reports/pdf": ["./node_modules/pdfkit/js/standard-fonts/*.cjs"],
-    "/app/api/admin/reports/combined/[id]/pdf": ["./node_modules/pdfkit/js/standard-fonts/*.cjs"],
-    "/app/api/reports/published/pdf": ["./node_modules/pdfkit/js/standard-fonts/*.cjs"],
-    "/app/api/reports/combined/[id]/pdf": ["./node_modules/pdfkit/js/standard-fonts/*.cjs"],
+    "/app/api/admin/reports/pdf": ["./node_modules/pdfkit/js/standard-fonts/**/*.cjs"],
+    "/app/api/admin/reports/combined/[id]/pdf": ["./node_modules/pdfkit/js/standard-fonts/**/*.cjs"],
+    "/app/api/reports/published/pdf": ["./node_modules/pdfkit/js/standard-fonts/**/*.cjs"],
+    "/app/api/reports/combined/[id]/pdf": ["./node_modules/pdfkit/js/standard-fonts/**/*.cjs"],
   },
   async headers() {
     return [
