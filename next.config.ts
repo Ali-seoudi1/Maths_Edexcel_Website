@@ -26,6 +26,15 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Keep the PDF dependency filesystem-backed, then include the files resolved
+  // through PDFKit's private package import map in each PDF function.
+  serverExternalPackages: ["pdfkit"],
+  outputFileTracingIncludes: {
+    "/app/api/admin/reports/pdf": ["./node_modules/pdfkit/js/standard-fonts/*.cjs"],
+    "/app/api/admin/reports/combined/[id]/pdf": ["./node_modules/pdfkit/js/standard-fonts/*.cjs"],
+    "/app/api/reports/published/pdf": ["./node_modules/pdfkit/js/standard-fonts/*.cjs"],
+    "/app/api/reports/combined/[id]/pdf": ["./node_modules/pdfkit/js/standard-fonts/*.cjs"],
+  },
   async headers() {
     return [
       {
