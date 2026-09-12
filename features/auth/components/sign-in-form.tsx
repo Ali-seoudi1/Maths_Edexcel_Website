@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -98,6 +99,9 @@ export function SignInForm() {
   return (
     <Card className="border-border/70 shadow-card">
       <CardHeader className="space-y-3">
+        <Link href="/" className="w-fit text-sm font-medium text-muted-foreground hover:text-foreground">
+          Back to Home
+        </Link>
         <div className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-primary/10 text-primary">
           <span className="text-sm font-semibold">EM</span>
         </div>

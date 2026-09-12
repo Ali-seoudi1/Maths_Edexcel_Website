@@ -1,6 +1,7 @@
 "use client";
 
 import { LogOut, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button, type ButtonProps } from "@/components/ui/button";
@@ -25,6 +26,7 @@ export function SignOutButton({
   title = "Are you sure you want to sign out?",
   ...props
 }: SignOutButtonProps) {
+  const router = useRouter();
   const { signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -34,6 +36,7 @@ export function SignOutButton({
 
     try {
       await signOut();
+      router.replace("/");
     } finally {
       setIsSigningOut(false);
       setOpen(false);

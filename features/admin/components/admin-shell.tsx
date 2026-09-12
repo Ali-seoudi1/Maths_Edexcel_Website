@@ -16,6 +16,7 @@ import {
   UsersRound,
   Video,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
@@ -54,8 +55,8 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <aside className="flex h-full min-h-0 flex-col overflow-hidden border-r bg-card px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-5 sm:py-6">
       <Link href="/admin" className="flex shrink-0 items-center gap-3 px-2" onClick={onNavigate}>
-        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <GraduationCap className="h-5 w-5" aria-hidden="true" />
+        <div className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-md border bg-white shadow-soft">
+          <Image src="/images/logo.jpeg" alt="" fill sizes="40px" className="object-contain p-1" />
         </div>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-foreground">Admin Console</p>

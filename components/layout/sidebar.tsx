@@ -1,6 +1,7 @@
 "use client";
 
-import { Lock, Sigma } from "lucide-react";
+import { Lock } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -60,8 +61,8 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   return (
     <aside className="flex h-full min-h-0 flex-col overflow-hidden bg-sidebar px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-6 text-sidebar-foreground sm:py-8">
       <div className="shrink-0 flex items-center gap-3 px-1">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success text-success-foreground shadow-soft">
-          <Sigma className="h-5 w-5" aria-hidden="true" />
+        <div className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-white/15 bg-white shadow-soft">
+          <Image src="/images/logo.jpeg" alt="" fill sizes="40px" className="object-contain p-1" />
         </div>
         <div className="min-w-0">
           <p className="truncate text-base font-bold leading-5">Mr. Omar - Math</p>
