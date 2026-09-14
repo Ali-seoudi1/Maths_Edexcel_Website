@@ -6,6 +6,7 @@ export type UserProfile = {
   fullName: string;
   role: UserRole;
   active: boolean;
+  isTestAccount?: boolean;
 };
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";

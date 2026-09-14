@@ -33,6 +33,7 @@ function parseUserProfile(data: unknown, uid: string): UserProfile | null {
     fullName: record.fullName,
     role: record.role,
     active: record.active,
+    isTestAccount: record.isTestAccount === true,
   };
 }
 

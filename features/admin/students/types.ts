@@ -9,6 +9,7 @@ export type Student = {
   mathTrack: string;
   role: "student";
   active: boolean;
+  isTestAccount?: boolean;
   createdAt: string | null;
 };
 

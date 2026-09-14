@@ -23,6 +23,7 @@ import { useState, type ReactNode } from "react";
 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { SignOutButton } from "@/components/shared/sign-out-button";
 import { ToastProvider } from "@/components/ui/toast";
 import { useAuth } from "@/features/auth";
@@ -104,6 +105,11 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
         <p className="mt-1 truncate text-sm font-semibold text-foreground">
           {profile?.fullName ?? "Admin"}
         </p>
+        {profile?.isTestAccount ? (
+          <Badge variant="outline" className="mt-2">
+            Test admin
+          </Badge>
+        ) : null}
         <SignOutButton
           variant="outline"
           className="mt-4 w-full justify-start"

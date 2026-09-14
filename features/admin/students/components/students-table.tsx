@@ -287,7 +287,10 @@ export function StudentsTable() {
                 {visibleStudents.map((student) => (
                   <TableRow key={student.uid}>
                     <TableCell>
-                      <p className="font-medium text-foreground">{student.fullName}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-foreground">{student.fullName}</p>
+                        {student.isTestAccount ? <Badge variant="outline">Test account</Badge> : null}
+                      </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{student.email}</TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">

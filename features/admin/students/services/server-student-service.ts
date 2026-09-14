@@ -118,6 +118,7 @@ function toStudent(uid: string, data: FirebaseFirestore.DocumentData): Student {
     mathTrack: typeof data.mathTrack === "string" ? data.mathTrack : "",
     role: "student",
     active: data.active === true,
+    isTestAccount: data.isTestAccount === true,
     createdAt: normalizeCreatedAt(data.createdAt),
   };
 }

@@ -214,7 +214,7 @@ async function listStudentProfiles(): Promise<Map<string, StudentProfile>> {
   const snapshot = await getFirebaseAdminDb().collection("users").where("role", "==", "student").get();
 
   return new Map(
-    snapshot.docs.map((doc) => {
+    snapshot.docs.filter((doc) => doc.data().isTestAccount !== true).map((doc) => {
       const data = doc.data();
 
       return [
@@ -249,7 +249,8 @@ export async function getAdminReportAnalytics(input: {
   const snapshots = snapshotQueries
     .flatMap((query) => query.docs)
     .map((doc) => toSnapshotRecord(doc.data()))
-    .filter((snapshot): snapshot is SnapshotRecord => Boolean(snapshot));
+    .filter((snapshot): snapshot is SnapshotRecord => Boolean(snapshot))
+    .filter((snapshot) => profiles.has(snapshot.studentId));
   const publishedPeriods = Array.from(new Set(snapshots.map((snapshot) => snapshot.period))).sort();
   const periodsWithoutReports = periods.filter((period) => !publishedPeriods.includes(period));
   const grouped = new Map<string, SnapshotRecord[]>();
